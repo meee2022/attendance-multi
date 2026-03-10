@@ -37,8 +37,8 @@ export default function PeriodGridSection({ date, focusClassId, highlightPeriod,
 
     const { school } = useSchool();
     const schoolId = school?._id || null;
-    const periodsPerDay: number = (school as any)?.periodsPerDay ?? 5;
     const initData = useQuery(api.setup.getInitialData, schoolId ? { schoolId: schoolId as any } : "skip");
+    const periodsPerDay: number = initData?.schools?.[0]?.periodsPerDay ?? 5;
 
     // Per-class period counts for today
     const periodCounts = useQuery(

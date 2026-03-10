@@ -402,9 +402,14 @@ export const getDailySummary = query({
                     const stAtt = studentAttMap.get(st._id.toString()) ?? [];
                     if (stAtt.length > 0) {
                         const absentPeriods = stAtt.filter(a => a === "absent").length;
-                        const isAbsentForDay = absentPeriods > dailyAbsenceThreshold;
-                        if (isAbsentForDay) dayAbsent++;
-                        else dayPresent++;
+                        const presentPeriods = stAtt.filter(a => a === "present").length;
+                        
+                        // Only count the student as "discovered" today if they actually have a recorded status
+                        if (absentPeriods > 0 || presentPeriods > 0) {
+                            const isAbsentForDay = absentPeriods > dailyAbsenceThreshold;
+                            if (isAbsentForDay) dayAbsent++;
+                            else dayPresent++;
+                        }
                     }
                 });
             }
@@ -717,12 +722,27 @@ export const getMatrixReport = query({
                     const stAtt = studentAttMap.get(st._id.toString()) ?? [];
                     if (stAtt.length > 0) {
                         const absentPeriods = stAtt.filter(a => a === "absent").length;
-                        if (absentPeriods <= dailyAbsenceThreshold) presentCount++;
+                        const presentPeriods = stAtt.filter(a => a === "present").length;
+                        if ((absentPeriods > 0 || presentPeriods > 0) && absentPeriods <= dailyAbsenceThreshold) {
+                            presentCount++;
+                        }
                     }
                 }
             }
 
-            const absentCount = hasData ? totalStudents - presentCount : 0;
+            // The number of absent students is the total number of students with ANY recorded data 
+            // minus the present count, to avoid inflating absences with students who have No Data.
+            let studentsWithDataCount = 0;
+            if (hasData) {
+                for (const st of clsStudents) {
+                     const stAtt = studentAttMap.get(st._id.toString()) ?? [];
+                     if (stAtt.length > 0 && (stAtt.includes("present") || stAtt.includes("absent"))) {
+                         studentsWithDataCount++;
+                     }
+                }
+            }
+            
+            const absentCount = hasData ? Math.max(0, studentsWithDataCount - presentCount) : 0;
             return {
                 classId: cls._id as string,
                 className: cls.name,

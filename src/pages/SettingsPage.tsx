@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 // @ts-ignore
 import { api } from "../../convex/_generated/api";
 import { Settings, BookOpen, Layers, Plus, Trash2, Pencil, Check, X, Hash, CalendarDays, Lock, KeyRound, Eye, EyeOff, ShieldAlert, Users, Database, MessagesSquare } from "lucide-react";
+import { format } from "date-fns";
 import { useSchool } from "../lib/SchoolContext";
 import ImportStudents from "./ImportStudents";
 import MessageTemplatesPage from "./MessageTemplatesPage";
@@ -97,7 +98,7 @@ function GeneralSettings() {
     const [periodsSaved, setPeriodsSaved] = useState(false);
 
     // Date state
-    const todayISO = new Date().toISOString().split("T")[0];
+    const todayISO = format(new Date(), "yyyy-MM-dd");
     const currentDate = school?.currentDate ?? todayISO;
     const [dateVal, setDateVal] = useState<string | null>(null);
     const [dateSaved, setDateSaved] = useState(false);
