@@ -11,7 +11,7 @@ export default defineSchema({
         currentDate: v.optional(v.string()),
         adminPin: v.optional(v.string()), // default "1234"
         dailyAbsenceThreshold: v.optional(v.number()), // max absent periods still = present
-    }),
+    }).index("by_code", ["code"]),
     classes: defineTable({
         schoolId: v.id("schools"),
         name: v.string(), // e.g., "10-1"
@@ -38,7 +38,7 @@ export default defineSchema({
         schoolId: v.id("schools"),
         name: v.string(),
         code: v.string(),
-    }),
+    }).index("by_school", ["schoolId"]),
     periods: defineTable({
         schoolId: v.id("schools"),
         classId: v.id("classes"),

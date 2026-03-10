@@ -93,10 +93,8 @@ export const createSubject = mutation({
     handler: async (ctx, args) => {
         // Check if a subject with the same code already exists for this school
         const existing = await ctx.db.query("subjects")
-            .filter(q => q.and(
-                q.eq(q.field("schoolId"), args.schoolId),
-                q.eq(q.field("code"), args.code.trim().toUpperCase())
-            ))
+            .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
+            .filter(q => q.eq(q.field("code"), args.code.trim().toUpperCase()))
             .first();
         if (existing) throw new Error("مادة بهذا الكود موجودة بالفعل.");
 

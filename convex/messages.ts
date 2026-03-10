@@ -100,7 +100,7 @@ export const getStudentsForMessages = query({
     // 2. Subjects map
     const subjectDocs = await ctx.db
       .query("subjects")
-      .filter((q) => q.eq(q.field("schoolId"), school._id))
+      .withIndex("by_school", (q) => q.eq("schoolId", school._id))
       .collect();
     const subjectMap = new Map(subjectDocs.map((s) => [s._id.toString(), s.name]));
 

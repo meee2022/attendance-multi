@@ -7,11 +7,31 @@ export const registerOrLoginSchool = mutation({
         name: v.optional(v.string())
     },
     handler: async (ctx, args) => {
-        const existing = await ctx.db.query("schools")
-            .filter(q => q.eq(q.field("code"), args.code))
-            .first();
+        // Use the by_code index to fetch all matching schools
+        const existingMatches = await ctx.db.query("schools")
+            .withIndex("by_code", q => q.eq("code", args.code))
+            .collect();
 
-        if (existing) {
+        if (existingMatches.length > 0) {
+            let existing = existingMatches[0];
+            
+            // If somehow there are multiple duplicate schools for the same code,
+            // we should pick the one that has actual classes/data configured.
+            if (existingMatches.length > 1) {
+                let bestMatch = existingMatches[0];
+                let maxData = -1;
+                for (const match of existingMatches) {
+                    const c = await ctx.db.query("classes")
+                        .withIndex("by_school", q => q.eq("schoolId", match._id))
+                        .collect();
+                    if (c.length > maxData) {
+                        maxData = c.length;
+                        bestMatch = match;
+                    }
+                }
+                existing = bestMatch;
+            }
+
             // If the user provided a name and it doesn't match the existing school name
             if (args.name && existing.name && args.name.trim() !== existing.name.trim()) {
                 throw new ConvexError(`عذراً، هذا الكود مستخدم مسبقاً لمدرسة (${existing.name}). يرجى التأكد من الكود الخاص بك.`);
@@ -266,7 +286,7 @@ export const getInitialData = query({
             .withIndex("by_school", q => q.eq("schoolId", school._id))
             .collect();
         const subjects = await ctx.db.query("subjects")
-            .filter(q => q.eq(q.field("schoolId"), school._id))
+            .withIndex("by_school", q => q.eq("schoolId", school._id))
             .collect();
         return { schools: [school], classes, subjects };
     },

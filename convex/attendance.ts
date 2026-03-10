@@ -601,7 +601,7 @@ export const toggleAttendance = mutation({
         if (!periodId) {
             // Create a period (with a placeholder subject)
             const subjects = await ctx.db.query("subjects")
-                .filter(q => q.eq(q.field("schoolId"), args.schoolId))
+                .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
                 .first();
             const subjectId = subjects?._id;
             if (!subjectId) throw new Error("لا توجد مواد دراسية. يرجى إضافة مادة أولاً.");
