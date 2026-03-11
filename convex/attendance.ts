@@ -414,7 +414,8 @@ export const getDailySummary = query({
                 });
             }
 
-            const presentPercentage = totalStudents > 0 && hasData ? (dayPresent / totalStudents) * 100 : 0;
+            const hasValidData = dayPresent > 0 || dayAbsent > 0;
+            const presentPercentage = totalStudents > 0 && hasValidData ? (dayPresent / totalStudents) * 100 : 0;
 
             return {
                 ...cls,
@@ -422,7 +423,7 @@ export const getDailySummary = query({
                 dayPresent,
                 dayAbsent,
                 presentPercentage,
-                hasData
+                hasData: hasValidData
             };
         });
 
@@ -742,7 +743,8 @@ export const getMatrixReport = query({
                 }
             }
             
-            const absentCount = hasData ? Math.max(0, studentsWithDataCount - presentCount) : 0;
+            const hasValidData = studentsWithDataCount > 0;
+            const absentCount = hasValidData ? Math.max(0, studentsWithDataCount - presentCount) : 0;
             return {
                 classId: cls._id as string,
                 className: cls.name,
@@ -751,9 +753,9 @@ export const getMatrixReport = query({
                 totalStudents,
                 presentCount,
                 absentCount,
-                presentPct: totalStudents > 0 && hasData ? (presentCount / totalStudents) * 100 : 0,
-                absentPct: totalStudents > 0 && hasData ? (absentCount / totalStudents) * 100 : 0,
-                hasData,
+                presentPct: totalStudents > 0 && hasValidData ? (presentCount / totalStudents) * 100 : 0,
+                absentPct: totalStudents > 0 && hasValidData ? (absentCount / totalStudents) * 100 : 0,
+                hasData: hasValidData,
             };
         }).sort((a, b) => {
             if (a.grade !== b.grade) return a.grade - b.grade;

@@ -60,9 +60,13 @@ function PctBadge({ pct }: { pct: number }) {
 
 export default function AdminDashboard() {
     const { school } = useSchool();
+    const initData = useQuery(api.setup.getInitialData, school?._id ? { schoolId: school._id as any } : "skip");
+    const lockedDate: string | undefined = initData?.schools?.[0]?.currentDate;
     const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+    // Use the school's locked date as default once loaded (matches where TeacherUpload saves data)
+    const activeDate = lockedDate ?? date;
     const [selectedGrade, setSelectedGrade] = useState<number>(10);
-    const data = useQuery(api.attendance.getDailySummary, school?._id ? { schoolId: school._id as any, date } : "skip");
+    const data = useQuery(api.attendance.getDailySummary, school?._id ? { schoolId: school._id as any, date: activeDate } : "skip");
 
     const tableData = useMemo(() => {
         if (!data || !data.classes) return null;
@@ -116,7 +120,7 @@ export default function AdminDashboard() {
                             <input
                                 type="date"
                                 className="bg-transparent border-none outline-none font-black text-white cursor-pointer"
-                                value={date}
+                                value={activeDate}
                                 onChange={e => setDate(e.target.value)}
                             />
                         </div>
