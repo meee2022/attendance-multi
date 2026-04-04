@@ -4,7 +4,8 @@ import { v, ConvexError } from "convex/values";
 export const registerOrLoginSchool = mutation({
     args: {
         code: v.string(),
-        name: v.optional(v.string())
+        name: v.optional(v.string()),
+        password: v.optional(v.string())
     },
     handler: async (ctx, args) => {
         // Use the by_code index to fetch all matching schools
@@ -37,6 +38,16 @@ export const registerOrLoginSchool = mutation({
                 throw new ConvexError(`عذراً، هذا الكود مستخدم مسبقاً لمدرسة (${existing.name}). يرجى التأكد من الكود الخاص بك.`);
             }
 
+            // Check password if the school already has one
+            if (existing.password && existing.password !== args.password) {
+                throw new ConvexError("كلمة المرور غير صحيحة. يرجى التأكد والمحاولة مرة أخرى.");
+            }
+
+            // If the school doesn't have a password yet but one was provided, set it
+            if (!existing.password && args.password) {
+                await ctx.db.patch(existing._id, { password: args.password });
+            }
+
             return {
                 _id: existing._id,
                 code: existing.code,
@@ -51,6 +62,7 @@ export const registerOrLoginSchool = mutation({
         const newId = await ctx.db.insert("schools", {
             name: args.name.trim(),
             code: args.code,
+            password: args.password,
             createdAt: new Date().toISOString(),
         });
 
@@ -62,11 +74,31 @@ export const registerOrLoginSchool = mutation({
     }
 });
 
+export const verifySchoolCode = query({
+    args: { code: v.string() },
+    handler: async (ctx, args) => {
+        const matches = await ctx.db.query("schools")
+            .withIndex("by_code", q => q.eq("code", args.code.trim().toUpperCase()))
+            .collect();
+        if (matches.length > 0) {
+            const school = matches[0];
+            return {
+                exists: true,
+                name: school.name,
+                hasPassword: school.password !== undefined && school.password !== null && school.password !== ""
+            };
+        }
+        return { exists: false, name: null, hasPassword: false };
+    }
+});
+
 export const checkSchoolExists = query({
-    args: { schoolId: v.optional(v.id("schools")) },
+    args: { schoolId: v.optional(v.string()) },
     handler: async (ctx, args) => {
         if (!args.schoolId) return false;
-        const school = await ctx.db.get(args.schoolId);
+        const normalizedId = ctx.db.normalizeId("schools", args.schoolId);
+        if (!normalizedId) return false;
+        const school = await ctx.db.get(normalizedId);
         return !!school;
     },
 });
@@ -245,8 +277,7 @@ export const ensureAllClasses = mutation({
 
         // Helper to determine track based on grade and class name
         function getTrack(grade: number, className: string): string {
-            if (grade < 10) return "عام"; // Primary and Prep are general
-            if (grade === 10) return "عام";
+            if (grade < 11) return "عام"; // Primary, Prep, and 10th are general
 
             // Extract class number: "11-4" -> 4
             const match = className.match(/-(\d+)$/);

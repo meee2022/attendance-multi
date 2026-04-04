@@ -10,7 +10,11 @@ import { api } from "../../convex/_generated/api";
 import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
 
-const GRADE_LABELS: Record<number, string> = { 10: "عاشر", 11: "حادي عشر", 12: "ثاني عشر" };
+const GRADE_LABELS: Record<number, string> = {
+    1: "أول", 2: "ثاني", 3: "ثالث", 4: "رابع", 5: "خامس", 6: "سادس",
+    7: "سابع", 8: "ثامن", 9: "تاسع",
+    10: "عاشر", 11: "حادي عشر", 12: "ثاني عشر",
+};
 const AR_DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
 function getArabicDayName(dateStr: string): string {
@@ -63,6 +67,7 @@ export default function MessagesPage() {
   const [page, setPage] = useState(0);
 
   const templates = useQuery(api.messages.getTemplates, school?._id ? { schoolId: school._id as any } : "skip");
+  const initData = useQuery(api.setup.getInitialData, school?._id ? { schoolId: school._id as any } : "skip");
   const studentsData = useQuery(api.messages.getStudentsForMessages, school?._id ? {
     schoolId: school._id as any,
     date,
@@ -74,6 +79,12 @@ export default function MessagesPage() {
 
   const studentsCount = studentsData?.items?.length ?? 0;
   const totalStudents = studentsData?.total ?? 0;
+
+  const availableGrades = useMemo(() => {
+    if (!initData?.classes) return [];
+    const grades = [...new Set(initData.classes.map((c: any) => c.grade as number))];
+    return grades.sort((a, b) => a - b);
+  }, [initData]);
 
   const template = msgType === "absent" ? templates?.absent : templates?.present;
   const defaultBody = msgType === "absent" ? templates?.defaultAbsent : templates?.defaultPresent;
@@ -195,7 +206,7 @@ export default function MessagesPage() {
           >
             جميع المراحل
           </button>
-          {([10, 11, 12] as const).map(g => (
+          {availableGrades.map(g => (
             <button
               key={g}
               onClick={() => {
@@ -208,7 +219,7 @@ export default function MessagesPage() {
                 : "bg-slate-50 text-slate-600 border-slate-200 hover:border-qatar-maroon/40"
                 }`}
             >
-              {GRADE_LABELS[g]}
+              {GRADE_LABELS[g] || `الصف ${g}`}
             </button>
           ))}
 

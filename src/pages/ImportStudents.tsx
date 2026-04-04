@@ -3,7 +3,8 @@ import { useQuery, useMutation } from "convex/react";
 import * as xlsx from "xlsx";
 import {
     UserPlus, FileSpreadsheet, CheckCircle2, AlertCircle,
-    Users, GraduationCap, Layers, Phone, BookOpen, BarChart3
+    Users, GraduationCap, Layers, Phone, BookOpen, BarChart3,
+    Search, ArrowLeftRight, Trash2, Pencil, Check, X, ChevronDown, ChevronUp
 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import StatCard from "../components/StatCard";
@@ -11,7 +12,11 @@ import { useSchool } from "../lib/SchoolContext";
 
 type ParsedRow = { fullName: string; className: string; phones: string };
 
-const GRADE_LABELS: Record<number, string> = { 10: "العاشر", 11: "الحادي عشر", 12: "الثاني عشر" };
+const GRADE_LABELS: Record<number, string> = {
+    1: "الأول", 2: "الثاني", 3: "الثالث", 4: "الرابع", 5: "الخامس", 6: "السادس",
+    7: "السابع", 8: "الثامن", 9: "التاسع",
+    10: "العاشر", 11: "الحادي عشر", 12: "الثاني عشر"
+};
 const TRACK_COLORS: Record<string, string> = {
     "علمي": "bg-blue-100 text-blue-800 border-blue-200",
     "أدبي": "bg-amber-100 text-amber-800 border-amber-200",
@@ -321,14 +326,14 @@ export default function ImportStudents() {
                                 ملخص حسب المرحلة الدراسية
                             </h4>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                {[10, 11, 12].map(g => {
+                                {[...Object.keys(gradeTrackSummary).map(Number)].sort((a,b) => a-b).map(g => {
                                     const info = gradeTrackSummary[g];
                                     if (!info) return null;
                                     return (
                                         <div key={g} className="bg-slate-50 border border-qatar-gray-border rounded-2xl p-5 space-y-3 relative overflow-hidden">
                                             <div className="absolute top-0 right-0 left-0 h-1 bg-qatar-maroon" />
                                             <div className="flex justify-between items-center">
-                                                <span className="font-black text-slate-800">الصف ال{GRADE_LABELS[g]}</span>
+                                                <span className="font-black text-slate-800">الصف {GRADE_LABELS[g] || g}</span>
                                                 <span className="text-2xl font-black text-qatar-maroon">{info.total}</span>
                                             </div>
                                             <div className="flex flex-wrap gap-1.5">
@@ -375,6 +380,369 @@ export default function ImportStudents() {
                             </div>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* ── Student Management Section ── */}
+            <StudentManagement />
+        </div>
+    );
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/*                   Student Management Component                 */
+/* ══════════════════════════════════════════════════════════════ */
+function StudentManagement() {
+    const { school } = useSchool();
+    const data = useQuery(api.setup.getInitialData, school?._id ? { schoolId: school._id as any } : "skip");
+    const allStudents = useQuery(api.students.getStudentsByClass, school?._id ? { schoolId: school._id as any } : "skip");
+    const transferStudent = useMutation(api.students.transferStudent);
+    const updateStudentInfo = useMutation(api.students.updateStudentInfo);
+    const deleteStudentMut = useMutation(api.students.deleteStudent);
+
+    const [search, setSearch] = useState("");
+    const [selectedClass, setSelectedClass] = useState<string>("all");
+    const [expandedGrades, setExpandedGrades] = useState<Record<number, boolean>>({});
+    const [transferTarget, setTransferTarget] = useState<{ studentId: string; studentName: string } | null>(null);
+    const [transferClassId, setTransferClassId] = useState("");
+    const [editingStudent, setEditingStudent] = useState<string | null>(null);
+    const [editName, setEditName] = useState("");
+    const [editPhone, setEditPhone] = useState("");
+    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
+
+    const classes = data?.classes || [];
+    const students = allStudents || [];
+
+    // Build class lookup
+    const classMap = useMemo(() => {
+        const m: Record<string, any> = {};
+        for (const c of classes) m[c._id] = c;
+        return m;
+    }, [classes]);
+
+    // Group classes by grade
+    const gradeGroups = useMemo(() => {
+        const g: Record<number, any[]> = {};
+        for (const c of classes) {
+            if (!g[c.grade]) g[c.grade] = [];
+            g[c.grade].push(c);
+        }
+        const grades = Object.keys(g).map(Number).sort((a, b) => a - b);
+        for (const grade of grades) {
+            g[grade].sort((a: any, b: any) => {
+                const na = parseInt(a.name.split("-")[1] || "0");
+                const nb = parseInt(b.name.split("-")[1] || "0");
+                return na - nb;
+            });
+        }
+        return { grades, map: g };
+    }, [classes]);
+
+    // Filter students
+    const filteredStudents = useMemo(() => {
+        let filtered = students;
+        if (selectedClass !== "all") {
+            filtered = filtered.filter(s => s.classId === selectedClass);
+        }
+        if (search.trim()) {
+            const q = search.trim().toLowerCase();
+            filtered = filtered.filter(s => s.fullName.toLowerCase().includes(q));
+        }
+        return filtered;
+    }, [students, selectedClass, search]);
+
+    // Group filtered students by class
+    const studentsByClass = useMemo(() => {
+        const m: Record<string, any[]> = {};
+        for (const s of filteredStudents) {
+            const cid = s.classId as string;
+            if (!m[cid]) m[cid] = [];
+            m[cid].push(s);
+        }
+        // Sort students within each class by name
+        for (const cid of Object.keys(m)) {
+            m[cid].sort((a: any, b: any) => a.fullName.localeCompare(b.fullName, 'ar'));
+        }
+        return m;
+    }, [filteredStudents]);
+
+    const toggleGrade = (grade: number) => {
+        setExpandedGrades(prev => ({ ...prev, [grade]: !prev[grade] }));
+    };
+
+    const handleTransfer = async () => {
+        if (!transferTarget || !transferClassId) return;
+        try {
+            const res = await transferStudent({ studentId: transferTarget.studentId as any, newClassId: transferClassId as any });
+            setMsg({ text: `تم نقل ${res.studentName} إلى الصف ${res.newClassName} بنجاح`, ok: true });
+            setTransferTarget(null);
+            setTransferClassId("");
+        } catch (e: any) {
+            setMsg({ text: e.message, ok: false });
+        }
+        setTimeout(() => setMsg(null), 3000);
+    };
+
+    const handleUpdateStudent = async (studentId: string) => {
+        try {
+            await updateStudentInfo({ studentId: studentId as any, fullName: editName, guardianPhone: editPhone });
+            setEditingStudent(null);
+            setMsg({ text: "تم تحديث بيانات الطالب بنجاح", ok: true });
+        } catch (e: any) {
+            setMsg({ text: e.message, ok: false });
+        }
+        setTimeout(() => setMsg(null), 3000);
+    };
+
+    const handleDeleteStudent = async (studentId: string) => {
+        try {
+            const res = await deleteStudentMut({ studentId: studentId as any });
+            setMsg({ text: `تم حذف ${res.studentName} و ${res.deletedAttendance} سجل حضور`, ok: true });
+            setDeleteConfirm(null);
+        } catch (e: any) {
+            setMsg({ text: e.message, ok: false });
+        }
+        setTimeout(() => setMsg(null), 3000);
+    };
+
+    if (!data || !allStudents) return null;
+    if (students.length === 0) return null;
+
+    return (
+        <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border overflow-hidden">
+            {/* Header */}
+            <div className="bg-qatar-maroon px-6 sm:px-8 py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <h2 className="text-xl font-black text-white flex items-center gap-3">
+                    <Users className="w-6 h-6 text-white/70" />
+                    إدارة الطلاب المسجلين
+                </h2>
+                <div className="flex items-center gap-2 text-white/80 text-sm font-bold">
+                    <span className="bg-white/15 px-3 py-1 rounded-full border border-white/20">
+                        {filteredStudents.length} / {students.length} طالب
+                    </span>
+                </div>
+            </div>
+
+            {/* Search & Filter Bar */}
+            <div className="p-4 sm:p-6 border-b border-qatar-gray-border bg-slate-50/50">
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder="بحث باسم الطالب..."
+                            className="w-full border border-slate-200 rounded-xl pr-10 pl-4 py-2.5 font-bold text-slate-700 outline-none focus:border-qatar-maroon bg-white"
+                        />
+                    </div>
+                    <select
+                        value={selectedClass}
+                        onChange={e => setSelectedClass(e.target.value)}
+                        className="border border-slate-200 rounded-xl px-4 py-2.5 font-bold text-slate-700 outline-none bg-white focus:border-qatar-maroon min-w-[180px]"
+                    >
+                        <option value="all">جميع الصفوف</option>
+                        {gradeGroups.grades.map(grade => (
+                            <optgroup key={grade} label={`الصف ${GRADE_LABELS[grade] || grade}`}>
+                                {gradeGroups.map[grade].map((c: any) => (
+                                    <option key={c._id} value={c._id}>{c.name} {c.track ? `(${c.track})` : ''}</option>
+                                ))}
+                            </optgroup>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            {/* Student List by Grade → Class */}
+            <div className="divide-y divide-qatar-gray-border">
+                {gradeGroups.grades.map(grade => {
+                    const gradeClasses = gradeGroups.map[grade];
+                    const gradeStudentCount = gradeClasses.reduce((sum: number, c: any) => sum + (studentsByClass[c._id]?.length || 0), 0);
+                    if (gradeStudentCount === 0 && selectedClass !== "all") return null;
+                    const isExpanded = expandedGrades[grade] !== false; // default expanded
+
+                    return (
+                        <div key={grade}>
+                            {/* Grade Header */}
+                            <button
+                                onClick={() => toggleGrade(grade)}
+                                className="w-full flex items-center justify-between px-6 py-3 bg-slate-100 hover:bg-slate-200 transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-qatar-maroon text-white flex items-center justify-center font-black text-sm">{grade}</div>
+                                    <span className="font-black text-slate-700">الصف {GRADE_LABELS[grade] || grade}</span>
+                                    <span className="text-xs font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full border border-slate-200">
+                                        {gradeStudentCount} طالب
+                                    </span>
+                                </div>
+                                {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                            </button>
+
+                            {/* Classes within Grade */}
+                            {isExpanded && gradeClasses.map((cls: any) => {
+                                const classStudents = studentsByClass[cls._id] || [];
+                                if (classStudents.length === 0 && selectedClass !== "all" && selectedClass !== cls._id) return null;
+
+                                return (
+                                    <div key={cls._id} className="border-t border-slate-100">
+                                        {/* Class subheader */}
+                                        <div className="flex items-center gap-2 px-6 py-2 bg-white border-b border-slate-100">
+                                            <Layers className="w-3.5 h-3.5 text-qatar-maroon" />
+                                            <span className="font-black text-qatar-maroon text-sm">{cls.name}</span>
+                                            {cls.track && (
+                                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full border ${TRACK_COLORS[cls.track] || TRACK_COLORS["عام"]}`}>
+                                                    {cls.track}
+                                                </span>
+                                            )}
+                                            <span className="text-xs font-bold text-slate-400 mr-auto">{classStudents.length} طالب</span>
+                                        </div>
+
+                                        {classStudents.length === 0 ? (
+                                            <p className="px-6 py-4 text-sm text-slate-300 font-bold text-center">لا يوجد طلاب</p>
+                                        ) : (
+                                            <div className="divide-y divide-slate-50">
+                                                {classStudents.map((student: any, idx: number) => (
+                                                    <div key={student._id} className={`flex items-center gap-3 px-6 py-2.5 hover:bg-rose-50/30 transition-colors ${idx % 2 === 0 ? '' : 'bg-slate-50/30'}`}>
+                                                        {/* Row number */}
+                                                        <span className="text-xs font-bold text-slate-300 w-6 text-center flex-shrink-0">{idx + 1}</span>
+
+                                                        {editingStudent === student._id ? (
+                                                            /* Edit Mode */
+                                                            <div className="flex items-center gap-2 flex-1 flex-wrap">
+                                                                <input
+                                                                    value={editName}
+                                                                    onChange={e => setEditName(e.target.value)}
+                                                                    className="border border-slate-300 rounded-lg px-3 py-1.5 font-bold text-slate-700 outline-none text-sm focus:border-qatar-maroon flex-1 min-w-[150px]"
+                                                                    placeholder="اسم الطالب"
+                                                                />
+                                                                <input
+                                                                    value={editPhone}
+                                                                    onChange={e => setEditPhone(e.target.value)}
+                                                                    className="border border-slate-300 rounded-lg px-3 py-1.5 font-bold text-slate-700 outline-none text-sm focus:border-qatar-maroon w-32"
+                                                                    placeholder="الهاتف"
+                                                                    dir="ltr"
+                                                                />
+                                                                <button onClick={() => handleUpdateStudent(student._id)} className="p-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600">
+                                                                    <Check className="w-3.5 h-3.5" />
+                                                                </button>
+                                                                <button onClick={() => setEditingStudent(null)} className="p-1.5 bg-slate-200 text-slate-600 rounded-lg hover:bg-slate-300">
+                                                                    <X className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            /* View Mode */
+                                                            <>
+                                                                <span className="font-bold text-slate-800 text-sm flex-1 truncate">{student.fullName}</span>
+                                                                {student.guardianPhone && (
+                                                                    <span className="text-[11px] text-slate-400 font-mono hidden sm:inline" dir="ltr">
+                                                                        {student.guardianPhone}
+                                                                    </span>
+                                                                )}
+
+                                                                {/* Actions */}
+                                                                <div className="flex items-center gap-1 flex-shrink-0">
+                                                                    {/* Transfer */}
+                                                                    <button
+                                                                        onClick={() => { setTransferTarget({ studentId: student._id, studentName: student.fullName }); setTransferClassId(""); }}
+                                                                        className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                        title="نقل لصف آخر"
+                                                                    >
+                                                                        <ArrowLeftRight className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    {/* Edit */}
+                                                                    <button
+                                                                        onClick={() => { setEditingStudent(student._id); setEditName(student.fullName); setEditPhone(student.guardianPhone || ""); }}
+                                                                        className="p-1.5 text-slate-400 hover:text-qatar-maroon hover:bg-rose-50 rounded-lg transition-colors"
+                                                                        title="تعديل"
+                                                                    >
+                                                                        <Pencil className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    {/* Delete */}
+                                                                    {deleteConfirm === student._id ? (
+                                                                        <div className="flex items-center gap-1">
+                                                                            <button onClick={() => handleDeleteStudent(student._id)} className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                                                                <Check className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                            <button onClick={() => setDeleteConfirm(null)} className="p-1.5 bg-slate-200 text-slate-600 rounded-lg hover:bg-slate-300">
+                                                                                <X className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={() => setDeleteConfirm(student._id)}
+                                                                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                                            title="حذف"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Transfer Modal */}
+            {transferTarget && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setTransferTarget(null)}>
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5" onClick={e => e.stopPropagation()}>
+                        <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
+                            <ArrowLeftRight className="w-5 h-5 text-blue-600" />
+                            نقل طالب لصف آخر
+                        </h3>
+                        <p className="text-sm text-slate-500 font-bold">
+                            نقل <span className="text-qatar-maroon">{transferTarget.studentName}</span> إلى:
+                        </p>
+                        <select
+                            value={transferClassId}
+                            onChange={e => setTransferClassId(e.target.value)}
+                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none focus:border-blue-500 bg-white"
+                        >
+                            <option value="">-- اختر الصف المستهدف --</option>
+                            {gradeGroups.grades.map(grade => (
+                                <optgroup key={grade} label={`الصف ${GRADE_LABELS[grade] || grade}`}>
+                                    {gradeGroups.map[grade].map((c: any) => (
+                                        <option key={c._id} value={c._id}>{c.name} {c.track ? `(${c.track})` : ''}</option>
+                                    ))}
+                                </optgroup>
+                            ))}
+                        </select>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleTransfer}
+                                disabled={!transferClassId}
+                                className="flex-1 bg-blue-600 text-white font-black py-3 rounded-xl hover:opacity-90 disabled:opacity-30 transition-opacity flex items-center justify-center gap-2"
+                            >
+                                <ArrowLeftRight className="w-4 h-4" />
+                                نقل
+                            </button>
+                            <button
+                                onClick={() => setTransferTarget(null)}
+                                className="flex-1 bg-slate-100 text-slate-700 font-black py-3 rounded-xl hover:bg-slate-200 transition-colors"
+                            >
+                                إلعاء
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Toast message */}
+            {msg && (
+                <div className={`fixed bottom-6 left-6 z-50 max-w-sm px-5 py-3 rounded-xl shadow-xl border font-black text-sm animate-in slide-in-from-left-5 duration-300 ${
+                    msg.ok ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
+                }`}>
+                    {msg.ok ? '✓ ' : '✗ '}{msg.text}
                 </div>
             )}
         </div>

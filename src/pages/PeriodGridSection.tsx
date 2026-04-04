@@ -7,11 +7,15 @@ import ClassPeriodGrid from "./ClassPeriodGrid";
 import { useSchool } from "../lib/SchoolContext";
 
 const GRADE_LABELS: Record<number, string> = {
-    10: "الصف العاشر",
-    11: "الصف الحادي عشر",
-    12: "الصف الثاني عشر",
+    1: "الصف الأول", 2: "الصف الثاني", 3: "الصف الثالث", 4: "الصف الرابع", 5: "الصف الخامس", 6: "الصف السادس",
+    7: "الصف السابع", 8: "الصف الثامن", 9: "الصف التاسع",
+    10: "الصف العاشر", 11: "الصف الحادي عشر", 12: "الصف الثاني عشر",
 };
-const GRADE_SHORT: Record<number, string> = { 10: "عاشر", 11: "حادي عشر", 12: "ثاني عشر" };
+const GRADE_SHORT: Record<number, string> = {
+    1: "أول", 2: "ثاني", 3: "ثالث", 4: "رابع", 5: "خامس", 6: "سادس",
+    7: "سابع", 8: "ثامن", 9: "تاسع",
+    10: "عاشر", 11: "حادي عشر", 12: "ثاني عشر",
+};
 
 const TRACK_COLORS: Record<string, { active: string; badge: string }> = {
     "علمي": { active: "bg-blue-600 text-white", badge: "bg-blue-100 text-blue-800 border-blue-200" },
@@ -32,7 +36,7 @@ interface PeriodGridSectionProps {
 }
 
 export default function PeriodGridSection({ date, focusClassId, highlightPeriod, highlightSubjectName }: PeriodGridSectionProps) {
-    const [selectedGrade, setSelectedGrade] = useState<number>(10);
+    const [selectedGrade, setSelectedGrade] = useState<number | null>(null);
     const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
 
     const { school } = useSchool();
@@ -46,6 +50,22 @@ export default function PeriodGridSection({ date, focusClassId, highlightPeriod,
         schoolId ? { schoolId: schoolId as any, date } : "skip"
     ) as Record<string, number> | undefined;
 
+    const availableGrades = useMemo(() => {
+        if (!initData?.classes) return [];
+        const grades = [...new Set(initData.classes.map((c: any) => c.grade as number))];
+        return grades.sort((a, b) => a - b);
+    }, [initData]);
+
+    // Auto-select first available grade if none valid selected
+    useEffect(() => {
+        if (availableGrades.length > 0 && (selectedGrade === null || !availableGrades.includes(selectedGrade))) {
+            // Only set if we don't have a focusClassId handling it below
+            if (!focusClassId) {
+                setSelectedGrade(availableGrades[0]);
+            }
+        }
+    }, [availableGrades, selectedGrade, focusClassId]);
+
     // Auto-focus the class selected in the upload form
     useEffect(() => {
         if (!focusClassId || !initData?.classes) return;
@@ -57,7 +77,7 @@ export default function PeriodGridSection({ date, focusClassId, highlightPeriod,
     }, [focusClassId, initData]);
 
     const gradeClasses = useMemo(() => {
-        if (!initData?.classes) return [];
+        if (!initData?.classes || selectedGrade === null) return [];
         return initData.classes
             .filter((c: any) => c.grade === selectedGrade && c.isActive)
             .sort((a: any, b: any) => {
@@ -116,8 +136,8 @@ export default function PeriodGridSection({ date, focusClassId, highlightPeriod,
                 </div>
 
                 {/* Grade Toggle Buttons */}
-                <div className="flex gap-2">
-                    {([10, 11, 12] as const).map(g => (
+                <div className="flex flex-wrap gap-2">
+                    {availableGrades.map(g => (
                         <button
                             key={g}
                             onClick={() => { setSelectedGrade(g); setSelectedClassId(null); }}
@@ -126,7 +146,7 @@ export default function PeriodGridSection({ date, focusClassId, highlightPeriod,
                                 : "bg-white/10 text-white border-white/20 hover:bg-white/20"
                                 }`}
                         >
-                            {GRADE_SHORT[g]}
+                            {GRADE_SHORT[g] || g}
                         </button>
                     ))}
                 </div>

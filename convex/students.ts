@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const importStudentsFromSheet = mutation({
@@ -30,7 +30,7 @@ export const importStudentsFromSheet = mutation({
 
         // Helper to determine track based on grade and class name
         function getTrack(grade: number, className: string): string {
-            if (grade === 10) return "عام";
+            if (grade < 11) return "عام"; // Grades 1-10 are general track
             // Extract class number: "11-4" -> 4
             const match = className.match(/-(\d+)$/);
             const num = match ? parseInt(match[1], 10) : 0;
@@ -162,5 +162,66 @@ export const deleteDummyStudents = mutation({
             }
         }
         return { studentCount, attendanceCount };
+    },
+});
+
+// Get all students grouped by class for a school
+export const getStudentsByClass = query({
+    args: { schoolId: v.id("schools") },
+    handler: async (ctx, args) => {
+        const students = await ctx.db.query("students")
+            .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
+            .collect();
+        return students;
+    },
+});
+
+// Transfer a student to a different class
+export const transferStudent = mutation({
+    args: {
+        studentId: v.id("students"),
+        newClassId: v.id("classes"),
+    },
+    handler: async (ctx, args) => {
+        const student = await ctx.db.get(args.studentId);
+        if (!student) throw new Error("الطالب غير موجود.");
+        const newClass = await ctx.db.get(args.newClassId);
+        if (!newClass) throw new Error("الصف المستهدف غير موجود.");
+        await ctx.db.patch(args.studentId, { classId: args.newClassId });
+        return { success: true, studentName: student.fullName, newClassName: newClass.name };
+    },
+});
+
+// Update student info (name, phone)
+export const updateStudentInfo = mutation({
+    args: {
+        studentId: v.id("students"),
+        fullName: v.optional(v.string()),
+        guardianPhone: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const student = await ctx.db.get(args.studentId);
+        if (!student) throw new Error("الطالب غير موجود.");
+        const patch: any = {};
+        if (args.fullName !== undefined) patch.fullName = args.fullName.trim();
+        if (args.guardianPhone !== undefined) patch.guardianPhone = args.guardianPhone.trim() || undefined;
+        await ctx.db.patch(args.studentId, patch);
+        return { success: true };
+    },
+});
+
+// Delete a single student and their attendance records
+export const deleteStudent = mutation({
+    args: { studentId: v.id("students") },
+    handler: async (ctx, args) => {
+        const student = await ctx.db.get(args.studentId);
+        if (!student) throw new Error("الطالب غير موجود.");
+        // Delete attendance records
+        const atts = await ctx.db.query("attendance")
+            .withIndex("by_student", q => q.eq("studentId", args.studentId))
+            .collect();
+        for (const a of atts) await ctx.db.delete(a._id);
+        await ctx.db.delete(args.studentId);
+        return { deletedAttendance: atts.length, studentName: student.fullName };
     },
 });

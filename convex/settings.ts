@@ -23,6 +23,19 @@ export const verifyAdminPin = mutation({
     },
 });
 
+export const updateSchoolPassword = mutation({
+    args: { schoolId: v.id("schools"), currentPassword: v.string(), newPassword: v.string() },
+    handler: async (ctx, args) => {
+        const school = await ctx.db.get(args.schoolId);
+        if (!school) throw new Error("لا توجد مدرسة.");
+        const stored = school.password;
+        if (stored && args.currentPassword !== stored) throw new Error("كلمة المرور الحالية غير صحيحة.");
+        if (args.newPassword.length < 4) throw new Error("يجب أن تكون كلمة المرور 4 أحرف على الأقل.");
+        await ctx.db.patch(school._id, { password: args.newPassword });
+        return "تم تغيير كلمة المرور.";
+    },
+});
+
 export const updateCurrentDate = mutation({
     args: { schoolId: v.id("schools"), date: v.string() },
     handler: async (ctx, args) => {

@@ -5,6 +5,7 @@ export default defineSchema({
     schools: defineTable({
         name: v.string(),
         code: v.string(),
+        password: v.optional(v.string()),
         logoUrl: v.optional(v.string()),
         createdAt: v.string(),
         periodsPerDay: v.optional(v.number()),
@@ -58,7 +59,9 @@ export default defineSchema({
         status: v.string(), // "present", "absent", "unverified"
         source: v.string(), // "upload", "manual"
         notes: v.optional(v.string()), // For unverified names
-    }).index("by_period", ["periodId"]).index("by_student", ["studentId"]),
+    }).index("by_period", ["periodId"])
+      .index("by_student", ["studentId"])
+      .index("by_school", ["schoolId"]),
     messageTemplates: defineTable({
         schoolId: v.id("schools"),
         name: v.string(),
@@ -66,4 +69,10 @@ export default defineSchema({
         body: v.string(),
         isActive: v.boolean(),
     }).index("by_school", ["schoolId"]),
+    tardiness: defineTable({
+        schoolId: v.id("schools"),
+        studentId: v.id("students"),
+        date: v.string(), // YYYY-MM-DD
+    }).index("by_school_date", ["schoolId", "date"])
+      .index("by_student", ["studentId"]),
 });

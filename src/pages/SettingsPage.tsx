@@ -10,7 +10,11 @@ import MessageTemplatesPage from "./MessageTemplatesPage";
 import SeedPage from "./SeedPage";
 
 const TRACKS = ["عام", "علمي", "أدبي", "تكنولوجي"];
-const GRADE_LABELS: Record<number, string> = { 10: "عاشر", 11: "حادي عشر", 12: "ثاني عشر" };
+const GRADE_LABELS: Record<number, string> = {
+    1: "أول", 2: "ثاني", 3: "ثالث", 4: "رابع", 5: "خامس", 6: "سادس",
+    7: "سابع", 8: "ثامن", 9: "تاسع",
+    10: "عاشر", 11: "حادي عشر", 12: "ثاني عشر",
+};
 const TRACK_COLORS: Record<string, string> = {
     "علمي": "bg-blue-100 text-blue-800 border-blue-200",
     "أدبي": "bg-amber-100 text-amber-800 border-amber-200",
@@ -67,7 +71,10 @@ export default function SettingsPage() {
             {mainTab === "settings" && (
                 <div className="space-y-8">
                     <GeneralSettings />
-                    <PinSettings />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <PinSettings />
+                        <SchoolPasswordSettings />
+                    </div>
                     <div className="flex gap-2">
                         <TabButton active={activeTab === "classes"} onClick={() => setActiveTab("classes")} icon={<Layers className="w-4 h-4" />} label="الصفوف الدراسية" />
                         <TabButton active={activeTab === "subjects"} onClick={() => setActiveTab("subjects")} icon={<BookOpen className="w-4 h-4" />} label="المواد الدراسية" />
@@ -412,6 +419,110 @@ function PinSettings() {
     );
 }
 
+function SchoolPasswordSettings() {
+    const { school } = useSchool();
+    const updatePassword = useMutation(api.settings.updateSchoolPassword);
+    const [current, setCurrent] = useState("");
+    const [next, setNext] = useState("");
+    const [confirm, setConfirm] = useState("");
+    const [showCurrent, setShowCurrent] = useState(false);
+    const [showNext, setShowNext] = useState(false);
+    const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    const handleSave = async () => {
+        if (next.length < 4) { setMsg({ text: "كلمة المرور يجب أن تكون 4 أحرف على الأقل.", ok: false }); return; }
+        if (next !== confirm) { setMsg({ text: "كلمة المرور الجديدة وتأكيدها غير متطابقين.", ok: false }); return; }
+        if (!school?._id) return;
+        setLoading(true);
+        setMsg(null);
+        try {
+            await updatePassword({ schoolId: school._id as any, currentPassword: current, newPassword: next });
+            setMsg({ text: "تم تغيير كلمة مرور المدرسة بنجاح.", ok: true });
+            setCurrent(""); setNext(""); setConfirm("");
+        } catch (e: any) {
+            setMsg({ text: e.message, ok: false });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border p-6">
+            <h3 className="font-black text-slate-700 mb-6 flex items-center gap-2 border-b border-qatar-gray-border pb-4">
+                <Lock className="w-4 h-4 text-qatar-maroon" />
+                تغيير كلمة مرور المدرسة
+            </h3>
+            <p className="text-xs text-slate-500 mb-4 font-bold bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                هذه هي كلمة المرور التي تُطلب عند تسجيل الدخول بكود المدرسة. تضمن أن لا أحد غيرك يستطيع الوصول حتى لو عرف الكود.
+            </p>
+            <div className="flex flex-col gap-4">
+                {/* Current Password */}
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-black text-slate-500">كلمة المرور الحالية (اتركها فارغة إن لم تكن موجودة)</label>
+                    <div className="relative">
+                        <input
+                            type={showCurrent ? "text" : "password"}
+                            value={current}
+                            onChange={e => setCurrent(e.target.value)}
+                            placeholder="كلمة المرور الحالية"
+                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 font-bold outline-none focus:border-qatar-maroon text-slate-700 bg-slate-50"
+                        />
+                        <button type="button" onClick={() => setShowCurrent(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                            {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                    </div>
+                </div>
+                {/* New Password */}
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-black text-slate-500">كلمة المرور الجديدة</label>
+                    <div className="relative">
+                        <input
+                            type={showNext ? "text" : "password"}
+                            value={next}
+                            onChange={e => setNext(e.target.value)}
+                            placeholder="كلمة المرور الجديدة"
+                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 font-bold outline-none focus:border-qatar-maroon text-slate-700 bg-slate-50"
+                        />
+                        <button type="button" onClick={() => setShowNext(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                            {showNext ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                    </div>
+                </div>
+                {/* Confirm */}
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-black text-slate-500">تأكيد كلمة المرور الجديدة</label>
+                    <input
+                        type="password"
+                        value={confirm}
+                        onChange={e => setConfirm(e.target.value)}
+                        placeholder="تأكيد كلمة المرور"
+                        className={`w-full border-2 rounded-xl px-4 py-2.5 font-bold outline-none text-slate-700 bg-slate-50 ${
+                            confirm && next && confirm !== next ? "border-red-400" : "border-slate-200 focus:border-qatar-maroon"
+                        }`}
+                    />
+                </div>
+            </div>
+
+            <div className="flex items-center gap-4 mt-5">
+                <button
+                    onClick={handleSave}
+                    disabled={loading || !next || !confirm}
+                    className="flex items-center gap-2 bg-qatar-maroon text-white px-6 py-2.5 rounded-xl font-black hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity text-sm"
+                >
+                    {loading ? <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" /> : <Lock className="w-4 h-4" />}
+                    حفظ كلمة المرور
+                </button>
+                {msg && (
+                    <span className={`text-sm font-black ${msg.ok ? "text-emerald-600" : "text-red-600"} animate-in fade-in`}>
+                        {msg.ok ? "✓ " : "✗ "}{msg.text}
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function TabButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
     return (
         <button
@@ -441,19 +552,21 @@ function ClassesSection() {
     const schoolId = school?._id;
 
     const grouped = useMemo(() => {
-        if (!data?.classes) return {};
-        const g: Record<number, any[]> = { 10: [], 11: [], 12: [] };
+        if (!data?.classes) return { grades: [] as number[], map: {} as Record<number, any[]> };
+        const map: Record<number, any[]> = {};
         for (const cls of data.classes) {
-            if (g[cls.grade]) g[cls.grade].push(cls);
+            if (!map[cls.grade]) map[cls.grade] = [];
+            map[cls.grade].push(cls);
         }
-        for (const grade of [10, 11, 12]) {
-            g[grade].sort((a: any, b: any) => {
+        const grades = Object.keys(map).map(Number).sort((a, b) => a - b);
+        for (const grade of grades) {
+            map[grade].sort((a: any, b: any) => {
                 const na = parseInt(a.name.split("-")[1] || "0", 10);
                 const nb = parseInt(b.name.split("-")[1] || "0", 10);
                 return na - nb;
             });
         }
-        return g;
+        return { grades, map };
     }, [data]);
 
     const handleAdd = async () => {
@@ -474,17 +587,17 @@ function ClassesSection() {
 
     return (
         <div className="space-y-6">
-            {[10, 11, 12].map((grade) => (
+            {grouped.grades.map((grade) => (
                 <div key={grade} className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border overflow-hidden">
                     <div className="bg-qatar-maroon px-6 py-4">
-                        <h2 className="text-white font-black text-lg">الصف ال{GRADE_LABELS[grade]}</h2>
+                        <h2 className="text-white font-black text-lg">الصف ال{GRADE_LABELS[grade] || grade}</h2>
                     </div>
                     <div className="p-4">
-                        {(grouped[grade] || []).length === 0 ? (
+                        {(grouped.map[grade] || []).length === 0 ? (
                             <p className="text-slate-400 text-sm font-bold text-center py-6">لا توجد صفوف مضافة</p>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {(grouped[grade] || []).map((cls: any) => (
+                                {(grouped.map[grade] || []).map((cls: any) => (
                                     <div key={cls._id} className="flex items-center justify-between gap-2 p-3 rounded-xl border border-qatar-gray-border bg-slate-50">
                                         <span className="font-black text-slate-800 text-sm w-14 flex-shrink-0">{cls.name}</span>
 
@@ -550,7 +663,7 @@ function ClassesSection() {
                     <div className="flex flex-col gap-1">
                         <label className="text-xs font-black text-slate-500">الصف</label>
                         <select value={newGrade} onChange={e => setNewGrade(Number(e.target.value))} className="border border-slate-300 rounded-xl px-4 py-2.5 font-bold text-slate-700 outline-none bg-white focus:border-qatar-maroon">
-                            {[10, 11, 12].map(g => <option key={g} value={g}>الصف ال{GRADE_LABELS[g]}</option>)}
+                            {[1,2,3,4,5,6,7,8,9,10,11,12].map(g => <option key={g} value={g}>الصف ال{GRADE_LABELS[g]}</option>)}
                         </select>
                     </div>
                     <div className="flex flex-col gap-1">

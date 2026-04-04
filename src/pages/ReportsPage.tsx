@@ -4,13 +4,17 @@ import { format } from "date-fns";
 import * as XLSX from "xlsx";
 import {
     Calendar, TrendingUp, Users, UserX, UserCheck, Download,
-    TableProperties, BarChart3, Check, X, AlertTriangle,
+    TableProperties, BarChart3, Check, X, AlertTriangle, Clock, ShieldAlert, Search
 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
 
-const GRADE_LABELS: Record<number, string> = { 10: "عاشر", 11: "حادي عشر", 12: "ثاني عشر" };
+const GRADE_LABELS: Record<number, string> = {
+    1: "الأول", 2: "الثاني", 3: "الثالث", 4: "الرابع", 5: "الخامس", 6: "السادس",
+    7: "السابع", 8: "الثامن", 9: "التاسع",
+    10: "العاشر", 11: "الحادي عشر", 12: "الثاني عشر"
+};
 
 /* ── Reusable badge helpers (styling only, no logic) ── */
 function PresentBadge({ value }: { value: number }) {
@@ -54,7 +58,7 @@ function PctBadge({ pct, type }: { pct: number; type: "present" | "absent" }) {
 /* ─────────────────── Page ─────────────────── */
 export default function ReportsPage() {
     const { school } = useSchool();
-    const [activeTab, setActiveTab] = useState<"summary" | "matrix" | "frequent">("summary");
+    const [activeTab, setActiveTab] = useState<"summary" | "matrix" | "frequent" | "tardiness" | "warnings">("summary");
     const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
     const schoolId = school?._id;
@@ -64,6 +68,12 @@ export default function ReportsPage() {
     const report = useQuery(api.attendance.getAttendanceReport,
         schoolId ? { schoolId: schoolId as any, date } : "skip"
     );
+
+    const availableGrades = React.useMemo(() => {
+        if (!initData?.classes) return [];
+        const grades = [...new Set(initData.classes.map((c: any) => c.grade as number))];
+        return grades.sort((a, b) => a - b);
+    }, [initData]);
 
     if (!report || !initData) {
         return (
@@ -81,8 +91,10 @@ export default function ReportsPage() {
 
     const tabs = [
         { id: "summary", label: "الملخص الإجمالي", icon: <BarChart3 className="w-4 h-4" /> },
-        { id: "matrix", label: "تفصيل الحضور حسب الصفوف", icon: <TableProperties className="w-4 h-4" /> },
+        { id: "matrix", label: "تفصيل الحضور", icon: <TableProperties className="w-4 h-4" /> },
         { id: "frequent", label: "الطلاب كثيرو الغياب", icon: <AlertTriangle className="w-4 h-4" /> },
+        { id: "warnings", label: "الإنذارات التراكمية", icon: <ShieldAlert className="w-4 h-4" /> },
+        { id: "tardiness", label: "إحصائيات التأخير", icon: <Clock className="w-4 h-4" /> },
     ] as const;
 
     return (
@@ -159,6 +171,7 @@ export default function ReportsPage() {
                             totalAbsent={totalTealAbsent}
                             report={report}
                             mode="teal"
+                            availableGrades={availableGrades}
                         />
                         <SummaryCard
                             title="المعيار الثاني: الاحتساب حسب الغياب"
@@ -168,6 +181,7 @@ export default function ReportsPage() {
                             totalAbsent={totalRedAbsent}
                             report={report}
                             mode="red"
+                            availableGrades={availableGrades}
                         />
                     </div>
                 </div>
@@ -175,12 +189,22 @@ export default function ReportsPage() {
 
             {/* ─── TAB 2: Matrix ─── */}
             {activeTab === "matrix" && (
-                <MatrixTab date={date} periodsPerDay={periodsPerDay} />
+                <MatrixTab date={date} periodsPerDay={periodsPerDay} availableGrades={availableGrades} />
             )}
 
             {/* ─── TAB 3: Frequently Absent Students ─── */}
             {activeTab === "frequent" && schoolId && (
                 <FrequentAbsencesTab schoolId={schoolId} date={date} />
+            )}
+
+            {/* ─── TAB 4: Tardiness Stats ─── */}
+            {activeTab === "tardiness" && schoolId && (
+                <TardinessStatsTab schoolId={schoolId} date={date} availableGrades={availableGrades} />
+            )}
+
+            {/* ─── TAB 5: Cumulative Warnings ─── */}
+            {activeTab === "warnings" && schoolId && (
+                <CumulativeWarningsTab schoolId={schoolId} />
             )}
         </div>
     );
@@ -188,10 +212,11 @@ export default function ReportsPage() {
 
 /* ─────────────────── Summary Card ─────────────────── */
 function SummaryCard({
-    title, subtitle, headerClass, totalPresent, totalAbsent, report, mode
+    title, subtitle, headerClass, totalPresent, totalAbsent, report, mode, availableGrades
 }: {
     title: string; subtitle: string; headerClass: string;
     totalPresent: number; totalAbsent: number; report: any; mode: "teal" | "red";
+    availableGrades: number[];
 }) {
     const table = mode === "teal" ? "tealTable" : "redTable";
     const gradeTotalField = mode === "teal" ? "teal" : "red";
@@ -228,7 +253,7 @@ function SummaryCard({
                         </tr>
                     </thead>
                     <tbody>
-                        {[10, 11, 12].map((grade: number) => {
+                        {availableGrades.map((grade: number) => {
                             const gradeClasses = report.classStats.filter((c: any) => c.grade === grade);
                             const gradeTotal = report.gradeTotals.find((g: any) => g.grade === grade);
                             return (
@@ -287,7 +312,9 @@ function SummaryCard({
                                             <td className="py-3.5 px-4 text-right">
                                                 <div className="flex items-center gap-2">
                                                     <span className="w-2 h-2 rounded-full bg-qatar-maroon flex-shrink-0" />
-                                                    <span className="font-black text-qatar-maroon text-sm">إجمالي الصف {grade}</span>
+                                                    <span className="font-black text-qatar-maroon text-sm">
+                                                        إجمالي {GRADE_LABELS[grade] ? `الصف ${GRADE_LABELS[grade]}` : `الصف ${grade}`}
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td className="py-3.5 px-4">
@@ -326,9 +353,9 @@ function SummaryCard({
 }
 
 /* ─────────────────── Matrix Tab ─────────────────── */
-function MatrixTab({ date, periodsPerDay }: { date: string; periodsPerDay: number }) {
+function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; periodsPerDay: number; availableGrades: number[] }) {
     const { school } = useSchool();
-    const [selectedGrade, setSelectedGrade] = useState<10 | 11 | 12>(10);
+    const [selectedGrade, setSelectedGrade] = useState<number>(availableGrades[0] || 10);
     const [selectedPeriod, setSelectedPeriod] = useState<number | undefined>(undefined);
 
     const matrix = useQuery(api.attendance.getMatrixReport, school?._id ? {
@@ -349,14 +376,14 @@ function MatrixTab({ date, periodsPerDay }: { date: string; periodsPerDay: numbe
             <div className="bg-white rounded-2xl border border-qatar-gray-border qatar-card-shadow p-4 sm:p-5">
                 <div className="flex flex-wrap items-center gap-3 justify-between">
                     <div className="flex gap-1.5 flex-wrap">
-                        {([10, 11, 12] as const).map(g => (
+                        {availableGrades.map(g => (
                             <button key={g} onClick={() => setSelectedGrade(g)}
                                 className={`px-4 py-2 rounded-xl font-black text-sm transition-all border ${selectedGrade === g
                                     ? "bg-qatar-maroon text-white border-qatar-maroon shadow-sm"
-                                    : "bg-slate-50 text-slate-600 border-slate-200 hover:border-qatar-maroon/40 hover:text-qatar-maroon"
+                                    : "bg-white text-slate-600 border-slate-200 hover:border-qatar-maroon/40 hover:text-qatar-maroon"
                                     }`}
                             >
-                                {GRADE_LABELS[g]}
+                                {GRADE_LABELS[g] || `الصف ${g}`}
                             </button>
                         ))}
                     </div>
@@ -396,7 +423,7 @@ function MatrixTab({ date, periodsPerDay }: { date: string; periodsPerDay: numbe
                         <div className="bg-qatar-maroon px-5 py-4 flex items-center justify-between">
                             <h2 className="text-white font-black flex items-center gap-2">
                                 <TableProperties className="w-5 h-5 text-white/70" />
-                                تقرير الصف ال{GRADE_LABELS[selectedGrade]}
+                                تقرير الصف {GRADE_LABELS[selectedGrade] ? `ال${GRADE_LABELS[selectedGrade]}` : selectedGrade}
                                 {selectedPeriod ? ` — الحصة ${selectedPeriod}` : " — جميع الحصص"}
                             </h2>
                             <span className="bg-white/10 text-white/80 text-xs font-bold px-3 py-1 rounded-full border border-white/20">
@@ -692,6 +719,213 @@ function FrequentAbsencesTab({ schoolId, date }: { schoolId: string; date: strin
                         </div>
                     );
                 })()}
+            </div>
+        </div>
+    );
+}
+
+/* ─────────────────── Tardiness Stats Tab ─────────────────── */
+function TardinessStatsTab({ schoolId }: { schoolId: string; date?: string; availableGrades?: number[] }) {
+    const data = useQuery(api.tardiness.getTardinessStats, { schoolId: schoolId as any });
+    const [search, setSearch] = useState("");
+
+    if (data === undefined) return <div className="text-center p-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-qatar-maroon mx-auto" /></div>;
+
+    const filtered = data.filter(s => s.studentName.includes(search) || s.className.includes(search));
+
+    return (
+        <div className="bg-white rounded-2xl p-6 qatar-card-shadow">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="font-black text-xl text-slate-800 flex items-center gap-2">
+                    <Clock className="w-6 h-6 text-qatar-maroon" />
+                    تأخير الطلاب المتراكم
+                </h3>
+                <div className="flex gap-2 bg-slate-100 rounded-xl px-4 py-2 w-64">
+                    <Search className="w-5 h-5 text-slate-400" />
+                    <input type="text" placeholder="بحث باسم الطالب أو الصف" value={search} onChange={e => setSearch(e.target.value)} className="bg-transparent border-none outline-none w-full text-sm font-bold" />
+                </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+                <table className="w-full text-right border-collapse">
+                    <thead>
+                        <tr className="bg-slate-50 border-b">
+                            <th className="py-3 px-4 text-xs font-black text-slate-500 text-center">م</th>
+                            <th className="py-3 px-4 text-xs font-black text-slate-500">اسم الطالب</th>
+                            <th className="py-3 px-4 text-xs font-black text-slate-500 text-center">الصف</th>
+                            <th className="py-3 px-4 text-xs font-black text-slate-500 text-center">أيام التأخير</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filtered.map((st, i) => (
+                            <tr key={st.studentId} className="border-b border-slate-100 transition-colors hover:bg-slate-50">
+                                <td className="py-3 px-4 text-center text-sm font-bold text-slate-400">{i + 1}</td>
+                                <td className="py-3 px-4 text-sm font-black text-slate-700">{st.studentName}</td>
+                                <td className="py-3 px-4 text-center text-sm font-bold text-slate-500"><span className="bg-slate-100 px-3 py-1 rounded-lg">{st.className}</span></td>
+                                <td className="py-3 px-4 text-center">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-qatar-maroon text-white font-black text-sm">
+                                        <Clock className="w-3.5 h-3.5" /> {st.lateDaysCount}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
+
+/* ─────────────────── CumulativeWarningsTab ─────────────────── */
+function CumulativeWarningsTab({ schoolId }: { schoolId: string }) {
+    const data = useQuery(api.attendance.getCumulativeAbsences, { schoolId: schoolId as any });
+    const [minDays, setMinDays] = useState<number>(5);
+
+    const filteredData = React.useMemo(() => {
+        if (!data) return [];
+        return data.filter(s => s.totalDaysAbsent >= minDays);
+    }, [data, minDays]);
+
+    const handleExport = () => {
+        if (!filteredData || filteredData.length === 0) return;
+        const rows = filteredData.map((s, i) => ({
+            "م": i + 1,
+            "اسم الطالب": s.studentName,
+            "الصف": s.className,
+            "رقم الجوال": s.phone ?? "—",
+            "إجمالي أيام الغياب": s.totalDaysAbsent,
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows, {
+            header: ["م", "اسم الطالب", "الصف", "رقم الجوال", "إجمالي أيام الغياب"],
+        });
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, `الإنذارات_${minDays}_أيام`);
+        XLSX.writeFile(wb, `cumulative_warnings_${minDays}_days.xlsx`);
+    };
+
+    if (data === undefined) {
+        return (
+            <div className="flex items-center justify-center min-h-[300px]">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-qatar-maroon" />
+            </div>
+        );
+    }
+
+    const filters = [
+        { label: "5 أيام فأكثر", value: 5, bg: "bg-amber-500", text: "text-amber-500", activeBg: "bg-amber-500 text-white" },
+        { label: "7 أيام فأكثر", value: 7, bg: "bg-orange-500", text: "text-orange-500", activeBg: "bg-orange-500 text-white" },
+        { label: "10 أيام فأكثر", value: 10, bg: "bg-red-500", text: "text-red-500", activeBg: "bg-red-500 text-white" },
+        { label: "12 يوم فأكثر", value: 12, bg: "bg-rose-600", text: "text-rose-600", activeBg: "bg-rose-600 text-white" },
+        { label: "15 يوم فأكثر", value: 15, bg: "bg-rose-800", text: "text-rose-800", activeBg: "bg-rose-800 text-white" },
+    ];
+
+    return (
+        <div className="space-y-5 animate-in fade-in duration-300">
+            {/* Header & Filters */}
+            <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border overflow-hidden p-6">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 border-b border-qatar-gray-border pb-5 mb-5">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center border border-orange-100">
+                            <ShieldAlert className="w-6 h-6 text-orange-600" />
+                        </div>
+                        <div>
+                            <h2 className="font-black text-xl text-slate-800">إنذارات غياب الطلاب (تراكمي طوال العام)</h2>
+                            <p className="text-sm font-bold text-slate-500 flex flex-wrap gap-1 mt-1">
+                                عدد الطلاب المنذرين: 
+                                <span className="text-orange-600 px-2 py-0.5 bg-orange-50 rounded-md">
+                                    {filteredData.length} طالب
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleExport}
+                        disabled={filteredData.length === 0}
+                        className="flex items-center gap-2 bg-qatar-maroon text-white font-black text-sm px-5 py-2.5 rounded-xl hover:bg-qatar-maroon/90 transition-all disabled:opacity-40 shadow-sm"
+                    >
+                        <Download className="w-4 h-4" />
+                        تصدير Excel لـ ({minDays} أيام)
+                    </button>
+                </div>
+
+                {/* Filter Pills */}
+                <div>
+                    <p className="text-xs font-black text-slate-400 mb-3 uppercase tracking-widest">تصفية حسب التحذير</p>
+                    <div className="flex flex-wrap gap-3">
+                        {filters.map(f => (
+                            <button
+                                key={f.value}
+                                onClick={() => setMinDays(f.value)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-sm transition-all border ${
+                                    minDays === f.value
+                                        ? `${f.activeBg} border-transparent shadow`
+                                        : `bg-white ${f.text} border-${f.text.split("-")[1]}-200 hover:bg-slate-50`
+                                }`}
+                            >
+                                {minDays === f.value && <Check className="w-4 h-4" />}
+                                {f.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Data Table */}
+            <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border overflow-hidden">
+                {filteredData.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
+                        <UserCheck className="w-12 h-12 text-emerald-300" />
+                        <p className="font-black text-lg">لم يتجاوز أي طالب {minDays} أيام غياب</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-right border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50 border-b border-qatar-gray-border">
+                                    <th className="py-3.5 px-4 text-xs font-black text-slate-500 w-16 text-center">م</th>
+                                    <th className="py-3.5 px-4 text-xs font-black text-slate-500">اسم الطالب</th>
+                                    <th className="py-3.5 px-4 text-xs font-black text-slate-500">الصف / الشعبة</th>
+                                    <th className="py-3.5 px-4 text-xs font-black text-slate-500">رقم الجوال</th>
+                                    <th className="py-3.5 px-4 text-xs font-black text-slate-500 text-center rounded-tl-xl">إجمالي أيام الغياب</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredData.map((row, i) => {
+                                    return (
+                                        <tr key={row.studentId} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                                            <td className="py-3 px-4 text-sm font-bold text-slate-400 text-center">
+                                                {i + 1}
+                                            </td>
+                                            <td className="py-3 px-4 font-black text-slate-700">
+                                                {row.studentName}
+                                            </td>
+                                            <td className="py-3 px-4 text-sm font-bold text-slate-500">
+                                                <span className="bg-slate-100 px-3 py-1 rounded-lg">
+                                                    {row.className}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-4 text-sm font-bold text-slate-500" dir="ltr">
+                                                {row.phone}
+                                            </td>
+                                            <td className="py-3 px-4 text-center">
+                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-black text-sm 
+                                                    ${row.totalDaysAbsent >= 15 ? 'bg-rose-800 text-white' : 
+                                                      row.totalDaysAbsent >= 12 ? 'bg-rose-600 text-white' : 
+                                                      row.totalDaysAbsent >= 10 ? 'bg-red-500 text-white' : 
+                                                      row.totalDaysAbsent >= 7 ? 'bg-orange-500 text-white' : 
+                                                      'bg-amber-500 text-white'}`}
+                                                >
+                                                    <AlertTriangle className="w-3.5 h-3.5" />
+                                                    {row.totalDaysAbsent} يوم
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );

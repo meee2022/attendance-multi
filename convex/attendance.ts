@@ -983,3 +983,82 @@ export const getFrequentlyAbsentStudents = query({
         return results;
     },
 });
+
+export const getCumulativeAbsences = query({
+    args: { schoolId: v.id("schools") },
+    handler: async (ctx, args) => {
+        const school = await ctx.db.get(args.schoolId);
+        if (!school) return [];
+        const threshold = school.dailyAbsenceThreshold ?? 0;
+
+        // 1. Fetch all periods for this school to map periodId -> date
+        const allPeriods = await ctx.db.query("periods")
+            .withIndex("by_school_date", q => q.eq("schoolId", args.schoolId))
+            .collect();
+
+        const periodMap = new Map<string, string>();
+        for (const p of allPeriods) {
+            periodMap.set(p._id as string, p.date);
+        }
+
+        // 2. Fetch all "absent" records for the entire school in ONE batch
+        const allAbsences = await ctx.db.query("attendance")
+            .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
+            .filter(q => q.eq(q.field("status"), "absent"))
+            .collect();
+
+        // 3. Aggregate in-memory: studentId -> (date -> count)
+        const dateCountsMap = new Map<string, Map<string, number>>();
+
+        for (const att of allAbsences) {
+            if (!att.studentId) continue;
+            const date = periodMap.get(att.periodId as string);
+            if (!date) continue;
+
+            const studentId = att.studentId as string;
+            if (!dateCountsMap.has(studentId)) {
+                dateCountsMap.set(studentId, new Map());
+            }
+            const counts = dateCountsMap.get(studentId)!;
+            counts.set(date, (counts.get(date) || 0) + 1);
+        }
+
+        // 4. Calculate total full days absent and filter
+        const studentTotalAbsences = new Map<string, number>();
+        const qualifiedIds: string[] = [];
+
+        for (const [studentId, dateCounts] of dateCountsMap.entries()) {
+            let fullAbsentDays = 0;
+            for (const count of dateCounts.values()) {
+                if (count > threshold) fullAbsentDays++;
+            }
+            if (fullAbsentDays >= 5) {
+                qualifiedIds.push(studentId);
+                studentTotalAbsences.set(studentId, fullAbsentDays);
+            }
+        }
+
+        // 5. Fetch details for qualified students
+        const results = [];
+        for (const studentId of qualifiedIds) {
+            const student = (await ctx.db.get(studentId as any)) as any;
+            if (!student || !student.isActive) continue;
+
+            let className = "غير محدد";
+            if (student.classId) {
+                const cls = (await ctx.db.get(student.classId)) as any;
+                if (cls) className = cls.name;
+            }
+
+            results.push({
+                studentId: student._id as string,
+                studentName: student.fullName,
+                className: className,
+                phone: student.guardianPhone ?? student.phone ?? "—",
+                totalDaysAbsent: studentTotalAbsences.get(studentId) || 0
+            });
+        }
+
+        return results.sort((a, b) => b.totalDaysAbsent - a.totalDaysAbsent);
+    }
+});

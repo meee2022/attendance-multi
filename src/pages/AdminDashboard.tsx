@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "convex/react";
 import { format } from "date-fns";
 import { Calendar, Users, UserCheck, UserX, Activity, BarChart3, Sigma, Check, X } from "lucide-react";
@@ -15,9 +15,9 @@ function sortClassNameAscending(nameA: string, nameB: string): number {
 }
 
 const GRADE_LABELS: Record<number, string> = {
-    10: "عاشر",
-    11: "حادي عشر",
-    12: "ثاني عشر",
+    1: "أول", 2: "ثاني", 3: "ثالث", 4: "رابع", 5: "خامس", 6: "سادس",
+    7: "سابع", 8: "ثامن", 9: "تاسع",
+    10: "عاشر", 11: "حادي عشر", 12: "ثاني عشر",
 };
 
 /* ── Badge helpers (styling only) ── */
@@ -65,11 +65,25 @@ export default function AdminDashboard() {
     const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
     // Use the school's locked date as default once loaded (matches where TeacherUpload saves data)
     const activeDate = lockedDate ?? date;
-    const [selectedGrade, setSelectedGrade] = useState<number>(10);
+    const [selectedGrade, setSelectedGrade] = useState<number | null>(null);
     const data = useQuery(api.attendance.getDailySummary, school?._id ? { schoolId: school._id as any, date: activeDate } : "skip");
 
+    // Extract unique grades from actual classes in database
+    const availableGrades = useMemo(() => {
+        if (!initData?.classes) return [];
+        const grades = [...new Set(initData.classes.map((c: any) => c.grade as number))];
+        return grades.sort((a, b) => a - b);
+    }, [initData]);
+
+    // Auto-select first available grade
+    useEffect(() => {
+        if (availableGrades.length > 0 && (selectedGrade === null || !availableGrades.includes(selectedGrade))) {
+            setSelectedGrade(availableGrades[0]);
+        }
+    }, [availableGrades]);
+
     const tableData = useMemo(() => {
-        if (!data || !data.classes) return null;
+        if (!data || !data.classes || selectedGrade === null) return null;
 
         const { classes } = data;
 
@@ -99,7 +113,7 @@ export default function AdminDashboard() {
 
     const { summary, classes } = tableData || { classes: [], summary: null };
     const formattedDate = format(new Date(date), "d/MM/yyyy");
-    const gradeLabel = GRADE_LABELS[selectedGrade];
+    const gradeLabel = selectedGrade !== null ? (GRADE_LABELS[selectedGrade] || `الصف ${selectedGrade}`) : "";
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 font-sans transition-all animate-in fade-in duration-500">
@@ -166,8 +180,8 @@ export default function AdminDashboard() {
             </div>
 
             {/* Grade Toggle Buttons */}
-            <div className="flex justify-end gap-2">
-                {([10, 11, 12] as const).map((grade) => (
+            <div className="flex justify-end gap-2 flex-wrap">
+                {availableGrades.map((grade) => (
                     <button
                         key={grade}
                         onClick={() => setSelectedGrade(grade)}
@@ -176,7 +190,7 @@ export default function AdminDashboard() {
                             : "bg-slate-100 text-qatar-maroon border-slate-200 hover:bg-rose-50"
                             }`}
                     >
-                        {GRADE_LABELS[grade]}
+                        {GRADE_LABELS[grade] || `الصف ${grade}`}
                     </button>
                 ))}
             </div>
