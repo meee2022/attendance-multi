@@ -94,26 +94,29 @@ export const getTardinessStats = query({
             .withIndex("by_school_date", (q) => q.eq("schoolId", args.schoolId))
             .collect();
 
-        // Group by student
-        const studentLateCounts: Record<string, number> = {};
+        // Group by student — track count AND dates
+        const studentLateMap: Record<string, string[]> = {};
         allLates.forEach(late => {
-            if (!studentLateCounts[late.studentId]) {
-                studentLateCounts[late.studentId] = 0;
+            if (!studentLateMap[late.studentId]) {
+                studentLateMap[late.studentId] = [];
             }
-            studentLateCounts[late.studentId]++;
+            studentLateMap[late.studentId].push(late.date);
         });
 
         const result = [];
-        for (const [studentId, count] of Object.entries(studentLateCounts)) {
+        for (const [studentId, dates] of Object.entries(studentLateMap)) {
             const student = (await ctx.db.get(studentId as Id<"students">)) as any;
             if (student) {
                 const cls = (await ctx.db.get(student.classId)) as any;
+                // Sort dates ascending
+                const sortedDates = [...dates].sort();
                 result.push({
                     studentId,
                     studentName: student.fullName,
                     className: cls?.name ?? "Unknown",
                     grade: cls?.grade ?? 0,
-                    lateDaysCount: count,
+                    lateDaysCount: dates.length,
+                    lateDates: sortedDates,
                 });
             }
         }

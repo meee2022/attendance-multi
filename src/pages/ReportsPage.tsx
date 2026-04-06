@@ -728,13 +728,81 @@ function FrequentAbsencesTab({ schoolId, date }: { schoolId: string; date: strin
 function TardinessStatsTab({ schoolId }: { schoolId: string; date?: string; availableGrades?: number[] }) {
     const data = useQuery(api.tardiness.getTardinessStats, { schoolId: schoolId as any });
     const [search, setSearch] = useState("");
+    const [selectedStudent, setSelectedStudent] = useState<{ name: string; className: string; dates: string[] } | null>(null);
 
     if (data === undefined) return <div className="text-center p-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-qatar-maroon mx-auto" /></div>;
 
     const filtered = data.filter(s => s.studentName.includes(search) || s.className.includes(search));
 
+    // Format YYYY-MM-DD → Arabic-friendly display
+    const formatDate = (d: string) => {
+        try {
+            const [y, m, day] = d.split("-");
+            const months = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+            return `${parseInt(day)} ${months[parseInt(m) - 1]} ${y}`;
+        } catch { return d; }
+    };
+
     return (
         <div className="bg-white rounded-2xl p-6 qatar-card-shadow">
+            {/* ── Date-detail Modal ── */}
+            {selectedStudent && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{ background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)" }}
+                    onClick={() => setSelectedStudent(null)}
+                >
+                    <div
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Modal header */}
+                        <div className="px-6 py-4 flex items-center justify-between"
+                            style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 100%)" }}>
+                            <div>
+                                <p className="text-white font-black text-base">{selectedStudent.name}</p>
+                                <p className="text-white/70 text-xs font-bold mt-0.5">
+                                    الصف: {selectedStudent.className} &nbsp;·&nbsp;
+                                    عدد مرات التأخير: {selectedStudent.dates.length}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setSelectedStudent(null)}
+                                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Date list */}
+                        <div className="p-5 max-h-[60vh] overflow-y-auto space-y-2">
+                            {selectedStudent.dates.length === 0 ? (
+                                <p className="text-center text-slate-400 font-bold py-6">لا توجد أيام مسجلة</p>
+                            ) : (
+                                selectedStudent.dates.map((d, i) => (
+                                    <div key={d} className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-100">
+                                        <span className="w-6 h-6 rounded-full bg-qatar-maroon text-white text-xs font-black flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+                                            <span className="text-slate-700 font-black text-sm">{formatDate(d)}</span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="px-5 pb-5">
+                            <button
+                                onClick={() => setSelectedStudent(null)}
+                                className="w-full py-2.5 rounded-xl bg-slate-100 text-slate-600 font-black text-sm hover:bg-slate-200 transition-colors"
+                            >
+                                إغلاق
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex justify-between items-center mb-6">
                 <h3 className="font-black text-xl text-slate-800 flex items-center gap-2">
                     <Clock className="w-6 h-6 text-qatar-maroon" />
@@ -745,6 +813,11 @@ function TardinessStatsTab({ schoolId }: { schoolId: string; date?: string; avai
                     <input type="text" placeholder="بحث باسم الطالب أو الصف" value={search} onChange={e => setSearch(e.target.value)} className="bg-transparent border-none outline-none w-full text-sm font-bold" />
                 </div>
             </div>
+
+            <p className="text-xs text-slate-400 font-bold mb-4 flex items-center gap-1.5">
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-qatar-maroon/10 text-qatar-maroon font-black text-[10px]">i</span>
+                اضغط على اسم الطالب لعرض أيام التأخير التفصيلية
+            </p>
             
             <div className="overflow-x-auto">
                 <table className="w-full text-right border-collapse">
@@ -758,23 +831,50 @@ function TardinessStatsTab({ schoolId }: { schoolId: string; date?: string; avai
                     </thead>
                     <tbody>
                         {filtered.map((st, i) => (
-                            <tr key={st.studentId} className="border-b border-slate-100 transition-colors hover:bg-slate-50">
+                            <tr key={st.studentId} className="border-b border-slate-100 transition-colors hover:bg-rose-50/30 group">
                                 <td className="py-3 px-4 text-center text-sm font-bold text-slate-400">{i + 1}</td>
-                                <td className="py-3 px-4 text-sm font-black text-slate-700">{st.studentName}</td>
+                                <td className="py-3 px-4">
+                                    <button
+                                        onClick={() => setSelectedStudent({
+                                            name: st.studentName,
+                                            className: st.className,
+                                            dates: (st as any).lateDates ?? [],
+                                        })}
+                                        className="text-sm font-black text-slate-700 group-hover:text-qatar-maroon transition-colors flex items-center gap-1.5 text-right"
+                                    >
+                                        {st.studentName}
+                                        <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Calendar className="w-3.5 h-3.5 text-qatar-maroon" />
+                                        </span>
+                                    </button>
+                                </td>
                                 <td className="py-3 px-4 text-center text-sm font-bold text-slate-500"><span className="bg-slate-100 px-3 py-1 rounded-lg">{st.className}</span></td>
                                 <td className="py-3 px-4 text-center">
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-qatar-maroon text-white font-black text-sm">
+                                    <button
+                                        onClick={() => setSelectedStudent({
+                                            name: st.studentName,
+                                            className: st.className,
+                                            dates: (st as any).lateDates ?? [],
+                                        })}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-qatar-maroon text-white font-black text-sm hover:bg-qatar-maroon/80 transition-colors active:scale-95"
+                                    >
                                         <Clock className="w-3.5 h-3.5" /> {st.lateDaysCount}
-                                    </span>
+                                    </button>
                                 </td>
                             </tr>
                         ))}
+                        {filtered.length === 0 && (
+                            <tr>
+                                <td colSpan={4} className="py-12 text-center text-slate-400 font-bold">لا توجد نتائج</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
         </div>
     );
 }
+
 
 /* ─────────────────── CumulativeWarningsTab ─────────────────── */
 function CumulativeWarningsTab({ schoolId }: { schoolId: string }) {

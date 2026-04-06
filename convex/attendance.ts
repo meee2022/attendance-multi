@@ -534,7 +534,8 @@ export const getClassPeriodGrid = query({
         // Build the grid rows
         const rows = students.map((st, idx) => {
             const periodStatuses: { periodNumber: number; status: string }[] = [];
-            let absentCount = 0;
+            let absentCount = 0;       // بدون عذر
+            let excusedCount = 0;      // بعذر
             let presentCount = 0;
             for (let p = 1; p <= args.periodsPerDay; p++) {
                 const periodId = periodMap.get(p);
@@ -544,7 +545,8 @@ export const getClassPeriodGrid = query({
                     const status = attLookup.get(`${st._id}_${periodId}`) || "no_data";
                     periodStatuses.push({ periodNumber: p, status });
                     if (status === "absent") absentCount++;
-                    if (status === "present") presentCount++;
+                    else if (status === "absent_excused") excusedCount++;
+                    else if (status === "present") presentCount++;
                 }
             }
             return {
@@ -555,25 +557,28 @@ export const getClassPeriodGrid = query({
                 index: idx + 1,
                 periods: periodStatuses,
                 absentCount,
+                excusedCount,
                 presentCount,
-                totalRecordedPeriods: presentCount + absentCount,
+                totalRecordedPeriods: presentCount + absentCount + excusedCount,
             };
         });
 
         // Build period summary (totals per period)
-        const periodSummary: { periodNumber: number; present: number; absent: number; total: number }[] = [];
+        const periodSummary: { periodNumber: number; present: number; absent: number; excused: number; total: number }[] = [];
         for (let p = 1; p <= args.periodsPerDay; p++) {
             const periodId = periodMap.get(p);
             let present = 0;
             let absent = 0;
+            let excused = 0;
             if (periodId) {
                 for (const st of students) {
                     const status = attLookup.get(`${st._id}_${periodId}`);
                     if (status === "present") present++;
                     else if (status === "absent") absent++;
+                    else if (status === "absent_excused") excused++;
                 }
             }
-            periodSummary.push({ periodNumber: p, present, absent, total: students.length });
+            periodSummary.push({ periodNumber: p, present, absent, excused, total: students.length });
         }
 
         return {
@@ -647,7 +652,11 @@ export const toggleAttendance = mutation({
             .first();
 
         if (existing) {
-            const newStatus = existing.status === "absent" ? "present" : "absent";
+            // Cycle: present → absent → absent_excused → present
+            let newStatus: string;
+            if (existing.status === "present") newStatus = "absent";
+            else if (existing.status === "absent") newStatus = "absent_excused";
+            else newStatus = "present"; // absent_excused → present
             await ctx.db.patch(existing._id, { status: newStatus, source: "manual" });
             return { newStatus };
         } else {

@@ -32,6 +32,14 @@ function AbsentBadge({ value }: { value: number }) {
         </span>
     );
 }
+function ExcusedBadge({ value }: { value: number }) {
+    if (value === 0) return <span className="text-slate-300 font-bold text-sm">—</span>;
+    return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-black bg-amber-50 text-amber-700 border border-amber-200 shadow-sm">
+            ✋{value}
+        </span>
+    );
+}
 function RateBadge({ rate }: { rate: number }) {
     const style = rate >= 90
         ? "bg-emerald-100 text-emerald-800 border-emerald-200"
@@ -188,7 +196,8 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
 
                             <th className="text-slate-300 py-3.5 px-3 border border-slate-700/50 min-w-[60px] text-xs font-black">حصص</th>
                             <th className="text-emerald-300 py-3.5 px-3 border border-slate-700/50 min-w-[70px] text-xs font-black">الحضور</th>
-                            <th className="text-rose-300 py-3.5 px-3 border border-slate-700/50 min-w-[70px] text-xs font-black">الغياب</th>
+                            <th className="text-rose-300 py-3.5 px-3 border border-slate-700/50 min-w-[70px] text-xs font-black">غياب</th>
+                            <th className="text-amber-300 py-3.5 px-3 border border-slate-700/50 min-w-[70px] text-xs font-black">بعذر</th>
                             <th className="text-blue-300 py-3.5 px-3 border border-slate-700/50 min-w-[75px] text-xs font-black">النسبة</th>
                             <th className="text-slate-400 py-3.5 px-3 border border-slate-700/50 min-w-[90px] text-xs font-black">جوال</th>
                         </tr>
@@ -202,13 +211,17 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                                 : 0;
                             const isEven = idx % 2 === 0;
                             const hasAbsence = row.absentCount > 0;
+                            const hasExcused = row.excusedCount > 0;
 
                             return (
                                 <tr key={row.studentId}
-                                    className={`transition-all group ${hasAbsence
+                                    className={`transition-all group ${
+                                        hasAbsence
                                             ? isEven ? "bg-rose-50/40 hover:bg-rose-50/70" : "bg-rose-50/60 hover:bg-rose-50/80"
-                                            : isEven ? "bg-white hover:bg-slate-50" : "bg-slate-50/60 hover:bg-slate-100/60"
-                                        }`}
+                                            : hasExcused
+                                                ? isEven ? "bg-amber-50/30 hover:bg-amber-50/60" : "bg-amber-50/50 hover:bg-amber-50/70"
+                                                : isEven ? "bg-white hover:bg-slate-50" : "bg-slate-50/60 hover:bg-slate-100/60"
+                                    }`}
                                 >
                                     {/* Index */}
                                     <td className="text-slate-400 py-2.5 px-3 border border-slate-100 text-xs sticky right-0 bg-inherit">{row.index}</td>
@@ -226,19 +239,23 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                                     {row.periods.map((p: any) => {
                                         const isAbsent = p.status === "absent";
                                         const isPresent = p.status === "present";
+                                        const isExcused = p.status === "absent_excused";
                                         return (
                                             <td
                                                 key={p.periodNumber}
                                                 onClick={() => handleToggle(row.studentId, p.periodNumber)}
-                                                title="اضغط للتبديل"
-                                                className={`py-2.5 px-2 border border-slate-100 cursor-pointer select-none transition-all active:scale-90 ${isAbsent ? "bg-rose-100 hover:bg-rose-200" :
-                                                        isPresent ? "bg-emerald-100 hover:bg-emerald-200" :
-                                                            "bg-slate-50 hover:bg-slate-100"
-                                                    }`}
+                                                title={isAbsent ? "غائب بدون عذر — اضغط للتغيير" : isExcused ? "غائب بعذر — اضغط للتغيير" : isPresent ? "حاضر — اضغط للتغيير" : "اضغط للتسجيل"}
+                                                className={`py-2.5 px-2 border border-slate-100 cursor-pointer select-none transition-all active:scale-90 ${
+                                                    isAbsent ? "bg-rose-100 hover:bg-rose-200" :
+                                                    isExcused ? "bg-amber-100 hover:bg-amber-200" :
+                                                    isPresent ? "bg-emerald-100 hover:bg-emerald-200" :
+                                                    "bg-slate-50 hover:bg-slate-100"
+                                                }`}
                                             >
                                                 {isAbsent && <span className="text-rose-600 text-base font-extrabold leading-none">✗</span>}
+                                                {isExcused && <span className="text-amber-600 text-base font-extrabold leading-none">✋</span>}
                                                 {isPresent && <span className="text-emerald-600 text-base font-extrabold leading-none">✓</span>}
-                                                {!isAbsent && !isPresent && <span className="text-slate-200 text-sm">─</span>}
+                                                {!isAbsent && !isPresent && !isExcused && <span className="text-slate-200 text-sm">─</span>}
                                             </td>
                                         );
                                     })}
@@ -255,9 +272,14 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                                         <PresentBadge value={row.presentCount} />
                                     </td>
 
-                                    {/* Absent badge */}
+                                    {/* Absent badge (no excuse) */}
                                     <td className="py-2.5 px-3 border border-slate-100">
                                         <AbsentBadge value={row.absentCount} />
+                                    </td>
+
+                                    {/* Excused badge */}
+                                    <td className="py-2.5 px-3 border border-slate-100">
+                                        <ExcusedBadge value={row.excusedCount ?? 0} />
                                     </td>
 
                                     {/* Rate badge */}
@@ -282,7 +304,7 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                             <td colSpan={3}
                                 className="py-3 px-4 border border-rose-200 text-right text-xs font-black sticky right-0 z-10"
                                 style={{ background: "linear-gradient(135deg, #be123c 0%, #e11d48 100%)", color: "white" }}>
-                                عدد الغائبين
+                                غياب بدون عذر
                             </td>
                             {periodSummary.map((ps: any) => (
                                 <td key={`abs-${ps.periodNumber}`} className="py-3 px-2 border border-rose-100">
@@ -296,7 +318,30 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                                     }
                                 </td>
                             ))}
-                            <td colSpan={5} className="border border-rose-100 bg-rose-50/30" />
+                            <td colSpan={6} className="border border-rose-100 bg-rose-50/30" />
+                        </tr>
+
+                        {/* ── Summary: Excused per period ── */}
+                        <tr style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)" }}
+                            className="border-t border-amber-200">
+                            <td colSpan={3}
+                                className="py-3 px-4 border border-amber-200 text-right text-xs font-black sticky right-0 z-10"
+                                style={{ background: "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)", color: "white" }}>
+                                غياب بعذر
+                            </td>
+                            {periodSummary.map((ps: any) => (
+                                <td key={`exc-${ps.periodNumber}`} className="py-3 px-2 border border-amber-100">
+                                    {(ps.excused ?? 0) > 0
+                                        ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-black bg-amber-500 text-white border border-amber-600 shadow-sm">
+                                            ✋ {ps.excused}
+                                        </span>
+                                        : <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-black bg-slate-50 text-slate-400 border border-slate-200">
+                                            0
+                                        </span>
+                                    }
+                                </td>
+                            ))}
+                            <td colSpan={6} className="border border-amber-100 bg-amber-50/30" />
                         </tr>
 
                         {/* ── Summary: Present per period ── */}
@@ -333,14 +378,18 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-rose-100 border border-rose-300 rounded-lg text-rose-600 font-black shadow-sm">✗</span>
-                    <span className="font-bold">غائب</span>
+                    <span className="font-bold">غائب بدون عذر</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-amber-100 border border-amber-300 rounded-lg text-amber-600 font-black shadow-sm">✋</span>
+                    <span className="font-bold">غائب بعذر</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-slate-100 border border-slate-200 rounded-lg text-slate-300 font-black shadow-sm">─</span>
                     <span className="font-bold">لم يُرصد</span>
                 </div>
                 <span className="text-slate-200">|</span>
-                <span className="text-slate-400 italic">اضغط أي خلية لتبديل الحضور/الغياب</span>
+                <span className="text-slate-400 italic">اضغط خلية للتبديل: حاضر → غياب → بعذر → حاضر</span>
                 <span className="text-slate-200">|</span>
                 <span className="flex items-center gap-1 text-rose-400 italic">
                     <Trash2 className="w-3 h-3" /> لحذف حصة كاملة اضغط "حذف" في رأس العمود
