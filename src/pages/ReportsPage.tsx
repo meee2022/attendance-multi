@@ -88,6 +88,10 @@ export default function ReportsPage() {
     const totalTealAbsent = report.gradeTotals.reduce((acc: number, g: any) => acc + g.teal.absent, 0);
     const totalRedAbsent = report.gradeTotals.reduce((acc: number, g: any) => acc + g.red.absent, 0);
     const totalRedPresent = report.gradeTotals.reduce((acc: number, g: any) => acc + g.red.present, 0);
+    
+    // New strict standard totals
+    const totalStrictAbsent = report.gradeTotals.reduce((acc: number, g: any) => acc + (g.strict?.absent ?? 0), 0);
+    const totalStrictPresent = report.gradeTotals.reduce((acc: number, g: any) => acc + (g.strict?.present ?? 0), 0);
 
     const tabs = [
         { id: "summary", label: "الملخص الإجمالي", icon: <BarChart3 className="w-4 h-4" /> },
@@ -162,7 +166,7 @@ export default function ReportsPage() {
                             icon={<TrendingUp className="w-5 h-5" />} color="blue" />
                     </div>
 
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
                         <SummaryCard
                             title="المعيار الأول: الاحتساب حسب الحضور"
                             subtitle="الطالب الذي حضر حصة واحدة فأكثر = حاضر"
@@ -175,12 +179,22 @@ export default function ReportsPage() {
                         />
                         <SummaryCard
                             title="المعيار الثاني: الاحتساب حسب الغياب"
-                            subtitle="الطالب الذي غاب حصتين فأكثر = غائب"
+                            subtitle={`الطالب الذي غاب ${report.absentThreshold} حصص فأكثر = غائب`}
                             headerClass="bg-slate-800"
                             totalPresent={totalRedPresent}
                             totalAbsent={totalRedAbsent}
                             report={report}
                             mode="red"
+                            availableGrades={availableGrades}
+                        />
+                        <SummaryCard
+                            title="المعيار الثالث: الحضور الصارم (الافتراضي)"
+                            subtitle="الطالب الذي يغيب حصة واحدة فأكثر = غائب اليوم"
+                            headerClass="bg-indigo-900"
+                            totalPresent={totalStrictPresent}
+                            totalAbsent={totalStrictAbsent}
+                            report={report}
+                            mode="strict"
                             availableGrades={availableGrades}
                         />
                     </div>
@@ -215,11 +229,11 @@ function SummaryCard({
     title, subtitle, headerClass, totalPresent, totalAbsent, report, mode, availableGrades
 }: {
     title: string; subtitle: string; headerClass: string;
-    totalPresent: number; totalAbsent: number; report: any; mode: "teal" | "red";
+    totalPresent: number; totalAbsent: number; report: any; mode: "teal" | "red" | "strict";
     availableGrades: number[];
 }) {
-    const table = mode === "teal" ? "tealTable" : "redTable";
-    const gradeTotalField = mode === "teal" ? "teal" : "red";
+    const table = mode === "teal" ? "tealTable" : mode === "red" ? "redTable" : "strictTable";
+    const gradeTotalField = mode === "teal" ? "teal" : mode === "red" ? "red" : "strict";
 
     return (
         <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border overflow-hidden">
@@ -259,8 +273,8 @@ function SummaryCard({
                             return (
                                 <React.Fragment key={grade}>
                                     {gradeClasses.map((cls: any, idx: number) => {
-                                        const present = cls[table].present as number;
-                                        const absent = cls[table].absent as number;
+                                        const present = cls[table]?.present ?? 0;
+                                        const absent = cls[table]?.absent ?? 0;
                                         const total = cls.total as number;
                                         const pct = cls.studentsWithData > 0 ? (present / cls.studentsWithData) * 100 : 0;
                                         const hasActivity = cls.hasData as boolean;
@@ -724,17 +738,20 @@ function FrequentAbsencesTab({ schoolId, date }: { schoolId: string; date: strin
     );
 }
 
-/* ─────────────────── Tardiness Stats Tab ─────────────────── */
+/* ─────────────────── Tardiness Stats Tab v2 ─────────────────── */
 function TardinessStatsTab({ schoolId }: { schoolId: string; date?: string; availableGrades?: number[] }) {
     const data = useQuery(api.tardiness.getTardinessStats, { schoolId: schoolId as any });
     const [search, setSearch] = useState("");
     const [selectedStudent, setSelectedStudent] = useState<{ name: string; className: string; dates: string[] } | null>(null);
 
-    if (data === undefined) return <div className="text-center p-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-qatar-maroon mx-auto" /></div>;
+    if (data === undefined) return (
+        <div className="flex items-center justify-center min-h-[300px]">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-qatar-maroon" />
+        </div>
+    );
 
     const filtered = data.filter(s => s.studentName.includes(search) || s.className.includes(search));
 
-    // Format YYYY-MM-DD → Arabic-friendly display
     const formatDate = (d: string) => {
         try {
             const [y, m, day] = d.split("-");
@@ -743,59 +760,96 @@ function TardinessStatsTab({ schoolId }: { schoolId: string; date?: string; avai
         } catch { return d; }
     };
 
+    const getRankStyle = (i: number) => {
+        if (i === 0) return { badge: "bg-amber-400 text-amber-900", row: "bg-amber-50/60 hover:bg-amber-50" };
+        if (i === 1) return { badge: "bg-slate-300 text-slate-700", row: "bg-slate-50/80 hover:bg-slate-100/80" };
+        if (i === 2) return { badge: "bg-orange-300 text-orange-900", row: "bg-orange-50/40 hover:bg-orange-50" };
+        return { badge: "bg-slate-100 text-slate-500", row: i % 2 === 0 ? "bg-white hover:bg-rose-50/30" : "bg-slate-50/40 hover:bg-rose-50/30" };
+    };
+
+    const getCountStyle = (count: number) => {
+        if (count >= 10) return "bg-rose-700 text-white border-rose-800";
+        if (count >= 7)  return "bg-rose-500 text-white border-rose-600";
+        if (count >= 5)  return "bg-orange-500 text-white border-orange-600";
+        if (count >= 3)  return "bg-amber-500 text-white border-amber-600";
+        return "bg-qatar-maroon text-white border-qatar-maroon/80";
+    };
+
+    const openStudent = (st: any) => setSelectedStudent({
+        name: st.studentName,
+        className: st.className,
+        dates: (st as any).lateDates ?? [],
+    });
+
+    const totalStudentsLate = data.length;
+    const totalInstances = data.reduce((acc, s) => acc + s.lateDaysCount, 0);
+    const maxCount = data[0]?.lateDaysCount ?? 0;
+
+    const getCountBg = (count: number) => {
+        if (count >= 10) return "#be123c"; // rose-700
+        if (count >= 7)  return "#f43f5e"; // rose-500
+        if (count >= 5)  return "#f97316"; // orange-500
+        if (count >= 3)  return "#f59e0b"; // amber-500
+        return "#9B1239"; // qatar-maroon
+    };
+
+    const getCountBorder = (count: number) => {
+        if (count >= 10) return "#9f1239";
+        if (count >= 7)  return "#e11d48";
+        if (count >= 5)  return "#ea580c";
+        if (count >= 3)  return "#d97706";
+        return "#7a0c2b";
+    };
+
     return (
-        <div className="bg-white rounded-2xl p-6 qatar-card-shadow">
-            {/* ── Date-detail Modal ── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+
+            {/* ── Date Modal ── */}
             {selectedStudent && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                    style={{ background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)" }}
+                    style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", background: "rgba(15,23,42,0.65)", backdropFilter: "blur(8px)" }}
                     onClick={() => setSelectedStudent(null)}
                 >
-                    <div
-                        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        {/* Modal header */}
-                        <div className="px-6 py-4 flex items-center justify-between"
-                            style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 100%)" }}>
+                    <div style={{ background: "#fff", borderRadius: "20px", boxShadow: "0 25px 60px rgba(0,0,0,0.3)", width: "100%", maxWidth: "380px", overflow: "hidden" }}
+                        onClick={e => e.stopPropagation()}>
+                        {/* header */}
+                        <div style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 100%)", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <div>
-                                <p className="text-white font-black text-base">{selectedStudent.name}</p>
-                                <p className="text-white/70 text-xs font-bold mt-0.5">
-                                    الصف: {selectedStudent.className} &nbsp;·&nbsp;
-                                    عدد مرات التأخير: {selectedStudent.dates.length}
+                                <p style={{ color: "#fff", fontWeight: 900, fontSize: "16px", margin: 0 }}>{selectedStudent.name}</p>
+                                <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "12px", margin: "6px 0 0", display: "flex", gap: "8px", alignItems: "center" }}>
+                                    <span style={{ background: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: "12px" }}>{selectedStudent.className}</span>
+                                    <span>{selectedStudent.dates.length > 0 ? `${selectedStudent.dates.length} مرة تأخير` : "لا يوجد تأخير"}</span>
                                 </p>
                             </div>
-                            <button
-                                onClick={() => setSelectedStudent(null)}
-                                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
-                            >
+                            <button onClick={() => setSelectedStudent(null)}
+                                style={{ width: "32px", height: "32px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
-
-                        {/* Date list */}
-                        <div className="p-5 max-h-[60vh] overflow-y-auto space-y-2">
+                        {/* body */}
+                        <div style={{ padding: "16px 20px", maxHeight: "55vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
                             {selectedStudent.dates.length === 0 ? (
-                                <p className="text-center text-slate-400 font-bold py-6">لا توجد أيام مسجلة</p>
+                                <div style={{ textAlign: "center", padding: "32px 0", color: "#94a3b8" }}>
+                                    <Clock style={{ width: 40, height: 40, color: "#e2e8f0", margin: "0 auto 8px" }} />
+                                    <p style={{ fontWeight: 700, margin: 0 }}>لا توجد أيام مسجلة بعد</p>
+                                    <p style={{ fontSize: "12px", color: "#cbd5e1", margin: "4px 0 0" }}>تأكد من تشغيل Convex</p>
+                                </div>
                             ) : (
                                 selectedStudent.dates.map((d, i) => (
-                                    <div key={d} className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-100">
-                                        <span className="w-6 h-6 rounded-full bg-qatar-maroon text-white text-xs font-black flex items-center justify-center flex-shrink-0">{i + 1}</span>
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
-                                            <span className="text-slate-700 font-black text-sm">{formatDate(d)}</span>
+                                    <div key={d} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", borderRadius: "12px", background: "#fff1f2", border: "1px solid #fecdd3" }}>
+                                        <span style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#9B1239,#C0184C)", color: "#fff", fontSize: "11px", fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</span>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                            <Calendar style={{ width: 14, height: 14, color: "#fb7185", flexShrink: 0 }} />
+                                            <span style={{ fontWeight: 900, color: "#334155", fontSize: "14px" }}>{formatDate(d)}</span>
                                         </div>
                                     </div>
                                 ))
                             )}
                         </div>
-
-                        <div className="px-5 pb-5">
-                            <button
-                                onClick={() => setSelectedStudent(null)}
-                                className="w-full py-2.5 rounded-xl bg-slate-100 text-slate-600 font-black text-sm hover:bg-slate-200 transition-colors"
-                            >
+                        <div style={{ padding: "0 20px 20px" }}>
+                            <button onClick={() => setSelectedStudent(null)}
+                                style={{ width: "100%", padding: "10px", borderRadius: "12px", background: "#f1f5f9", border: "none", cursor: "pointer", fontWeight: 900, fontSize: "14px", color: "#64748b" }}>
                                 إغلاق
                             </button>
                         </div>
@@ -803,77 +857,131 @@ function TardinessStatsTab({ schoolId }: { schoolId: string; date?: string; avai
                 </div>
             )}
 
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="font-black text-xl text-slate-800 flex items-center gap-2">
-                    <Clock className="w-6 h-6 text-qatar-maroon" />
-                    تأخير الطلاب المتراكم
-                </h3>
-                <div className="flex gap-2 bg-slate-100 rounded-xl px-4 py-2 w-64">
-                    <Search className="w-5 h-5 text-slate-400" />
-                    <input type="text" placeholder="بحث باسم الطالب أو الصف" value={search} onChange={e => setSearch(e.target.value)} className="bg-transparent border-none outline-none w-full text-sm font-bold" />
+            {/* ── Header Card with gradient ── */}
+            <div style={{ borderRadius: "20px", overflow: "hidden", boxShadow: "0 4px 24px rgba(155,18,57,0.18)" }}>
+                {/* Gradient section */}
+                <div style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 55%, #9B1239 100%)", padding: "28px 32px" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "20px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                            <div style={{ width: 56, height: 56, borderRadius: "16px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <Clock style={{ width: 28, height: 28, color: "#fff" }} />
+                            </div>
+                            <div>
+                                <h2 style={{ color: "#fff", fontWeight: 900, fontSize: "22px", margin: 0 }}>إحصائية التأخير المتراكم</h2>
+                                <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "13px", margin: "4px 0 0" }}>سجل شامل لجميع حالات التأخير طوال العام</p>
+                            </div>
+                        </div>
+                        {/* Stats chips */}
+                        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                            {[
+                                { label: "طلاب متأخرون", val: totalStudentsLate },
+                                { label: "مجموع المرات", val: totalInstances },
+                                { label: "أعلى تأخير", val: maxCount },
+                            ].map(chip => (
+                                <div key={chip.label} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "14px", padding: "10px 18px", textAlign: "center" }}>
+                                    <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "11px", fontWeight: 700, margin: 0 }}>{chip.label}</p>
+                                    <p style={{ color: "#fff", fontWeight: 900, fontSize: "22px", margin: "2px 0 0" }}>{chip.val}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                {/* Search bar */}
+                <div style={{ background: "#fff", borderBottom: "1px solid #f1f5f9", padding: "12px 24px", display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "8px 14px" }}>
+                        <Search style={{ width: 16, height: 16, color: "#94a3b8", flexShrink: 0 }} />
+                        <input
+                            type="text"
+                            placeholder="ابحث باسم الطالب أو الصف..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            style={{ background: "transparent", border: "none", outline: "none", width: "100%", fontSize: "14px", fontWeight: 700, color: "#334155", fontFamily: "inherit" }}
+                        />
+                    </div>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: "#94a3b8", whiteSpace: "nowrap" }}>{filtered.length} نتيجة</span>
                 </div>
             </div>
 
-            <p className="text-xs text-slate-400 font-bold mb-4 flex items-center gap-1.5">
-                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-qatar-maroon/10 text-qatar-maroon font-black text-[10px]">i</span>
-                اضغط على اسم الطالب لعرض أيام التأخير التفصيلية
-            </p>
-            
-            <div className="overflow-x-auto">
-                <table className="w-full text-right border-collapse">
-                    <thead>
-                        <tr className="bg-slate-50 border-b">
-                            <th className="py-3 px-4 text-xs font-black text-slate-500 text-center">م</th>
-                            <th className="py-3 px-4 text-xs font-black text-slate-500">اسم الطالب</th>
-                            <th className="py-3 px-4 text-xs font-black text-slate-500 text-center">الصف</th>
-                            <th className="py-3 px-4 text-xs font-black text-slate-500 text-center">أيام التأخير</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filtered.map((st, i) => (
-                            <tr key={st.studentId} className="border-b border-slate-100 transition-colors hover:bg-rose-50/30 group">
-                                <td className="py-3 px-4 text-center text-sm font-bold text-slate-400">{i + 1}</td>
-                                <td className="py-3 px-4">
-                                    <button
-                                        onClick={() => setSelectedStudent({
-                                            name: st.studentName,
-                                            className: st.className,
-                                            dates: (st as any).lateDates ?? [],
-                                        })}
-                                        className="text-sm font-black text-slate-700 group-hover:text-qatar-maroon transition-colors flex items-center gap-1.5 text-right"
-                                    >
-                                        {st.studentName}
-                                        <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Calendar className="w-3.5 h-3.5 text-qatar-maroon" />
-                                        </span>
-                                    </button>
-                                </td>
-                                <td className="py-3 px-4 text-center text-sm font-bold text-slate-500"><span className="bg-slate-100 px-3 py-1 rounded-lg">{st.className}</span></td>
-                                <td className="py-3 px-4 text-center">
-                                    <button
-                                        onClick={() => setSelectedStudent({
-                                            name: st.studentName,
-                                            className: st.className,
-                                            dates: (st as any).lateDates ?? [],
-                                        })}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-qatar-maroon text-white font-black text-sm hover:bg-qatar-maroon/80 transition-colors active:scale-95"
-                                    >
-                                        <Clock className="w-3.5 h-3.5" /> {st.lateDaysCount}
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                        {filtered.length === 0 && (
-                            <tr>
-                                <td colSpan={4} className="py-12 text-center text-slate-400 font-bold">لا توجد نتائج</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            {/* ── Table ── */}
+            {data.length === 0 ? (
+                <div style={{ background: "#fff", borderRadius: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", padding: "64px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", color: "#94a3b8" }}>
+                    <Clock style={{ width: 56, height: 56, color: "#e2e8f0" }} />
+                    <p style={{ fontWeight: 900, fontSize: "18px", margin: 0 }}>لا توجد سجلات تأخير</p>
+                    <p style={{ fontSize: "13px", margin: 0 }}>سيظهر هنا الطلاب الذين سُجّل تأخيرهم</p>
+                </div>
+            ) : (
+                <div style={{ background: "#fff", borderRadius: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", border: "1px solid #f1f5f9", overflow: "hidden" }}>
+                    <div style={{ overflowX: "auto" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "right" }}>
+                            <thead>
+                                <tr style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)" }}>
+                                    <th style={{ padding: "14px 16px", fontSize: "12px", fontWeight: 900, color: "#94a3b8", textAlign: "center", width: 60 }}>الترتيب</th>
+                                    <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 900, color: "#fff" }}>اسم الطالب</th>
+                                    <th style={{ padding: "14px 16px", fontSize: "12px", fontWeight: 900, color: "#94a3b8", textAlign: "center" }}>الصف</th>
+                                    <th style={{ padding: "14px 16px", fontSize: "12px", fontWeight: 900, color: "#fbbf24", textAlign: "center" }}>مرات التأخير</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map((st, i) => {
+                                    const rank = getRankStyle(i);
+                                    const rowBg = i === 0 ? "#fffbeb" : i === 1 ? "#f8fafc" : i === 2 ? "#fff7ed" : i % 2 === 0 ? "#fff" : "#fafafa";
+
+                                    return (
+                                        <tr key={st.studentId}
+                                            onClick={() => openStudent(st)}
+                                            style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer", background: rowBg, transition: "background 0.15s" }}
+                                            onMouseEnter={e => (e.currentTarget.style.background = "#fff1f2")}
+                                            onMouseLeave={e => (e.currentTarget.style.background = rowBg)}
+                                        >
+                                            {/* Rank */}
+                                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                                                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: "50%", fontSize: "14px", fontWeight: 900, boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}
+                                                    className={rank.badge}>
+                                                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span style={{ color: "#64748b", fontSize: "13px" }}>{i + 1}</span>}
+                                                </span>
+                                            </td>
+
+                                            {/* Name */}
+                                            <td style={{ padding: "14px 20px" }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                    <span style={{ fontWeight: 900, fontSize: "14px", color: "#1e293b" }}>{st.studentName}</span>
+                                                    <Calendar style={{ width: 13, height: 13, color: "#9B1239", opacity: 0.5 }} />
+                                                </div>
+                                            </td>
+
+                                            {/* Class */}
+                                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                                                <span style={{ display: "inline-block", padding: "4px 12px", borderRadius: "8px", background: "#f1f5f9", border: "1px solid #e2e8f0", fontSize: "12px", fontWeight: 900, color: "#475569" }}>
+                                                    {st.className}
+                                                </span>
+                                            </td>
+
+                                            {/* Count */}
+                                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 14px", borderRadius: "10px", fontWeight: 900, fontSize: "14px", border: "1px solid", background: getCountBg(st.lateDaysCount), color: "#fff", borderColor: getCountBorder(st.lateDaysCount) }}>
+                                                    <Clock style={{ width: 13, height: 13 }} />
+                                                    {st.lateDaysCount} مرة
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                                {filtered.length === 0 && (
+                                    <tr>
+                                        <td colSpan={4} style={{ padding: "48px", textAlign: "center", color: "#94a3b8", fontWeight: 700 }}>
+                                            لا توجد نتائج مطابقة
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
+
 
 
 /* ─────────────────── CumulativeWarningsTab ─────────────────── */
@@ -919,50 +1027,71 @@ function CumulativeWarningsTab({ schoolId }: { schoolId: string }) {
         { label: "15 يوم فأكثر", value: 15, bg: "bg-rose-800", text: "text-rose-800", activeBg: "bg-rose-800 text-white" },
     ];
 
+    const getRankStyle = (i: number) => {
+        if (i === 0) return { badge: "bg-amber-400 text-amber-900 shadow-sm", row: "bg-[#fffbeb]" };
+        if (i === 1) return { badge: "bg-slate-300 text-slate-700 shadow-sm", row: "bg-[#f8fafc]" };
+        if (i === 2) return { badge: "bg-orange-300 text-orange-900 shadow-sm", row: "bg-[#fff7ed]" };
+        return { badge: "bg-slate-100 text-slate-500", row: i % 2 === 0 ? "bg-white" : "bg-[#fafafa]" };
+    };
+
     return (
-        <div className="space-y-5 animate-in fade-in duration-300">
-            {/* Header & Filters */}
-            <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border overflow-hidden p-6">
-                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 border-b border-qatar-gray-border pb-5 mb-5">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center border border-orange-100">
-                            <ShieldAlert className="w-6 h-6 text-orange-600" />
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {/* ── Header Card with gradient ── */}
+            <div style={{ borderRadius: "20px", overflow: "hidden", boxShadow: "0 4px 24px rgba(155,18,57,0.18)" }}>
+                {/* Gradient section */}
+                <div style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 55%, #9B1239 100%)", padding: "28px 32px" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "20px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                            <div style={{ width: 56, height: 56, borderRadius: "16px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <ShieldAlert style={{ width: 28, height: 28, color: "#fff" }} />
+                            </div>
+                            <div>
+                                <h2 style={{ color: "#fff", fontWeight: 900, fontSize: "22px", margin: 0 }}>الإنذارات التراكمية</h2>
+                                <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "13px", margin: "4px 0 0" }}>تتبع الطلاب الذين تجاوزوا الحد المسموح للغياب طوال العام</p>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="font-black text-xl text-slate-800">إنذارات غياب الطلاب (تراكمي طوال العام)</h2>
-                            <p className="text-sm font-bold text-slate-500 flex flex-wrap gap-1 mt-1">
-                                عدد الطلاب المنذرين: 
-                                <span className="text-orange-600 px-2 py-0.5 bg-orange-50 rounded-md">
-                                    {filteredData.length} طالب
-                                </span>
-                            </p>
+                        {/* Stats chips & Export */}
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                            <div style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "14px", padding: "10px 18px", textAlign: "center" }}>
+                                <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "11px", fontWeight: 700, margin: 0 }}>طلاب منذرين</p>
+                                <p style={{ color: "#fff", fontWeight: 900, fontSize: "22px", margin: "2px 0 0" }}>{filteredData.length}</p>
+                            </div>
+                            <button
+                                onClick={handleExport}
+                                disabled={filteredData.length === 0}
+                                style={{
+                                    display: "flex", alignItems: "center", gap: "8px", 
+                                    background: "#fff", color: "#9B1239", 
+                                    border: "none", borderRadius: "14px", padding: "12px 20px", 
+                                    fontWeight: 900, fontSize: "14px", cursor: filteredData.length === 0 ? "not-allowed" : "pointer",
+                                    opacity: filteredData.length === 0 ? 0.5 : 1, transition: "transform 0.2s"
+                                }}
+                            >
+                                <Download style={{ width: 18, height: 18 }} />
+                                تصدير ({minDays} أيام)
+                            </button>
                         </div>
                     </div>
-                    <button
-                        onClick={handleExport}
-                        disabled={filteredData.length === 0}
-                        className="flex items-center gap-2 bg-qatar-maroon text-white font-black text-sm px-5 py-2.5 rounded-xl hover:bg-qatar-maroon/90 transition-all disabled:opacity-40 shadow-sm"
-                    >
-                        <Download className="w-4 h-4" />
-                        تصدير Excel لـ ({minDays} أيام)
-                    </button>
                 </div>
 
-                {/* Filter Pills */}
-                <div>
-                    <p className="text-xs font-black text-slate-400 mb-3 uppercase tracking-widest">تصفية حسب التحذير</p>
-                    <div className="flex flex-wrap gap-3">
+                {/* Filter Pills below header */}
+                <div style={{ background: "#fff", borderBottom: "1px solid #f1f5f9", padding: "12px 24px", display: "flex", alignItems: "center", gap: "12px", overflowX: "auto" }}>
+                    <p style={{ fontSize: "13px", fontWeight: 900, color: "#64748b", margin: 0, whiteSpace: "nowrap" }}>أيام الغياب:</p>
+                    <div style={{ display: "flex", gap: "8px" }}>
                         {filters.map(f => (
                             <button
                                 key={f.value}
                                 onClick={() => setMinDays(f.value)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-sm transition-all border ${
-                                    minDays === f.value
-                                        ? `${f.activeBg} border-transparent shadow`
-                                        : `bg-white ${f.text} border-${f.text.split("-")[1]}-200 hover:bg-slate-50`
-                                }`}
+                                style={{
+                                    display: "flex", alignItems: "center", gap: "6px",
+                                    padding: "8px 16px", borderRadius: "12px", border: "1px solid",
+                                    fontWeight: 900, fontSize: "13px", cursor: "pointer", transition: "all 0.2s", whiteSpace: "nowrap",
+                                    background: minDays === f.value ? f.bg.replace('bg-', '') : "#fff",
+                                    color: minDays === f.value ? "#fff" : f.text.replace('text-', ''),
+                                }}
+                                className={minDays === f.value ? f.activeBg : `bg-white ${f.text}`}
                             >
-                                {minDays === f.value && <Check className="w-4 h-4" />}
+                                {minDays === f.value && <Check strokeWidth={3} style={{ width: 14, height: 14 }} />}
                                 {f.label}
                             </button>
                         ))}
@@ -970,52 +1099,69 @@ function CumulativeWarningsTab({ schoolId }: { schoolId: string }) {
                 </div>
             </div>
 
-            {/* Data Table */}
-            <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border overflow-hidden">
-                {filteredData.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
-                        <UserCheck className="w-12 h-12 text-emerald-300" />
-                        <p className="font-black text-lg">لم يتجاوز أي طالب {minDays} أيام غياب</p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-right border-collapse">
+            {/* ── Table ── */}
+            {filteredData.length === 0 ? (
+                <div style={{ background: "#fff", borderRadius: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", padding: "64px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", color: "#94a3b8" }}>
+                    <UserCheck style={{ width: 56, height: 56, color: "#10b981" }} />
+                    <p style={{ fontWeight: 900, fontSize: "18px", margin: 0 }}>وضع ممتاز</p>
+                    <p style={{ fontSize: "13px", margin: 0 }}>لم يتجاوز أي طالب ({minDays} أيام) غياب حتى الآن</p>
+                </div>
+            ) : (
+                <div style={{ background: "#fff", borderRadius: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", border: "1px solid #f1f5f9", overflow: "hidden" }}>
+                    <div style={{ overflowX: "auto" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "right" }}>
                             <thead>
-                                <tr className="bg-slate-50 border-b border-qatar-gray-border">
-                                    <th className="py-3.5 px-4 text-xs font-black text-slate-500 w-16 text-center">م</th>
-                                    <th className="py-3.5 px-4 text-xs font-black text-slate-500">اسم الطالب</th>
-                                    <th className="py-3.5 px-4 text-xs font-black text-slate-500">الصف / الشعبة</th>
-                                    <th className="py-3.5 px-4 text-xs font-black text-slate-500">رقم الجوال</th>
-                                    <th className="py-3.5 px-4 text-xs font-black text-slate-500 text-center rounded-tl-xl">إجمالي أيام الغياب</th>
+                                <tr style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)" }}>
+                                    <th style={{ padding: "14px 16px", fontSize: "12px", fontWeight: 900, color: "#94a3b8", textAlign: "center", width: 60 }}>الترتيب</th>
+                                    <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 900, color: "#fff" }}>اسم الطالب</th>
+                                    <th style={{ padding: "14px 16px", fontSize: "12px", fontWeight: 900, color: "#94a3b8", textAlign: "center" }}>الصف</th>
+                                    <th style={{ padding: "14px 16px", fontSize: "12px", fontWeight: 900, color: "#94a3b8", textAlign: "center" }}>رقم الجوال</th>
+                                    <th style={{ padding: "14px 16px", fontSize: "12px", fontWeight: 900, color: "#fca5a5", textAlign: "center" }}>إجمالي الغياب</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredData.map((row, i) => {
+                                    const rank = getRankStyle(i);
+                                    
+                                    let absBg = "#f59e0b"; // amber-500
+                                    let absBorder = "#d97706";
+                                    if (row.totalDaysAbsent >= 15) { absBg = "#9f1239"; absBorder = "#881337"; }
+                                    else if (row.totalDaysAbsent >= 12) { absBg = "#e11d48"; absBorder = "#be123c"; }
+                                    else if (row.totalDaysAbsent >= 10) { absBg = "#ef4444"; absBorder = "#dc2626"; }
+                                    else if (row.totalDaysAbsent >= 7) { absBg = "#f97316"; absBorder = "#ea580c"; }
+
                                     return (
-                                        <tr key={row.studentId} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                                            <td className="py-3 px-4 text-sm font-bold text-slate-400 text-center">
-                                                {i + 1}
+                                        <tr key={row.studentId} style={{ borderBottom: "1px solid #f1f5f9", transition: "background 0.15s" }} className={`hover:bg-slate-50/50 ${rank.row}`}>
+                                            {/* Rank */}
+                                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                                                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: "50%", fontSize: "14px", fontWeight: 900 }} className={rank.badge}>
+                                                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span style={{ color: "#64748b", fontSize: "13px" }}>{i + 1}</span>}
+                                                </span>
                                             </td>
-                                            <td className="py-3 px-4 font-black text-slate-700">
-                                                {row.studentName}
+
+                                            {/* Name */}
+                                            <td style={{ padding: "14px 20px" }}>
+                                                <span style={{ fontWeight: 900, fontSize: "14px", color: "#1e293b" }}>{row.studentName}</span>
                                             </td>
-                                            <td className="py-3 px-4 text-sm font-bold text-slate-500">
-                                                <span className="bg-slate-100 px-3 py-1 rounded-lg">
+
+                                            {/* Class */}
+                                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                                                <span style={{ display: "inline-block", padding: "4px 12px", borderRadius: "8px", background: "#f1f5f9", border: "1px solid #e2e8f0", fontSize: "12px", fontWeight: 900, color: "#475569" }}>
                                                     {row.className}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-4 text-sm font-bold text-slate-500" dir="ltr">
-                                                {row.phone}
+
+                                            {/* Phone */}
+                                            <td style={{ padding: "14px 16px", textAlign: "center" }} dir="ltr">
+                                                <span style={{ fontWeight: 900, fontSize: "13px", color: "#64748b", letterSpacing: "1px" }}>
+                                                    {row.phone || "—"}
+                                                </span>
                                             </td>
-                                            <td className="py-3 px-4 text-center">
-                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-black text-sm 
-                                                    ${row.totalDaysAbsent >= 15 ? 'bg-rose-800 text-white' : 
-                                                      row.totalDaysAbsent >= 12 ? 'bg-rose-600 text-white' : 
-                                                      row.totalDaysAbsent >= 10 ? 'bg-red-500 text-white' : 
-                                                      row.totalDaysAbsent >= 7 ? 'bg-orange-500 text-white' : 
-                                                      'bg-amber-500 text-white'}`}
-                                                >
-                                                    <AlertTriangle className="w-3.5 h-3.5" />
+
+                                            {/* Absences */}
+                                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 14px", borderRadius: "10px", fontWeight: 900, fontSize: "14px", border: "1px solid", background: absBg, color: "#fff", borderColor: absBorder }}>
+                                                    <AlertTriangle style={{ width: 13, height: 13 }} />
                                                     {row.totalDaysAbsent} يوم
                                                 </span>
                                             </td>
@@ -1025,8 +1171,8 @@ function CumulativeWarningsTab({ schoolId }: { schoolId: string }) {
                             </tbody>
                         </table>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }

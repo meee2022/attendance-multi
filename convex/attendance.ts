@@ -856,6 +856,7 @@ export const getAttendanceReport = query({
             const clsStudents = allStudents.filter(s => s.classId === cls._id);
             let absentInRed = 0;
             let presentInTeal = 0;
+            let absentInStrict = 0;
             let studentsWithData = 0;
 
             clsStudents.forEach(st => {
@@ -863,10 +864,12 @@ export const getAttendanceReport = query({
                 // Skip students with NO records — don't count as present or absent
                 if (statuses.length === 0) return;
                 studentsWithData++;
-                const absentCount = statuses.filter(s => s === "absent").length;
+                const absentCount = statuses.filter(s => s.startsWith("absent")).length;
                 const presentCount = statuses.filter(s => s === "present").length;
+                
                 if (absentCount >= absentThreshold) absentInRed++;
                 if (presentCount >= presentThreshold) presentInTeal++;
+                if (absentCount >= 1) absentInStrict++;
             });
 
             const hasData = studentsWithData > 0;
@@ -889,6 +892,11 @@ export const getAttendanceReport = query({
                     present: presentInTeal,
                     absent: studentsWithData - presentInTeal,
                 },
+                // strictTable = criterion: absent if absent >= 1
+                strictTable: {
+                    absent: absentInStrict,
+                    present: studentsWithData - absentInStrict,
+                },
             };
         }).sort((a, b) => {
             if (a.grade !== b.grade) return a.grade - b.grade;
@@ -896,21 +904,24 @@ export const getAttendanceReport = query({
         });
 
         // 6. Calculate Grade-Level Totals (based on studentsWithData only)
-        const grades = [10, 11, 12];
+        const grades = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
         const gradeTotals = grades.map(g => {
             const gClasses = classStats.filter(c => c.grade === g);
             const total = gClasses.reduce((acc, c) => acc + c.total, 0);
             const studentsWithData = gClasses.reduce((acc, c) => acc + c.studentsWithData, 0);
             const redAbsent = gClasses.reduce((acc, c) => acc + c.redTable.absent, 0);
             const tealPresent = gClasses.reduce((acc, c) => acc + c.tealTable.present, 0);
+            const strictAbsent = gClasses.reduce((acc, c) => acc + c.strictTable.absent, 0);
+            
             return {
                 grade: g,
                 total,
                 studentsWithData,
                 red: { absent: redAbsent, present: studentsWithData - redAbsent },
                 teal: { present: tealPresent, absent: studentsWithData - tealPresent },
+                strict: { absent: strictAbsent, present: studentsWithData - strictAbsent },
             };
-        });
+        }).filter(g => g.total > 0);
 
         return {
             date,
