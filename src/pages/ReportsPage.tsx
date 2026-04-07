@@ -600,8 +600,9 @@ function FrequentAbsencesTab({ schoolId, date }: { schoolId: string; date: strin
     const queryData = useQuery(api.attendance.getFrequentlyAbsentStudents, { schoolId: schoolId as any, date });
 
     const handleExport = () => {
-        if (!queryData?.students || queryData.students.length === 0) return;
-        const rows = queryData.students.map((s, i) => ({
+        const studentsList = Array.isArray(queryData) ? queryData : (queryData?.students || []);
+        if (studentsList.length === 0) return;
+        const rows = studentsList.map((s: any, i: number) => ({
             "م": i + 1,
             "اسم الطالب": s.studentName,
             "الصف": s.className,
