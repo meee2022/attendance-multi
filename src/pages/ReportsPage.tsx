@@ -597,11 +597,11 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
 
 /* ─────────────────── FrequentAbsencesTab ─────────────────── */
 function FrequentAbsencesTab({ schoolId, date }: { schoolId: string; date: string }) {
-    const data = useQuery(api.attendance.getFrequentlyAbsentStudents, { schoolId: schoolId as any, date });
+    const queryData = useQuery(api.attendance.getFrequentlyAbsentStudents, { schoolId: schoolId as any, date });
 
     const handleExport = () => {
-        if (!data || data.length === 0) return;
-        const rows = data.map((s, i) => ({
+        if (!queryData?.students || queryData.students.length === 0) return;
+        const rows = queryData.students.map((s, i) => ({
             "م": i + 1,
             "اسم الطالب": s.studentName,
             "الصف": s.className,
@@ -616,13 +616,16 @@ function FrequentAbsencesTab({ schoolId, date }: { schoolId: string; date: strin
         XLSX.writeFile(wb, `absent_students_${date}.xlsx`);
     };
 
-    if (data === undefined) {
+    if (queryData === undefined) {
         return (
             <div className="flex items-center justify-center min-h-[300px]">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-qatar-maroon" />
             </div>
         );
     }
+
+    const students = Array.isArray(queryData) ? queryData : (queryData.students || []);
+    const threshold = Array.isArray(queryData) ? 3 : (queryData.threshold ?? 3);
 
     return (
         <div className="space-y-5 animate-in fade-in duration-300">
@@ -636,16 +639,16 @@ function FrequentAbsencesTab({ schoolId, date }: { schoolId: string; date: strin
                         </div>
                         <div>
                             <h2 className="text-white font-black text-lg">الطلاب كثيرو الغياب</h2>
-                            <p className="text-white/70 text-xs font-bold">طلاب غابوا في 3 حصص أو أكثر بتاريخ {date}</p>
+                            <p className="text-white/70 text-xs font-bold">طلاب غابوا في {threshold} حصص أو أكثر بتاريخ {date}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
                         <span className="bg-white/20 text-white text-sm font-black px-4 py-1.5 rounded-xl border border-white/20">
-                            {data.length} طالب
+                            {students.length} طالب
                         </span>
                         <button
                             onClick={handleExport}
-                            disabled={data.length === 0}
+                            disabled={students.length === 0}
                             className="flex items-center gap-2 bg-white text-qatar-maroon font-black text-sm px-5 py-2 rounded-xl hover:bg-rose-50 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow"
                         >
                             <Download className="w-4 h-4" />
@@ -654,16 +657,16 @@ function FrequentAbsencesTab({ schoolId, date }: { schoolId: string; date: strin
                     </div>
                 </div>
 
-                {data.length === 0 ? (
+                {students.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
                         <UserCheck className="w-12 h-12 text-emerald-300" />
-                        <p className="font-black text-lg">لا يوجد طلاب غائبون أكثر من حصتين</p>
+                        <p className="font-black text-lg">لا يوجد طلاب غائبون في {threshold} حصص أو أكثر</p>
                         <p className="text-sm font-medium">جميع الطلاب ضمن الحد المقبول للغياب</p>
                     </div>
                 ) : (() => {
                     // Group by className, sorted ascending (10-1, 10-2, ...)
-                    const grouped: Record<string, typeof data> = {};
-                    for (const row of data) {
+                    const grouped: Record<string, typeof students> = {};
+                    for (const row of students) {
                         const key = row.className || "—";
                         if (!grouped[key]) grouped[key] = [];
                         grouped[key].push(row);

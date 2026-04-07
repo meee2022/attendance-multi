@@ -20,11 +20,13 @@ export const getLatesByDate = query({
         const lateDetails = await Promise.all(
             lates.map(async (late) => {
                 const student = (await ctx.db.get(late.studentId)) as any;
+                const cls = student?.classId ? (await ctx.db.get(student.classId)) as any : null;
                 return {
                     _id: late._id,
                     studentId: late.studentId,
-                    studentName: student?.fullName ?? "Unknown",
+                    studentName: student?.fullName ?? student?.name ?? "Unknown",
                     classId: student?.classId,
+                    className: cls?.name ?? "غير محدد",
                 };
             })
         );

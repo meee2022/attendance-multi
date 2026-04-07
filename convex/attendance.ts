@@ -937,6 +937,11 @@ export const getAttendanceReport = query({
 export const getFrequentlyAbsentStudents = query({
     args: { schoolId: v.id("schools"), date: v.string() },
     handler: async (ctx, args) => {
+        const school = await ctx.db.get(args.schoolId);
+        if (!school) return [];
+
+        const threshold = (school.dailyAbsenceThreshold ?? 0) + 1;
+
         // Get all classes for this school
         const classes = await ctx.db
             .query("classes")
@@ -973,9 +978,9 @@ export const getFrequentlyAbsentStudents = query({
             }
         }
 
-        // Keep only students absent in >= 3 periods, sorted descending
+        // Keep only students absent in >= threshold periods, sorted descending
         const qualified = [...countMap.entries()]
-            .filter(([, count]) => count >= 3)
+            .filter(([, count]) => count >= threshold)
             .sort((a, b) => b[1] - a[1]);
 
         // Resolve student + class info
@@ -1000,7 +1005,10 @@ export const getFrequentlyAbsentStudents = query({
             });
         }
 
-        return results;
+        return {
+            students: results,
+            threshold
+        };
     },
 });
 

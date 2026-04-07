@@ -24,13 +24,17 @@ interface StatCardProps {
     subValue?: string;
     icon: React.ReactNode;
     color?: StatCardColor;
+    onClick?: () => void;
 }
 
-export default function StatCard({ label, value, subValue, icon, color = "maroon" }: StatCardProps) {
+export default function StatCard({ label, value, subValue, icon, color = "maroon", onClick }: StatCardProps) {
     const c = COLOR_MAP[color];
 
     return (
-        <div className={`relative overflow-hidden rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex ${c.cardBg}`}>
+        <div 
+            onClick={onClick}
+            className={`relative overflow-hidden rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex ${c.cardBg} ${onClick ? 'cursor-pointer hover:scale-[1.02] active:scale-95 transition-transform' : ''}`}
+        >
             {/* Colored side bar */}
             <div className={`w-1.5 flex-shrink-0 rounded-r-none rounded-l-2xl ${c.bar}`} />
 
