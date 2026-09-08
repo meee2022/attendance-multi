@@ -402,11 +402,19 @@ export default function ImportStudents() {
                         </div>
                         <div>
                             <h3 className="text-2xl font-black text-white">تم الاستيراد بنجاح</h3>
-                            <p className="text-white/70 text-sm font-bold">تفاصيل ما تم إضافته للنظام</p>
+                            <p className="text-white/70 text-sm font-bold">الموجودون سابقاً حُدِّثت بياناتهم بدل تكرارهم</p>
                         </div>
-                        <div className="mr-auto text-right">
-                            <div className="text-5xl font-black text-white">{result.importedCount}</div>
-                            <div className="text-white/70 text-xs font-black uppercase tracking-widest">طالب مُضاف</div>
+                        <div className="mr-auto text-right flex items-center gap-6">
+                            <div>
+                                <div className="text-5xl font-black text-white">{result.importedCount}</div>
+                                <div className="text-white/70 text-xs font-black tracking-widest">طالب جديد</div>
+                            </div>
+                            {result.updatedCount > 0 && (
+                                <div>
+                                    <div className="text-5xl font-black text-white/80">{result.updatedCount}</div>
+                                    <div className="text-white/70 text-xs font-black tracking-widest">طالب مُحدَّث</div>
+                                </div>
+                            )}
                         </div>
                     </div>
 

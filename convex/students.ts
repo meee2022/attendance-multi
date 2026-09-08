@@ -1,6 +1,17 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+/** Match student names across exports that spell hamza/ya/ta-marbuta differently. */
+function normalizeStudentName(value: string): string {
+    return value
+        .replace(/[ً-ْـ]/g, "")
+        .replace(/[أإآٱ]/g, "ا")
+        .replace(/ى/g, "ي")
+        .replace(/ة/g, "ه")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 export const importStudentsFromSheet = mutation({
     args: {
         schoolId: v.id("schools"),
@@ -12,6 +23,7 @@ export const importStudentsFromSheet = mutation({
     },
     handler: async (ctx, args) => {
         let importedCount = 0;
+        let updatedCount = 0;
 
         // Fetch existing classes for this school
         const existingClasses = await ctx.db.query("classes")
@@ -23,6 +35,16 @@ export const importStudentsFromSheet = mutation({
             // Normalize stored class names too (in case they were stored as "10/1")
             const normalized = cls.name.trim().replace(/\//g, "-");
             classNameToId.set(normalized, cls._id);
+        }
+
+        // Existing students, keyed by normalized name, for the upsert below.
+        const existingStudents = await ctx.db.query("students")
+            .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
+            .collect();
+        const existingByName = new Map<string, string>();
+        for (const student of existingStudents) {
+            const key = normalizeStudentName(student.fullName);
+            if (key && !existingByName.has(key)) existingByName.set(key, student._id);
         }
 
         // Skip rows with no name or no class
@@ -72,19 +94,33 @@ export const importStudentsFromSheet = mutation({
                 }
             }
 
-            // Insert student
-            await ctx.db.insert("students", {
+            // Upsert, never blind-insert: re-importing the same roster used to
+            // duplicate every student, because nothing checked for an existing
+            // record. Matching ignores alef/ya/ta-marbuta spelling differences,
+            // which vary between exports of the same register.
+            const existingId = existingByName.get(normalizeStudentName(row.fullName));
+            if (existingId) {
+                await ctx.db.patch(existingId as any, {
+                    classId: classId as any,
+                    ...(guardianPhone ? { guardianPhone } : {}),
+                    isActive: true,
+                });
+                updatedCount++;
+                continue;
+            }
+
+            const newId = await ctx.db.insert("students", {
                 schoolId: args.schoolId,
                 classId: classId as any,
                 fullName: row.fullName.trim(),
                 guardianPhone,
                 isActive: true,
             });
-
+            existingByName.set(normalizeStudentName(row.fullName), newId);
             importedCount++;
         }
 
-        return { importedCount };
+        return { importedCount, updatedCount };
     }
 });
 
