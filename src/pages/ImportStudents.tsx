@@ -11,7 +11,7 @@ import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
 import {
     inspectSheet, extractRows, COLUMN_LABELS,
-    type SheetShape, type ColumnKind, type ParsedRow,
+    type SheetShape, type ColumnKind, type ParsedRow, type SkippedRow,
 } from "../lib/parseStudentSheet";
 
 const GRADE_LABELS: Record<number, string> = {
@@ -41,6 +41,7 @@ export default function ImportStudents() {
     const [error, setError] = useState("");
     const [shape, setShape] = useState<SheetShape | null>(null);
     const [mapping, setMapping] = useState<Record<ColumnKind, number> | null>(null);
+    const [skipped, setSkipped] = useState<SkippedRow[]>([]);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const uploadedFile = e.target.files?.[0];
@@ -51,6 +52,7 @@ export default function ImportStudents() {
         setResult(null);
         setShape(null);
         setMapping(null);
+        setSkipped([]);
 
         const reader = new FileReader();
         reader.onload = (evt) => {
@@ -60,14 +62,11 @@ export default function ImportStudents() {
                 setShape(nextShape);
                 setMapping(nextShape.mapping);
 
-                if (nextShape.headerIndex === -1) {
-                    setError("تعذّر التعرف على صف العناوين. اربط الأعمدة يدوياً من القائمة أدناه.");
-                    return;
-                }
-                const rows = extractRows(nextShape);
+                const { rows, skipped: bad } = extractRows(nextShape);
                 setParsedRows(rows);
+                setSkipped(bad);
                 if (rows.length === 0) {
-                    setError("لم يتم العثور على صفوف طلاب. راجع ربط الأعمدة أدناه.");
+                    setError("لم يتم التعرف على بيانات الطلاب. راجع ربط الأعمدة أدناه واختر العمود الصحيح لكل حقل.");
                 }
             } catch {
                 setError("فشل في قراءة الملف. تأكد من صيغة Excel.");
@@ -83,8 +82,9 @@ export default function ImportStudents() {
         if (!shape || !mapping) return;
         const next = { ...mapping, [kind]: index };
         setMapping(next);
-        const rows = extractRows(shape, next);
+        const { rows, skipped: bad } = extractRows(shape, next);
         setParsedRows(rows);
+        setSkipped(bad);
         setError(rows.length === 0 ? "لم يتم العثور على صفوف طلاب بهذا الربط." : "");
     };
 
@@ -249,48 +249,66 @@ export default function ImportStudents() {
                                     <ArrowLeftRight className="w-4 h-4 text-qatar-maroon" />
                                     ربط الأعمدة
                                 </h4>
-                                {shape.headerIndex !== -1 && (
-                                    <span className="text-[11px] font-black text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full">
-                                        صف العناوين: {shape.headerIndex + 1}
-                                    </span>
-                                )}
+                                <span className="text-[11px] font-black text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full">
+                                    {shape.headerless
+                                        ? "ملف بلا عناوين — قُرئ من أول صف"
+                                        : `صف العناوين: ${shape.headerIndex + 1}`}
+                                </span>
                             </div>
 
-                            {shape.headerIndex === -1 ? (
-                                <p className="text-xs font-bold text-rose-700">
-                                    تعذّر التعرف على صف العناوين في الملف. تأكد أن الملف يحتوي صفاً فيه عناوين الأعمدة (اسم الطالب، الصف/الشعبة).
-                                </p>
-                            ) : (
-                                <>
-                                    <p className="text-[11px] font-bold text-slate-500 leading-relaxed">
-                                        تم التعرف على الأعمدة تلقائياً. عدّلها يدوياً إذا كان الربط خاطئاً — الأرقام تتحدث فوراً.
-                                    </p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {(["name", "class", "grade", "section", "phone"] as ColumnKind[]).map(kind => (
-                                            <div key={kind} className="flex flex-col gap-1.5">
-                                                <label className="text-[11px] font-black text-slate-500">
-                                                    {COLUMN_LABELS[kind]}
-                                                    {kind === "name" && <span className="text-rose-500"> *</span>}
-                                                </label>
-                                                <select
-                                                    value={mapping?.[kind] ?? -1}
-                                                    onChange={e => remap(kind, parseInt(e.target.value, 10))}
-                                                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-qatar-maroon"
-                                                >
-                                                    <option value={-1}>— غير مستخدم —</option>
-                                                    {shape.headers.map((h, i) => (
-                                                        <option key={i} value={i}>
-                                                            {h?.trim() ? h : `عمود ${i + 1}`}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        ))}
+                            <p className="text-[11px] font-bold text-slate-500 leading-relaxed">
+                                {shape.headerless
+                                    ? "هذا الملف بلا صف عناوين، فتم التعرف على الأعمدة من محتواها. راجعها وعدّلها إن لزم — الأرقام تتحدث فوراً."
+                                    : "تم التعرف على الأعمدة تلقائياً. عدّلها يدوياً إذا كان الربط خاطئاً."}
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {(["name", "class", "grade", "section", "phone"] as ColumnKind[]).map(kind => (
+                                    <div key={kind} className="flex flex-col gap-1.5">
+                                        <label className="text-[11px] font-black text-slate-500">
+                                            {COLUMN_LABELS[kind]}
+                                            {kind === "name" && <span className="text-rose-500"> *</span>}
+                                        </label>
+                                        <select
+                                            value={mapping?.[kind] ?? -1}
+                                            onChange={e => remap(kind, parseInt(e.target.value, 10))}
+                                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-qatar-maroon"
+                                        >
+                                            <option value={-1}>— غير مستخدم —</option>
+                                            {shape.headers.map((h, i) => (
+                                                <option key={i} value={i}>
+                                                    {h?.trim() ? h : `عمود ${i + 1}`}
+                                                    {shape.samples[i] ? ` · ${shape.samples[i].slice(0, 22)}` : ""}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
-                                    <p className="text-[11px] font-bold text-slate-400">
-                                        الشعبة الصفية تُؤخذ من عمود واحد إن وُجد، وإلا تُدمج من «الصف» + «الشعبة» (مثال: 10 + 3 ← 10-3).
+                                ))}
+                            </div>
+                            <p className="text-[11px] font-bold text-slate-400">
+                                الشعبة الصفية تُؤخذ من عمود واحد إن وُجد، وإلا تُدمج من «الصف» + «الشعبة» (مثال: 10 + 3 ← 10-3).
+                            </p>
+
+                            {skipped.length > 0 && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+                                    <p className="text-xs font-black text-amber-900">
+                                        {skipped.length} صف لن يُستورد — بيانات ناقصة في الملف نفسه:
                                     </p>
-                                </>
+                                    <ul className="space-y-1 max-h-40 overflow-y-auto">
+                                        {skipped.slice(0, 25).map((row, i) => (
+                                            <li key={i} className="text-[11px] font-bold text-amber-800 flex items-center gap-2">
+                                                <span className="font-mono bg-amber-100 px-1.5 py-0.5 rounded">صف {row.rowNumber}</span>
+                                                <span className="flex-1 truncate">{row.fullName}</span>
+                                                <span className="text-amber-600">{row.reason}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    {skipped.length > 25 && (
+                                        <p className="text-[11px] font-bold text-amber-700">و{skipped.length - 25} صفاً آخر…</p>
+                                    )}
+                                    <p className="text-[11px] font-bold text-amber-700">
+                                        صحّح هذه الصفوف في الملف وأعد رفعه، أو أضِف هؤلاء الطلاب يدوياً بعد الاستيراد.
+                                    </p>
+                                </div>
                             )}
                         </div>
                     )}

@@ -17,10 +17,16 @@ export type ColumnKind = "name" | "grade" | "section" | "class" | "phone";
 export type SheetShape = {
     /** Raw rows, as arrays of cell strings. */
     rows: string[][];
-    /** Index into `rows` of the detected header row, or -1. */
+    /** Index into `rows` of the detected header row, or -1 when there is none. */
     headerIndex: number;
-    /** Header captions of that row. */
+    /** True when the sheet carries no caption row and data starts at row 0. */
+    headerless: boolean;
+    /** First row of actual data. */
+    dataStart: number;
+    /** Column captions — synthesised for a header-less sheet. */
     headers: string[];
+    /** A sample value per column, to help a human confirm the mapping. */
+    samples: string[];
     /** Detected column index per kind; -1 when absent. */
     mapping: Record<ColumnKind, number>;
 };
@@ -79,6 +85,62 @@ function mappingScore(mapping: Record<ColumnKind, number>): number {
 }
 
 const HEADER_SEARCH_DEPTH = 30;
+const CONTENT_SAMPLE = 60;
+
+/** "02/1", "10-3" — a grade/section pair. */
+function looksLikeClass(value: string): boolean {
+    return /^\s*\d{1,2}\s*[\/\-]\s*\d{1,3}\s*$/.test(value);
+}
+
+/** One or more phone numbers, possibly comma-separated. */
+function looksLikePhone(value: string): boolean {
+    const digits = value.replace(/\D/g, "");
+    return digits.length >= 7 && /^[\d\s,،+\-()]+$/.test(value);
+}
+
+/** A person's name: letters, no digits. */
+function looksLikeName(value: string): boolean {
+    return /\p{L}{2,}/u.test(value) && !/\d/.test(value);
+}
+
+/** Share of non-empty sampled values in `column` satisfying `test`. */
+function columnScore(rows: string[][], column: number, test: (v: string) => boolean): number {
+    let seen = 0, hits = 0;
+    for (const row of rows.slice(0, CONTENT_SAMPLE)) {
+        const value = (row[column] ?? "").trim();
+        if (!value) continue;
+        seen++;
+        if (test(value)) hits++;
+    }
+    return seen === 0 ? 0 : hits / seen;
+}
+
+/**
+ * Infer the columns of a sheet that has no captions at all — an export that is
+ * pure data, like the ministry's سجل القيد. Decided by what the values look
+ * like, most distinctive kind first so the loose "name" test cannot steal a
+ * column from the class or phone.
+ */
+function mappingFromContent(rows: string[][]): Record<ColumnKind, number> {
+    const mapping: Record<ColumnKind, number> = { name: -1, grade: -1, section: -1, class: -1, phone: -1 };
+    const width = rows.reduce((max, r) => Math.max(max, r.length), 0);
+    const taken = new Set<number>();
+
+    const claim = (kind: ColumnKind, test: (v: string) => boolean, threshold: number) => {
+        let best = -1, bestScore = threshold;
+        for (let c = 0; c < width; c++) {
+            if (taken.has(c)) continue;
+            const score = columnScore(rows, c, test);
+            if (score > bestScore) { bestScore = score; best = c; }
+        }
+        if (best !== -1) { mapping[kind] = best; taken.add(best); }
+    };
+
+    claim("class", looksLikeClass, 0.6);
+    claim("phone", looksLikePhone, 0.6);
+    claim("name", looksLikeName, 0.5);
+    return mapping;
+}
 
 /** Read a workbook and locate the header row + column mapping. */
 export function inspectSheet(input: ArrayBuffer | string): SheetShape {
@@ -95,8 +157,28 @@ export function inspectSheet(input: ArrayBuffer | string): SheetShape {
         if (score > best) { best = score; headerIndex = i; }
     }
 
-    const headers = headerIndex === -1 ? [] : rows[headerIndex];
-    return { rows, headerIndex, headers, mapping: headerIndex === -1 ? buildMapping([]) : buildMapping(headers) };
+    const width = rows.reduce((max, r) => Math.max(max, r.length), 0);
+    const headerless = headerIndex === -1;
+    const dataStart = headerless ? 0 : headerIndex + 1;
+
+    const headers = headerless
+        ? Array.from({ length: width }, (_, i) => `عمود ${i + 1}`)
+        : rows[headerIndex];
+
+    // First non-empty value under each column, shown next to the mapping menus.
+    const samples = Array.from({ length: width }, (_, c) => {
+        for (let r = dataStart; r < Math.min(rows.length, dataStart + CONTENT_SAMPLE); r++) {
+            const value = (rows[r]?.[c] ?? "").trim();
+            if (value) return value;
+        }
+        return "";
+    });
+
+    const mapping = headerless
+        ? mappingFromContent(rows)
+        : buildMapping(rows[headerIndex]);
+
+    return { rows, headerIndex, headerless, dataStart, headers, samples, mapping };
 }
 
 const ARABIC_GRADES: Record<string, number> = {
@@ -116,32 +198,55 @@ function normalizeGrade(value: string): string {
     return value.trim();
 }
 
+/** A row that could not be imported, with the reason, for showing the user. */
+export type SkippedRow = { rowNumber: number; fullName: string; reason: string };
+
+export type ExtractResult = { rows: ParsedRow[]; skipped: SkippedRow[] };
+
+/** A usable class name must carry at least one digit — "-" and "" do not. */
+function isUsableClass(value: string): boolean {
+    return /\d/.test(value);
+}
+
 /**
  * Turn the sheet into importable rows using `mapping`.
  * Grade and section may live in one column ("10-3") or two ("10" + "3").
+ *
+ * Rows missing a name or a class are reported rather than imported: a student
+ * whose class cell is blank would otherwise create a junk class in the system.
  */
-export function extractRows(shape: SheetShape, mapping = shape.mapping): ParsedRow[] {
-    if (shape.headerIndex === -1) return [];
-    const out: ParsedRow[] = [];
+export function extractRows(shape: SheetShape, mapping = shape.mapping): ExtractResult {
+    if (mapping.name === -1) return { rows: [], skipped: [] };
+    const rows: ParsedRow[] = [];
+    const skipped: SkippedRow[] = [];
 
     const cell = (row: string[], index: number) => (index === -1 ? "" : (row[index] ?? "").trim());
 
-    for (let i = shape.headerIndex + 1; i < shape.rows.length; i++) {
+    for (let i = shape.dataStart; i < shape.rows.length; i++) {
         const row = shape.rows[i];
         const fullName = cell(row, mapping.name);
-        if (!fullName) continue;
+        // A wholly empty row is padding, not a problem worth reporting.
+        if (!fullName) {
+            if (row.some(c => c.trim())) {
+                skipped.push({ rowNumber: i + 1, fullName: "—", reason: "بدون اسم" });
+            }
+            continue;
+        }
 
-        let className = cell(row, mapping.class).replace(/[\/\\\s]+/g, "-");
+        let className = cell(row, mapping.class).replace(/[\/\\s]+/g, "-");
         if (!className) {
             const grade = normalizeGrade(cell(row, mapping.grade));
-            const section = cell(row, mapping.section).replace(/[\/\\\s]+/g, "-");
+            const section = cell(row, mapping.section).replace(/[\/\\s]+/g, "-");
             className = grade && section ? `${grade}-${section}` : grade || section;
         }
-        if (!className) continue;
+        if (!isUsableClass(className)) {
+            skipped.push({ rowNumber: i + 1, fullName, reason: "الشعبة ناقصة أو غير مفهومة" });
+            continue;
+        }
 
-        out.push({ fullName, className, phones: cell(row, mapping.phone) });
+        rows.push({ fullName, className, phones: cell(row, mapping.phone) });
     }
-    return out;
+    return { rows, skipped };
 }
 
 export const COLUMN_LABELS: Record<ColumnKind, string> = {
