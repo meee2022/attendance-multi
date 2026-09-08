@@ -24,7 +24,7 @@ const GRADE_LABELS: Record<number, string> = {
 function PresentBadge({ value }: { value: number }) {
     if (value === 0) return <span className="text-slate-300 font-bold text-sm select-none">—</span>;
     return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-black bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
             <Check className="w-3.5 h-3.5" />{value}
         </span>
     );
@@ -32,14 +32,14 @@ function PresentBadge({ value }: { value: number }) {
 function AbsentBadge({ value }: { value: number }) {
     if (value === 0) return <span className="text-slate-300 font-bold text-sm select-none">—</span>;
     return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-black bg-rose-50 text-rose-700 border border-rose-200 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-extrabold bg-rose-50 text-rose-700 border border-rose-200 shadow-sm">
             <X className="w-3.5 h-3.5" />{value}
         </span>
     );
 }
 function TotalBadge({ value }: { value: number }) {
     return (
-        <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-black bg-slate-100 text-slate-600 border border-slate-200 shadow-sm">
+        <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-extrabold bg-slate-100 text-slate-600 border border-slate-200 shadow-sm">
             {value}
         </span>
     );
@@ -52,7 +52,7 @@ function PctBadge({ pct }: { pct: number }) {
             ? "bg-amber-100 text-amber-800 border-amber-200"
             : "bg-rose-100 text-rose-800 border-rose-200";
     return (
-        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-black border shadow-sm ${style}`}>
+        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-extrabold border shadow-sm ${style}`}>
             {pct.toFixed(1)}%
         </span>
     );
@@ -121,8 +121,8 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto space-y-8 font-sans transition-all animate-in fade-in duration-500">
 
             {/* Page Header */}
-            <div className="rounded-2xl overflow-hidden qatar-card-shadow"
-                style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 50%, #9B1239 100%)" }}>
+            <div className="app-page-heading overflow-hidden"
+                >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 sm:p-8">
                     <div className="space-y-1">
                         <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
                     <button
                         key={grade}
                         onClick={() => setSelectedGrade(grade)}
-                        className={`px-5 py-2 rounded-xl font-black text-sm transition-colors border ${selectedGrade === grade
+                        className={`px-5 py-2 rounded-xl font-extrabold text-sm transition-colors border ${selectedGrade === grade
                             ? "bg-qatar-maroon text-white border-qatar-maroon"
                             : "bg-slate-100 text-qatar-maroon border-slate-200 hover:bg-rose-50"
                             }`}
@@ -229,11 +229,11 @@ export default function AdminDashboard() {
                         <table className="w-full border-collapse text-right">
                             <thead>
                                 <tr style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)" }}>
-                                    <th className="py-4 px-6 text-sm font-black text-white text-right">صف دراسي</th>
-                                    <th className="py-4 px-6 text-sm font-black text-slate-300 text-center">العدد الكلي</th>
-                                    <th className="py-4 px-6 text-sm font-black text-emerald-300 text-center">الحضور</th>
-                                    <th className="py-4 px-6 text-sm font-black text-rose-300 text-center">الغياب</th>
-                                    <th className="py-4 px-6 text-sm font-black text-slate-300 text-center">نسبة الحضور</th>
+                                    <th className="py-4 px-6 text-sm font-extrabold text-white text-right">صف دراسي</th>
+                                    <th className="py-4 px-6 text-sm font-extrabold text-slate-300 text-center">العدد الكلي</th>
+                                    <th className="py-4 px-6 text-sm font-extrabold text-emerald-300 text-center">الحضور</th>
+                                    <th className="py-4 px-6 text-sm font-extrabold text-rose-300 text-center">الغياب</th>
+                                    <th className="py-4 px-6 text-sm font-extrabold text-slate-300 text-center">نسبة الحضور</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -308,17 +308,17 @@ export default function AdminDashboard() {
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-center">
-                                            <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-black bg-white text-slate-700 border border-slate-300 shadow-sm">
+                                            <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-extrabold bg-white text-slate-700 border border-slate-300 shadow-sm">
                                                 {summary.totalStudents}
                                             </span>
                                         </td>
                                         <td className="py-4 px-6 text-center">
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-black bg-emerald-600 text-white shadow-sm">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-extrabold bg-emerald-600 text-white shadow-sm">
                                                 <Check className="w-3.5 h-3.5" />{summary.totalPresent}
                                             </span>
                                         </td>
                                         <td className="py-4 px-6 text-center">
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-black bg-qatar-maroon text-white shadow-sm">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-extrabold bg-qatar-maroon text-white shadow-sm">
                                                 <X className="w-3.5 h-3.5" />{summary.totalAbsent}
                                             </span>
                                         </td>
@@ -369,9 +369,9 @@ export default function AdminDashboard() {
                                 <table className="w-full text-right border-collapse">
                                     <thead className="bg-slate-50 sticky top-0 border-b border-qatar-gray-border">
                                         <tr>
-                                            <th className="py-3 px-6 text-xs font-black text-slate-500 w-12 text-center">م</th>
-                                            <th className="py-3 px-6 text-xs font-black text-slate-500">اسم الطالب</th>
-                                            <th className="py-3 px-6 text-xs font-black text-slate-500 text-center">الصف</th>
+                                            <th className="py-3 px-6 text-xs font-bold text-slate-500 w-12 text-center">م</th>
+                                            <th className="py-3 px-6 text-xs font-bold text-slate-500">اسم الطالب</th>
+                                            <th className="py-3 px-6 text-xs font-bold text-slate-500 text-center">الصف</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -381,10 +381,10 @@ export default function AdminDashboard() {
                                                     <span className="text-slate-400 font-bold text-sm w-6 inline-block">{i + 1}</span>
                                                 </td>
                                                 <td className="py-3.5 px-6">
-                                                    <span className="font-black text-sm text-slate-700">{st.studentName}</span>
+                                                    <span className="font-extrabold text-sm text-slate-700">{st.studentName}</span>
                                                 </td>
                                                 <td className="py-3.5 px-6 text-center">
-                                                    <span className="inline-block bg-slate-100 border border-slate-200 px-3 py-1 rounded-lg text-xs font-black text-slate-600">
+                                                    <span className="inline-block bg-slate-100 border border-slate-200 px-3 py-1 rounded-lg text-xs font-bold text-slate-600">
                                                         {st.className}
                                                     </span>
                                                 </td>
@@ -396,7 +396,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
                             <button onClick={() => setIsTardyModalOpen(false)}
-                                className="px-6 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-sm transition-colors">
+                                className="px-6 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold text-sm transition-colors">
                                 إغلاق
                             </button>
                         </div>

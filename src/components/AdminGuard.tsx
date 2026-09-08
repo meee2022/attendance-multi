@@ -89,7 +89,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                 <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-qatar-gray-border qatar-card-shadow p-8 space-y-5">
 
                     <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-500 flex items-center gap-1.5">
+                        <label className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
                             <KeyRound className="w-3.5 h-3.5" />
                             رمز الدخول
                         </label>
@@ -115,7 +115,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                             </button>
                         </div>
                         {error && (
-                            <div className="flex items-center gap-2 text-red-600 text-sm font-black animate-in fade-in">
+                            <div className="flex items-center gap-2 text-red-600 text-sm font-extrabold animate-in fade-in">
                                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                                 {error}
                             </div>
@@ -152,7 +152,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                     <button
                         type="button"
                         onClick={() => setForgot(true)}
-                        className="w-full flex items-center justify-center gap-1.5 text-xs font-black text-slate-400 hover:text-qatar-maroon transition-colors pt-1"
+                        className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-slate-400 hover:text-qatar-maroon transition-colors pt-1"
                     >
                         <LifeBuoy className="w-3.5 h-3.5" />
                         نسيت رمز الدخول؟
@@ -226,7 +226,7 @@ function RecoverPin({ onCancel, onDone }: { onCancel: () => void; onDone: () => 
                     <CheckCircle2 className="w-14 h-14 text-emerald-500 mx-auto" />
                     <h2 className="text-xl font-black text-slate-800">تم تعيين رمز الدخول</h2>
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-right space-y-2">
-                        <p className="text-xs font-black text-amber-800">رمز استعادة جديد — احفظه الآن:</p>
+                        <p className="text-xs font-bold text-amber-800">رمز استعادة جديد — احفظه الآن:</p>
                         <div className="flex items-center gap-2">
                             <code className="flex-1 bg-white border border-amber-300 rounded-lg px-3 py-2.5 font-mono font-black tracking-widest text-slate-800 text-center" dir="ltr">
                                 {newCode}
@@ -277,7 +277,7 @@ function RecoverPin({ onCancel, onDone }: { onCancel: () => void; onDone: () => 
                                     key={id}
                                     type="button"
                                     onClick={() => { setMethod(id); setSecret(""); setError(""); }}
-                                    className={`py-2 rounded-lg text-xs font-black transition-all ${method === id ? "bg-white text-qatar-maroon shadow-sm" : "text-slate-500"}`}
+                                    className={`py-2 rounded-lg text-xs font-bold transition-all ${method === id ? "bg-white text-qatar-maroon shadow-sm" : "text-slate-500"}`}
                                 >
                                     {label}
                                 </button>
@@ -292,7 +292,7 @@ function RecoverPin({ onCancel, onDone }: { onCancel: () => void; onDone: () => 
                     )}
 
                     <div className="space-y-1.5">
-                        <label className="text-xs font-black text-slate-500">
+                        <label className="text-xs font-bold text-slate-500">
                             {method === "code" ? "رمز الاستعادة" : "كلمة مرور المدرسة"}
                         </label>
                         <input
@@ -308,7 +308,7 @@ function RecoverPin({ onCancel, onDone }: { onCancel: () => void; onDone: () => 
 
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-black text-slate-500">الرمز الجديد</label>
+                            <label className="text-xs font-bold text-slate-500">الرمز الجديد</label>
                             <input
                                 type="password" value={newPin} dir="ltr"
                                 onChange={e => { setNewPin(digits(e.target.value)); setError(""); }}
@@ -316,7 +316,7 @@ function RecoverPin({ onCancel, onDone }: { onCancel: () => void; onDone: () => 
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-xs font-black text-slate-500">تأكيد الرمز</label>
+                            <label className="text-xs font-bold text-slate-500">تأكيد الرمز</label>
                             <input
                                 type="password" value={confirmPin} dir="ltr"
                                 onChange={e => { setConfirmPin(digits(e.target.value)); setError(""); }}
@@ -326,7 +326,7 @@ function RecoverPin({ onCancel, onDone }: { onCancel: () => void; onDone: () => 
                     </div>
 
                     {error && (
-                        <div className="flex items-start gap-2 text-red-600 text-sm font-black animate-in fade-in">
+                        <div className="flex items-start gap-2 text-red-600 text-sm font-extrabold animate-in fade-in">
                             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                             {error}
                         </div>

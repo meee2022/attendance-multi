@@ -42,7 +42,7 @@ export default function StatCard({ label, value, subValue, icon, color = "maroon
             <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-5 sm:py-5 flex-1 min-w-0 bg-white/70">
                 {/* Text side */}
                 <div className="flex flex-col gap-1 flex-1 min-w-0">
-                    <p className={`text-[10px] sm:text-xs font-black uppercase tracking-wider truncate ${c.labelText}`}>{label}</p>
+                    <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider truncate ${c.labelText}`}>{label}</p>
                     <p className="text-2xl sm:text-3xl font-black text-slate-800 leading-none">{value}</p>
                     {subValue && <p className="text-[10px] sm:text-xs font-bold text-slate-400 truncate">{subValue}</p>}
                 </div>

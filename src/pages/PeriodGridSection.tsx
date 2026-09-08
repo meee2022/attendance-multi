@@ -141,7 +141,7 @@ export default function PeriodGridSection({ date, focusClassId, highlightPeriod,
                         <button
                             key={g}
                             onClick={() => { setSelectedGrade(g); setSelectedClassId(null); }}
-                            className={`px-4 py-2 rounded-xl font-black text-sm transition-all border ${selectedGrade === g
+                            className={`px-4 py-2 rounded-xl font-extrabold text-sm transition-all border ${selectedGrade === g
                                 ? "bg-white text-qatar-maroon border-white shadow"
                                 : "bg-white/10 text-white border-white/20 hover:bg-white/20"
                                 }`}
@@ -164,7 +164,7 @@ export default function PeriodGridSection({ date, focusClassId, highlightPeriod,
                         <span className="text-xs text-slate-400 font-bold">الصف المحدد:</span>
                         <span className="font-black text-white">{activeClass.name}</span>
                         {activeClass.track && (
-                            <span className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${getTrack(activeClass.track).badge}`}>
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${getTrack(activeClass.track).badge}`}>
                                 {activeClass.track}
                             </span>
                         )}
@@ -198,7 +198,7 @@ export default function PeriodGridSection({ date, focusClassId, highlightPeriod,
                 ) : trackOrder.map((track) => (
                     <div key={track} className="flex flex-wrap items-center gap-2">
                         {/* Track label */}
-                        <span className={`text-[11px] font-black px-3 py-1.5 rounded-lg border whitespace-nowrap ${getTrack(track).badge}`}>
+                        <span className={`text-[11px] font-bold px-3 py-1.5 rounded-lg border whitespace-nowrap ${getTrack(track).badge}`}>
                             {track}
                         </span>
                         {/* Class buttons */}
@@ -219,7 +219,7 @@ export default function PeriodGridSection({ date, focusClassId, highlightPeriod,
                                 >
                                     {cls.name}
                                     {recordedCount > 0 && (
-                                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${isActive
+                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${isActive
                                             ? "bg-white/25 text-white"
                                             : isDone
                                                 ? "bg-emerald-200 text-emerald-800"
@@ -238,7 +238,7 @@ export default function PeriodGridSection({ date, focusClassId, highlightPeriod,
             {/* ── Per-class period summary pills ── */}
             {periodCounts && gradeClasses.some((c: any) => (periodCounts[c._id] || 0) > 0) && (
                 <div className="bg-slate-50 border-x border-b border-slate-200 px-6 py-4">
-                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-3">حالة الحصص المسجلة لكل صف اليوم</p>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">حالة الحصص المسجلة لكل صف اليوم</p>
                     <div className="flex flex-wrap gap-3">
                         {gradeClasses.map((cls: any) => {
                             const count = periodCounts[cls._id] || 0;
@@ -254,10 +254,10 @@ export default function PeriodGridSection({ date, focusClassId, highlightPeriod,
                                             : "bg-amber-50 border-amber-200 text-amber-800"
                                         }`}
                                 >
-                                    <span className="font-black text-sm">{cls.name}</span>
+                                    <span className="font-extrabold text-sm">{cls.name}</span>
                                     <div className="flex flex-col gap-1 min-w-[60px]">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black">{count}/{periodsPerDay}</span>
+                                            <span className="text-[10px] font-bold">{count}/{periodsPerDay}</span>
                                             <span className="text-[10px] font-bold opacity-70">{pct}%</span>
                                         </div>
                                         <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">

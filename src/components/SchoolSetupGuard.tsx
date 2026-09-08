@@ -51,7 +51,7 @@ return (
                         <div className="flex items-center justify-center gap-2.5 mt-5">
                             {["الكود", "كلمة المرور"].map((label, i) => (
                                 <div key={label} className="flex items-center gap-2.5">
-                                    <span className={`flex items-center gap-1.5 text-[11px] font-black transition-all ${i === stepIndex ? "text-white" : "text-white/45"}`}>
+                                    <span className={`flex items-center gap-1.5 text-[11px] font-bold transition-all ${i === stepIndex ? "text-white" : "text-white/45"}`}>
                                         <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${i === stepIndex ? "bg-white text-qatar-maroon" : "bg-white/20 text-white/70"}`}>
                                             {i + 1}
                                         </span>
@@ -188,7 +188,7 @@ export default function SchoolSetupGuard({ children }: { children: React.ReactNo
                     <ErrorBox error={error} />
 
                     <div className="space-y-2">
-                        <label className="text-sm font-black text-slate-700 block">كود المدرسة</label>
+                        <label className="text-sm font-extrabold text-slate-700 block">كود المدرسة</label>
                         <input
                             type="text"
                             dir="ltr"
@@ -214,7 +214,7 @@ export default function SchoolSetupGuard({ children }: { children: React.ReactNo
                     <button
                         type="submit"
                         disabled={checking}
-                        className="w-full text-white font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_6px_16px_-6px_rgba(155,18,57,0.55)] hover:shadow-[0_10px_22px_-8px_rgba(155,18,57,0.6)] hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-l from-[#9B1239] to-[#C0184C]"
+                        className="w-full text-white font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_6px_16px_-6px_hsl(343_72%_27%_/_0.45)] hover:shadow-[0_10px_22px_-8px_hsl(343_72%_27%_/_0.5)] hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-l from-qatar-maroon-light to-qatar-maroon"
                     >
                         {checking
                             ? <><div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />جاري البحث...</>
@@ -232,7 +232,7 @@ export default function SchoolSetupGuard({ children }: { children: React.ReactNo
                 <form onSubmit={e => enterSchool(e, false)} className="p-7 space-y-5">
                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center space-y-1">
                         <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto" />
-                        <p className="text-[11px] font-black text-emerald-700">تم العثور على المدرسة</p>
+                        <p className="text-[11px] font-bold text-emerald-700">تم العثور على المدرسة</p>
                         <p className="text-lg font-black text-slate-800">{schoolInfo?.name}</p>
                         <p className="text-xs font-mono font-black text-slate-500" dir="ltr">{submittedCode}</p>
                     </div>
@@ -240,7 +240,7 @@ export default function SchoolSetupGuard({ children }: { children: React.ReactNo
                     <ErrorBox error={error} />
 
                     <div className="space-y-1.5">
-                        <label className="text-sm font-black text-slate-700">
+                        <label className="text-sm font-extrabold text-slate-700">
                             {schoolInfo?.hasPassword ? "كلمة مرور المدرسة" : "عيّن كلمة مرور للمدرسة"}
                         </label>
                         <input
@@ -265,7 +265,7 @@ export default function SchoolSetupGuard({ children }: { children: React.ReactNo
                         </button>
                         <button
                             type="submit" disabled={isSubmitting}
-                            className="flex-[2] text-white font-black py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_6px_16px_-6px_rgba(155,18,57,0.55)] hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-l from-[#9B1239] to-[#C0184C]"
+                            className="flex-[2] text-white font-black py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_6px_16px_-6px_hsl(343_72%_27%_/_0.45)] hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-l from-qatar-maroon-light to-qatar-maroon"
                         >
                             {isSubmitting
                                 ? <><div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />جاري الدخول...</>
@@ -282,7 +282,7 @@ export default function SchoolSetupGuard({ children }: { children: React.ReactNo
         <Shell icon={<AlertTriangle className="w-8 h-8" />} title="كود غير معروف" stepIndex={stepIndex}>
             <form onSubmit={e => enterSchool(e, true)} className="p-7 space-y-5">
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-1.5 text-center">
-                    <p className="text-sm font-black text-amber-900">
+                    <p className="text-sm font-extrabold text-amber-900">
                         لا توجد مدرسة بالكود <span className="font-mono" dir="ltr">{submittedCode}</span>
                     </p>
                     <p className="text-xs font-bold text-amber-800 leading-relaxed">
@@ -293,14 +293,14 @@ export default function SchoolSetupGuard({ children }: { children: React.ReactNo
 
                 <button
                     type="button" onClick={backToCode}
-                    className="w-full text-white font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_6px_16px_-6px_rgba(155,18,57,0.55)] hover:shadow-[0_10px_22px_-8px_rgba(155,18,57,0.6)] hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-l from-[#9B1239] to-[#C0184C]"
+                    className="w-full text-white font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_6px_16px_-6px_hsl(343_72%_27%_/_0.45)] hover:shadow-[0_10px_22px_-8px_hsl(343_72%_27%_/_0.5)] hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-l from-qatar-maroon-light to-qatar-maroon"
                 >
                     <ArrowRight className="w-5 h-5" />تصحيح الكود
                 </button>
 
                 <div className="flex items-center gap-3 pt-1">
                     <div className="flex-1 h-px bg-slate-200" />
-                    <span className="text-[11px] font-black text-slate-400">أو</span>
+                    <span className="text-[11px] font-bold text-slate-400">أو</span>
                     <div className="flex-1 h-px bg-slate-200" />
                 </div>
 
@@ -311,7 +311,7 @@ export default function SchoolSetupGuard({ children }: { children: React.ReactNo
                         onChange={e => { setConfirmNew(e.target.checked); setError(""); }}
                         className="mt-0.5 w-4 h-4 accent-qatar-maroon"
                     />
-                    <span className="text-xs font-black text-slate-700">
+                    <span className="text-xs font-bold text-slate-700">
                         أنا أُسجّل <span className="text-qatar-maroon">مدرسة جديدة</span> لم تُستخدم في النظام من قبل
                     </span>
                 </label>
@@ -319,7 +319,7 @@ export default function SchoolSetupGuard({ children }: { children: React.ReactNo
                 {confirmNew && (
                     <div className="space-y-4 animate-in fade-in duration-300">
                         <div className="space-y-1.5">
-                            <label className="text-sm font-black text-slate-700">اسم المدرسة</label>
+                            <label className="text-sm font-extrabold text-slate-700">اسم المدرسة</label>
                             <input
                                 type="text" autoFocus value={name}
                                 onChange={e => { setName(e.target.value); setError(""); }}
@@ -328,7 +328,7 @@ export default function SchoolSetupGuard({ children }: { children: React.ReactNo
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-sm font-black text-slate-700">كلمة مرور المدرسة</label>
+                            <label className="text-sm font-extrabold text-slate-700">كلمة مرور المدرسة</label>
                             <input
                                 type="password" value={password}
                                 onChange={e => { setPassword(e.target.value); setError(""); }}

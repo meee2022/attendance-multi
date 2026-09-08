@@ -229,8 +229,8 @@ export default function TeacherUpload() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-10 font-sans transition-all animate-in fade-in duration-500 pb-20">
-            <div className="rounded-2xl overflow-hidden qatar-card-shadow"
-                style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 50%, #9B1239 100%)" }}>
+            <div className="app-page-heading overflow-hidden"
+                >
                 <div className="flex flex-col gap-1 p-5 sm:p-8">
                     <h1 className="text-3xl font-black text-white flex items-center gap-3">
                         <Upload className="w-8 h-8 text-white/80" />
@@ -259,11 +259,11 @@ export default function TeacherUpload() {
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedClass ? 'bg-qatar-maroon text-white' : 'bg-rose-100 text-qatar-maroon'}`}>
                                         <Layers className="w-4 h-4" />
                                     </div>
-                                    <span className="text-xs font-black text-qatar-maroon">الصف الدراسي</span>
+                                    <span className="text-xs font-bold text-qatar-maroon">الصف الدراسي</span>
                                     {selectedClass && <span className="mr-auto text-[10px] bg-qatar-maroon text-white px-2 py-0.5 rounded-full font-black">✓ محدد</span>}
                                 </div>
                                 <select
-                                    className={`w-full rounded-xl px-3 py-2.5 font-black text-sm outline-none appearance-none border transition-colors ${selectedClass ? 'bg-white border-qatar-maroon/30 text-qatar-maroon' : 'bg-white/70 border-rose-200 text-slate-500'}`}
+                                    className={`w-full rounded-xl px-3 py-2.5 font-extrabold text-sm outline-none appearance-none border transition-colors ${selectedClass ? 'bg-white border-qatar-maroon/30 text-qatar-maroon' : 'bg-white/70 border-rose-200 text-slate-500'}`}
                                     value={selectedClass}
                                     onChange={e => setSelectedClass(e.target.value)}
                                 >
@@ -280,11 +280,11 @@ export default function TeacherUpload() {
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedSubject ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-600'}`}>
                                         <BookOpen className="w-4 h-4" />
                                     </div>
-                                    <span className="text-xs font-black text-blue-600">المادة</span>
+                                    <span className="text-xs font-bold text-blue-600">المادة</span>
                                     {selectedSubject && <span className="mr-auto text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-black">✓ محدد</span>}
                                 </div>
                                 <select
-                                    className={`w-full rounded-xl px-3 py-2.5 font-black text-sm outline-none appearance-none border transition-colors ${selectedSubject ? 'bg-white border-blue-300 text-blue-700' : 'bg-white/70 border-blue-200 text-slate-500'}`}
+                                    className={`w-full rounded-xl px-3 py-2.5 font-extrabold text-sm outline-none appearance-none border transition-colors ${selectedSubject ? 'bg-white border-blue-300 text-blue-700' : 'bg-white/70 border-blue-200 text-slate-500'}`}
                                     value={selectedSubject}
                                     onChange={e => setSelectedSubject(e.target.value)}
                                 >
@@ -301,13 +301,13 @@ export default function TeacherUpload() {
                                     <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
                                         <Calendar className="w-4 h-4" />
                                     </div>
-                                    <span className="text-xs font-black text-emerald-700">تاريخ الحصة</span>
+                                    <span className="text-xs font-bold text-emerald-700">تاريخ الحصة</span>
                                     <span className="mr-auto flex items-center gap-1 text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-black">
                                         <Lock className="w-2.5 h-2.5" />
                                         مثبَّت
                                     </span>
                                 </div>
-                                <div className="w-full rounded-xl px-3 py-2.5 font-black text-sm text-emerald-900 bg-white border border-emerald-300 text-center tracking-widest select-none">
+                                <div className="w-full rounded-xl px-3 py-2.5 font-extrabold text-sm text-emerald-900 bg-white border border-emerald-300 text-center tracking-widest select-none">
                                     {activeDate}
                                 </div>
                                 <p className="mt-1.5 text-[10px] text-emerald-600/70 font-bold text-center">يُحدَّد من صفحة الإعدادات فقط</p>
@@ -319,11 +319,11 @@ export default function TeacherUpload() {
                                     <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center">
                                         <Hash className="w-4 h-4" />
                                     </div>
-                                    <span className="text-xs font-black text-amber-700">رقم الحصة</span>
+                                    <span className="text-xs font-bold text-amber-700">رقم الحصة</span>
                                     {periodNumber && <span className="mr-auto text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-black">ح {periodNumber}</span>}
                                 </div>
                                 <select
-                                    className="w-full rounded-xl px-3 py-2.5 font-black text-sm text-amber-800 bg-white border border-amber-300 outline-none appearance-none"
+                                    className="w-full rounded-xl px-3 py-2.5 font-extrabold text-sm text-amber-800 bg-white border border-amber-300 outline-none appearance-none"
                                     value={periodNumber}
                                     onChange={e => setPeriodNumber(e.target.value)}
                                 >
@@ -370,7 +370,7 @@ export default function TeacherUpload() {
                             {error && (
                                 <div className="flex items-center gap-4 bg-rose-50 text-rose-800 px-6 py-5 rounded-2xl border border-rose-100 animate-shake">
                                     <AlertCircle className="w-6 h-6 flex-shrink-0" />
-                                    <p className="text-sm font-black italic">{error}</p>
+                                    <p className="text-sm font-extrabold italic">{error}</p>
                                 </div>
                             )}
                         </div>
@@ -444,11 +444,11 @@ export default function TeacherUpload() {
                                     <div className="flex items-center gap-6">
                                         <div className="flex items-center gap-2">
                                             <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                                            <span className="text-xs font-black text-slate-500">حاضر ({draftResult.students.filter((s: any) => s.present).length})</span>
+                                            <span className="text-xs font-bold text-slate-500">حاضر ({draftResult.students.filter((s: any) => s.present).length})</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="w-3 h-3 bg-rose-400 rounded-full"></div>
-                                            <span className="text-xs font-black text-slate-500">غائب ({draftResult.students.filter((s: any) => !s.present).length})</span>
+                                            <span className="text-xs font-bold text-slate-500">غائب ({draftResult.students.filter((s: any) => !s.present).length})</span>
                                         </div>
                                     </div>
                                 </div>
@@ -464,9 +464,9 @@ export default function TeacherUpload() {
                                                 <span className={`text-lg font-black leading-tight ${s.present ? 'text-emerald-900' : 'text-slate-700'}`}>{s.fullName}</span>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     {s.present ? (
-                                                        <span className="bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">حاضر فعلي</span>
+                                                        <span className="bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest">حاضر فعلي</span>
                                                     ) : (
-                                                        <span className="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">غائب الآن</span>
+                                                        <span className="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest">غائب الآن</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -489,7 +489,7 @@ export default function TeacherUpload() {
 
                             <div className="flex flex-col items-center gap-6 pt-10 border-t border-qatar-gray-border">
                                 {draftResult.pendingNames?.length > 0 && (
-                                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-5 py-3 rounded-xl text-sm font-black">
+                                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-5 py-3 rounded-xl text-sm font-extrabold">
                                         <AlertCircle className="w-4 h-4 flex-shrink-0" />
                                         هناك {draftResult.pendingNames.length} {draftResult.pendingNames.length === 1 ? "اسم غير متطابق" : "أسماء غير متطابقة"} لم يتم التعامل معها بعد — ستُتجاهل عند الحفظ.
                                     </div>
@@ -531,11 +531,11 @@ export default function TeacherUpload() {
                     </div>
                     <div className="p-10 grid grid-cols-2 gap-8 bg-emerald-50 italic">
                         <div className="flex flex-col items-center">
-                            <span className="text-xs font-black text-emerald-700/60 uppercase tracking-widest mb-1">إجمالي الحضور</span>
+                            <span className="text-xs font-bold text-emerald-700/60 uppercase tracking-widest mb-1">إجمالي الحضور</span>
                             <span className="text-5xl font-black text-emerald-700">{finalResult.presentCount}</span>
                         </div>
                         <div className="flex flex-col items-center border-r border-emerald-200">
-                            <span className="text-xs font-black text-rose-700/60 uppercase tracking-widest mb-1">إجمالي الغياب</span>
+                            <span className="text-xs font-bold text-rose-700/60 uppercase tracking-widest mb-1">إجمالي الغياب</span>
                             <span className="text-5xl font-black text-rose-700">{finalResult.absentCount}</span>
                         </div>
                     </div>
@@ -568,7 +568,7 @@ export default function TeacherUpload() {
 function FormGroup({ label, children, icon }: { label: string; children: React.ReactNode; icon?: React.ReactNode }) {
     return (
         <div className="space-y-2">
-            <label className="block text-sm font-black text-slate-700 mr-1 flex items-center gap-2">
+            <label className="block text-sm font-extrabold text-slate-700 mr-1 flex items-center gap-2">
                 {icon && <span className="opacity-40">{icon}</span>}
                 {label}
             </label>
@@ -619,7 +619,7 @@ function AmbiguousNamesPanel({
 
                         {/* Uploaded name */}
                         <div>
-                            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">
+                            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">
                                 الاسم المكتشف في الملف:
                             </p>
                             <p className="text-xl font-black text-slate-800 italic">
@@ -629,7 +629,7 @@ function AmbiguousNamesPanel({
 
                         {entry.candidateStudents.length > 0 ? (
                             <div className="space-y-3">
-                                <p className="text-xs font-black text-slate-500">
+                                <p className="text-xs font-bold text-slate-500">
                                     اختر الطالب المقصود (إن وجد):
                                 </p>
                                 <div className="relative">
@@ -654,14 +654,14 @@ function AmbiguousNamesPanel({
                                     <button
                                         onClick={() => handleConfirm(entry.uploadedName)}
                                         disabled={!selections[entry.uploadedName]}
-                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-30 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl text-sm font-black shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-30 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl text-sm font-extrabold shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
                                     >
                                         <UserCheck className="w-4 h-4" />
                                         تأكيد – وضع كحاضر
                                     </button>
                                     <button
                                         onClick={() => onResolve(entry.uploadedName)}
-                                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 rounded-xl text-sm font-black border border-slate-200 transition-colors active:scale-95 flex items-center gap-2"
+                                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 rounded-xl text-sm font-extrabold border border-slate-200 transition-colors active:scale-95 flex items-center gap-2"
                                     >
                                         <UserX className="w-4 h-4" />
                                         تجاهل
@@ -675,7 +675,7 @@ function AmbiguousNamesPanel({
                                 </p>
                                 <button
                                     onClick={() => onResolve(entry.uploadedName)}
-                                    className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 rounded-xl text-sm font-black border border-slate-200 transition-colors active:scale-95 flex items-center gap-2"
+                                    className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 rounded-xl text-sm font-extrabold border border-slate-200 transition-colors active:scale-95 flex items-center gap-2"
                                 >
                                     <UserX className="w-4 h-4" />
                                     تجاهل

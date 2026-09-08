@@ -134,7 +134,7 @@ function Navbar() {
   return (
     <nav className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-20" dir="rtl">
       {/* Top accent bar */}
-      <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #9B1239 0%, #C0184C 50%, #9B1239 100%)" }} />
+      <div className="h-1 w-full" style={{ background: "var(--gradient-primary)" }} />
 
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 gap-4">
@@ -142,9 +142,9 @@ function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-md"
-              style={{ background: "linear-gradient(135deg, #9B1239, #C0184C)" }}>Q</div>
+              style={{ background: "var(--gradient-primary)" }}>Q</div>
             <div className="flex flex-col leading-tight">
-              <span className="font-black text-sm text-slate-800">{school?.name || "نظام الحضور والغياب"}</span>
+              <span className="font-extrabold text-sm text-slate-800">{school?.name || "نظام الحضور والغياب"}</span>
               <span className="hidden sm:block text-[9px] text-slate-400 font-bold uppercase tracking-wider">{school?.code || "QATAR"}</span>
             </div>
           </Link>
@@ -191,20 +191,20 @@ function Navbar() {
           <div className="flex items-center gap-2 flex-shrink-0">
             {isAdminAuthed && (
               <button onClick={handleLogout} title="إنهاء جلسة المسؤول والبقاء داخل المدرسة"
-                className="hidden sm:flex items-center gap-1.5 text-[11px] font-black text-slate-400 hover:text-qatar-maroon border border-slate-200 hover:border-qatar-maroon/40 px-3 py-1.5 rounded-xl transition-all">
+                className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-qatar-maroon border border-slate-200 hover:border-qatar-maroon/40 px-3 py-1.5 rounded-xl transition-all">
                 <Shield className="w-3.5 h-3.5" />خروج المسؤول
               </button>
             )}
             <button onClick={() => setShowExitSchool(true)} title="الخروج من المدرسة وتغييرها"
-              className="flex items-center gap-1.5 text-[11px] font-black text-slate-400 hover:text-qatar-maroon border border-slate-200 hover:border-qatar-maroon/40 px-3 py-1.5 rounded-xl transition-all">
+              className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-qatar-maroon border border-slate-200 hover:border-qatar-maroon/40 px-3 py-1.5 rounded-xl transition-all">
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">خروج من المدرسة</span>
             </button>
             <div className="hidden sm:flex flex-col items-end leading-tight">
               <span className="text-[10px] font-bold text-slate-400">{isAdminAuthed ? "مسؤول النظام" : "معلم"}</span>
-              <span className="text-sm font-black text-slate-700">{isAdminAuthed ? "Admin" : "Teacher"}</span>
+              <span className="text-sm font-extrabold text-slate-700">{isAdminAuthed ? "Admin" : "Teacher"}</span>
             </div>
-            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-black text-xs ${isAdminAuthed ? "bg-qatar-maroon text-white border-qatar-maroon" : "bg-qatar-maroon/10 border-qatar-maroon/20 text-qatar-maroon"
+            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-xs ${isAdminAuthed ? "bg-qatar-maroon text-white border-qatar-maroon" : "bg-qatar-maroon/10 border-qatar-maroon/20 text-qatar-maroon"
               }`}>
               {isAdminAuthed ? "AD" : "T"}
             </div>
@@ -276,7 +276,7 @@ function BottomNav() {
             const active = isActive(to);
             return (
               <Link key={to} to={to}
-                className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[9px] font-black transition-colors ${active ? "text-qatar-maroon" : "text-slate-400"
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[9px] font-bold transition-colors ${active ? "text-qatar-maroon" : "text-slate-400"
                   }`}
               >
                 <span className={`transition-all ${active ? "scale-110" : ""}`}>{icon}</span>
@@ -285,7 +285,7 @@ function BottomNav() {
             );
           })}
           <button onClick={() => setShowAdminDrawer(v => !v)}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[9px] font-black transition-colors relative ${isAdminRouteActive || showAdminDrawer ? "text-qatar-maroon" : "text-slate-400"
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[9px] font-bold transition-colors relative ${isAdminRouteActive || showAdminDrawer ? "text-qatar-maroon" : "text-slate-400"
               }`}
           >
             <Shield className={`w-5 h-5 transition-all ${isAdminRouteActive || showAdminDrawer ? "scale-110" : ""}`} />

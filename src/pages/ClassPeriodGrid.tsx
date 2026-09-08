@@ -19,7 +19,7 @@ interface ClassPeriodGridProps {
 function PresentBadge({ value }: { value: number }) {
     if (value === 0) return <span className="text-slate-300 font-bold text-sm">—</span>;
     return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-black bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
             <Check className="w-3.5 h-3.5" />{value}
         </span>
     );
@@ -27,7 +27,7 @@ function PresentBadge({ value }: { value: number }) {
 function AbsentBadge({ value }: { value: number }) {
     if (value === 0) return <span className="text-slate-300 font-bold text-sm">—</span>;
     return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-black bg-rose-50 text-rose-700 border border-rose-200 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-extrabold bg-rose-50 text-rose-700 border border-rose-200 shadow-sm">
             <X className="w-3.5 h-3.5" />{value}
         </span>
     );
@@ -35,7 +35,7 @@ function AbsentBadge({ value }: { value: number }) {
 function ExcusedBadge({ value }: { value: number }) {
     if (value === 0) return <span className="text-slate-300 font-bold text-sm">—</span>;
     return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-black bg-amber-50 text-amber-700 border border-amber-200 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-extrabold bg-amber-50 text-amber-700 border border-amber-200 shadow-sm">
             ✋{value}
         </span>
     );
@@ -47,7 +47,7 @@ function RateBadge({ rate }: { rate: number }) {
             ? "bg-amber-100 text-amber-800 border-amber-200"
             : "bg-rose-100 text-rose-800 border-rose-200";
     return (
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-black border shadow-sm ${style}`}>
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-extrabold border shadow-sm ${style}`}>
             {rate}%
         </span>
     );
@@ -106,7 +106,7 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
 
             {/* ── Delete success toast ── */}
             {deletedMsg && (
-                <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl animate-in fade-in text-sm font-black">
+                <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl animate-in fade-in text-sm font-extrabold">
                     <span className="text-emerald-500 text-lg">✓</span>
                     <span className="flex-1">{deletedMsg}</span>
                     <button onClick={() => setDeletedMsg("")} className="text-emerald-400 hover:text-emerald-700">
@@ -120,20 +120,20 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                 <div className="flex flex-wrap items-center gap-4 bg-red-50 border-2 border-red-300 text-red-800 px-5 py-4 rounded-xl animate-in fade-in">
                     <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                        <p className="font-black text-sm">حذف بيانات الحصة {PERIOD_LABELS[confirmDelete - 1]}؟</p>
+                        <p className="font-extrabold text-sm">حذف بيانات الحصة {PERIOD_LABELS[confirmDelete - 1]}؟</p>
                         <p className="text-xs font-medium text-red-600 mt-0.5">سيتم مسح جميع سجلات الحضور والغياب لهذه الحصة — لا يمكن التراجع.</p>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
                         <button
                             onClick={() => handleDeletePeriod(confirmDelete)}
-                            className="flex items-center gap-1.5 bg-red-600 text-white px-4 py-2 rounded-xl font-black text-sm hover:bg-red-700 transition-colors"
+                            className="flex items-center gap-1.5 bg-red-600 text-white px-4 py-2 rounded-xl font-extrabold text-sm hover:bg-red-700 transition-colors"
                         >
                             <Trash2 className="w-3.5 h-3.5" />
                             نعم، احذف
                         </button>
                         <button
                             onClick={() => setConfirmDelete(null)}
-                            className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-600 px-4 py-2 rounded-xl font-black text-sm hover:bg-slate-50 transition-colors"
+                            className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-600 px-4 py-2 rounded-xl font-extrabold text-sm hover:bg-slate-50 transition-colors"
                         >
                             <X className="w-3.5 h-3.5" />
                             إلغاء
@@ -149,11 +149,11 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                     {/* ── Header ── */}
                     <thead>
                         <tr style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)" }}>
-                            <th className="text-slate-300 py-3.5 px-3 border border-slate-700/50 min-w-[36px] text-xs font-black sticky right-0 z-10"
+                            <th className="text-slate-300 py-3.5 px-3 border border-slate-700/50 min-w-[36px] text-xs font-bold sticky right-0 z-10"
                                 style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)" }}>م</th>
                             <th className="text-white py-3.5 px-5 border border-slate-700/50 min-w-[200px] text-right font-black sticky"
                                 style={{ right: "36px", background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)", zIndex: 10 }}>الاسم</th>
-                            <th className="text-slate-300 py-3.5 px-3 border border-slate-700/50 min-w-[55px] text-xs font-black">الشعبة</th>
+                            <th className="text-slate-300 py-3.5 px-3 border border-slate-700/50 min-w-[55px] text-xs font-bold">الشعبة</th>
 
                             {Array.from({ length: periodsPerDay }, (_, i) => {
                                 const pNum = i + 1;
@@ -169,17 +169,17 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                                         <div className="flex flex-col items-center gap-0.5 py-2 px-1">
                                             {isHighlighted ? (
                                                 <div className="flex flex-col items-center gap-0.5">
-                                                    <span className="text-[10px] font-black text-white/80">{highlightSubjectName}</span>
+                                                    <span className="text-[10px] font-bold text-white/80">{highlightSubjectName}</span>
                                                     <span className="text-[9px] font-bold text-white/50">{periodLabel}</span>
                                                 </div>
                                             ) : (
-                                                <span className="text-xs font-black text-white">{periodLabel}</span>
+                                                <span className="text-xs font-bold text-white">{periodLabel}</span>
                                             )}
                                             {hasData ? (
                                                 <button
                                                     onClick={() => setConfirmDelete(pNum)}
                                                     title={`حذف بيانات الحصة ${PERIOD_LABELS[i]}`}
-                                                    className={`flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 rounded-full transition-all ${confirmDelete === pNum
+                                                    className={`flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full transition-all ${confirmDelete === pNum
                                                             ? 'bg-red-300 text-red-900'
                                                             : 'bg-white/20 text-white/80 hover:bg-red-500 hover:text-white'
                                                         }`}
@@ -194,12 +194,12 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                                 );
                             })}
 
-                            <th className="text-slate-300 py-3.5 px-3 border border-slate-700/50 min-w-[60px] text-xs font-black">حصص</th>
-                            <th className="text-emerald-300 py-3.5 px-3 border border-slate-700/50 min-w-[70px] text-xs font-black">الحضور</th>
-                            <th className="text-rose-300 py-3.5 px-3 border border-slate-700/50 min-w-[70px] text-xs font-black">غياب</th>
-                            <th className="text-amber-300 py-3.5 px-3 border border-slate-700/50 min-w-[70px] text-xs font-black">بعذر</th>
-                            <th className="text-blue-300 py-3.5 px-3 border border-slate-700/50 min-w-[75px] text-xs font-black">النسبة</th>
-                            <th className="text-slate-400 py-3.5 px-3 border border-slate-700/50 min-w-[90px] text-xs font-black">جوال</th>
+                            <th className="text-slate-300 py-3.5 px-3 border border-slate-700/50 min-w-[60px] text-xs font-bold">حصص</th>
+                            <th className="text-emerald-300 py-3.5 px-3 border border-slate-700/50 min-w-[70px] text-xs font-bold">الحضور</th>
+                            <th className="text-rose-300 py-3.5 px-3 border border-slate-700/50 min-w-[70px] text-xs font-bold">غياب</th>
+                            <th className="text-amber-300 py-3.5 px-3 border border-slate-700/50 min-w-[70px] text-xs font-bold">بعذر</th>
+                            <th className="text-blue-300 py-3.5 px-3 border border-slate-700/50 min-w-[75px] text-xs font-bold">النسبة</th>
+                            <th className="text-slate-400 py-3.5 px-3 border border-slate-700/50 min-w-[90px] text-xs font-bold">جوال</th>
                         </tr>
                     </thead>
 
@@ -262,7 +262,7 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
 
                                     {/* Recorded periods total */}
                                     <td className="py-2.5 px-3 border border-slate-100">
-                                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-black bg-slate-100 text-slate-600 border border-slate-200 shadow-sm">
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-extrabold bg-slate-100 text-slate-600 border border-slate-200 shadow-sm">
                                             {row.totalRecordedPeriods}
                                         </span>
                                     </td>
@@ -302,17 +302,17 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                         <tr style={{ background: "linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%)" }}
                             className="border-t-2 border-rose-200">
                             <td colSpan={3}
-                                className="py-3 px-4 border border-rose-200 text-right text-xs font-black sticky right-0 z-10"
+                                className="py-3 px-4 border border-rose-200 text-right text-xs font-bold sticky right-0 z-10"
                                 style={{ background: "linear-gradient(135deg, #be123c 0%, #e11d48 100%)", color: "white" }}>
                                 غياب بدون عذر
                             </td>
                             {periodSummary.map((ps: any) => (
                                 <td key={`abs-${ps.periodNumber}`} className="py-3 px-2 border border-rose-100">
                                     {ps.absent > 0
-                                        ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-black bg-rose-600 text-white border border-rose-700 shadow-sm">
+                                        ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-extrabold bg-rose-600 text-white border border-rose-700 shadow-sm">
                                             <X className="w-3 h-3" />{ps.absent}
                                         </span>
-                                        : <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-black bg-emerald-50 text-emerald-600 border border-emerald-200">
+                                        : <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-extrabold bg-emerald-50 text-emerald-600 border border-emerald-200">
                                             {ps.absent}
                                         </span>
                                     }
@@ -325,17 +325,17 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                         <tr style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)" }}
                             className="border-t border-amber-200">
                             <td colSpan={3}
-                                className="py-3 px-4 border border-amber-200 text-right text-xs font-black sticky right-0 z-10"
+                                className="py-3 px-4 border border-amber-200 text-right text-xs font-bold sticky right-0 z-10"
                                 style={{ background: "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)", color: "white" }}>
                                 غياب بعذر
                             </td>
                             {periodSummary.map((ps: any) => (
                                 <td key={`exc-${ps.periodNumber}`} className="py-3 px-2 border border-amber-100">
                                     {(ps.excused ?? 0) > 0
-                                        ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-black bg-amber-500 text-white border border-amber-600 shadow-sm">
+                                        ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-extrabold bg-amber-500 text-white border border-amber-600 shadow-sm">
                                             ✋ {ps.excused}
                                         </span>
-                                        : <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-black bg-slate-50 text-slate-400 border border-slate-200">
+                                        : <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-extrabold bg-slate-50 text-slate-400 border border-slate-200">
                                             0
                                         </span>
                                     }
@@ -348,17 +348,17 @@ export default function ClassPeriodGrid({ classId, schoolId, date, periodsPerDay
                         <tr style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" }}
                             className="border-b-2 border-emerald-200">
                             <td colSpan={3}
-                                className="py-3 px-4 border border-emerald-200 text-right text-xs font-black sticky right-0 z-10"
+                                className="py-3 px-4 border border-emerald-200 text-right text-xs font-bold sticky right-0 z-10"
                                 style={{ background: "linear-gradient(135deg, #059669 0%, #10b981 100%)", color: "white" }}>
                                 عدد الحاضرين
                             </td>
                             {periodSummary.map((ps: any) => (
                                 <td key={`pres-${ps.periodNumber}`} className="py-3 px-2 border border-emerald-100">
                                     {ps.present > 0
-                                        ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-black bg-emerald-600 text-white border border-emerald-700 shadow-sm">
+                                        ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-extrabold bg-emerald-600 text-white border border-emerald-700 shadow-sm">
                                             <Check className="w-3 h-3" />{ps.present}
                                         </span>
-                                        : <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-black bg-slate-50 text-slate-400 border border-slate-200">
+                                        : <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-extrabold bg-slate-50 text-slate-400 border border-slate-200">
                                             {ps.present}
                                         </span>
                                     }

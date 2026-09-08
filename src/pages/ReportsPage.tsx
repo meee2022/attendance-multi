@@ -20,7 +20,7 @@ const GRADE_LABELS: Record<number, string> = {
 function PresentBadge({ value }: { value: number }) {
     if (value === 0) return <span className="text-slate-300 font-bold text-sm select-none">—</span>;
     return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-black bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
             <Check className="w-3.5 h-3.5" />{value}
         </span>
     );
@@ -28,14 +28,14 @@ function PresentBadge({ value }: { value: number }) {
 function AbsentBadge({ value }: { value: number }) {
     if (value === 0) return <span className="text-slate-300 font-bold text-sm select-none">—</span>;
     return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-black bg-rose-50 text-rose-700 border border-rose-200 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-extrabold bg-rose-50 text-rose-700 border border-rose-200 shadow-sm">
             <X className="w-3.5 h-3.5" />{value}
         </span>
     );
 }
 function TotalBadge({ value }: { value: number }) {
     return (
-        <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-black bg-slate-100 text-slate-600 border border-slate-200 shadow-sm">
+        <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-extrabold bg-slate-100 text-slate-600 border border-slate-200 shadow-sm">
             {value}
         </span>
     );
@@ -48,7 +48,7 @@ function PctBadge({ pct, type }: { pct: number; type: "present" | "absent" }) {
         : (pct < 20 ? "bg-orange-50 text-orange-700 border-orange-200"
             : "bg-rose-100 text-rose-800 border-rose-200");
     return (
-        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-black border shadow-sm ${style}`}>
+        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-extrabold border shadow-sm ${style}`}>
             {type === "present" ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
             {pct.toFixed(1)}%
         </span>
@@ -105,8 +105,8 @@ export default function ReportsPage() {
         <div className="max-w-7xl mx-auto space-y-6 pb-20 font-sans animate-in fade-in duration-500">
 
             {/* Header */}
-            <div className="rounded-2xl overflow-hidden qatar-card-shadow"
-                style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 50%, #9B1239 100%)" }}>
+            <div className="app-page-heading overflow-hidden"
+                >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 sm:p-8">
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
@@ -125,7 +125,7 @@ export default function ReportsPage() {
                                 className="bg-transparent border-none outline-none font-black text-white cursor-pointer text-sm"
                             />
                         </div>
-                        <button className="flex items-center gap-2 text-sm font-black bg-white/20 backdrop-blur-sm text-white px-5 py-2.5 rounded-xl hover:bg-white/30 transition-all border border-white/20 active:scale-95">
+                        <button className="flex items-center gap-2 text-sm font-extrabold bg-white/20 backdrop-blur-sm text-white px-5 py-2.5 rounded-xl hover:bg-white/30 transition-all border border-white/20 active:scale-95">
                             <Download className="w-4 h-4" />
                             تصدير
                         </button>
@@ -139,7 +139,7 @@ export default function ReportsPage() {
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all ${activeTab === tab.id
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-extrabold text-sm transition-all ${activeTab === tab.id
                             ? "bg-qatar-maroon text-white shadow-md"
                             : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                             }`}
@@ -245,11 +245,11 @@ function SummaryCard({
             {/* Totals bar */}
             <div className="p-5 grid grid-cols-2 gap-4 border-b border-qatar-gray-border bg-slate-50/50">
                 <div className="text-center">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">إجمالي الحاضرين</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">إجمالي الحاضرين</p>
                     <p className="text-2xl font-black text-emerald-700">{totalPresent}</p>
                 </div>
                 <div className="text-center">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">إجمالي الغائبين</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">إجمالي الغائبين</p>
                     <p className="text-2xl font-black text-rose-700">{totalAbsent}</p>
                 </div>
             </div>
@@ -259,11 +259,11 @@ function SummaryCard({
                 <table className="w-full text-right border-collapse">
                     <thead>
                         <tr style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)" }}>
-                            <th className="py-3.5 px-4 text-xs font-black text-white text-right">الشعبة</th>
-                            <th className="py-3.5 px-4 text-xs font-black text-emerald-300 text-center">حضر</th>
-                            <th className="py-3.5 px-4 text-xs font-black text-rose-300 text-center">غاب</th>
-                            <th className="py-3.5 px-4 text-xs font-black text-blue-300 text-center">% حضور</th>
-                            <th className="py-3.5 px-4 text-xs font-black text-slate-300 text-center">الإجمالي</th>
+                            <th className="py-3.5 px-4 text-xs font-bold text-white text-right">الشعبة</th>
+                            <th className="py-3.5 px-4 text-xs font-bold text-emerald-300 text-center">حضر</th>
+                            <th className="py-3.5 px-4 text-xs font-bold text-rose-300 text-center">غاب</th>
+                            <th className="py-3.5 px-4 text-xs font-bold text-blue-300 text-center">% حضور</th>
+                            <th className="py-3.5 px-4 text-xs font-bold text-slate-300 text-center">الإجمالي</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -332,12 +332,12 @@ function SummaryCard({
                                                 </div>
                                             </td>
                                             <td className="py-3.5 px-4">
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-black bg-emerald-600 text-white shadow-sm">
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-extrabold bg-emerald-600 text-white shadow-sm">
                                                     <Check className="w-3.5 h-3.5" />{gradeTotal[gradeTotalField].present}
                                                 </span>
                                             </td>
                                             <td className="py-3.5 px-4">
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-black bg-qatar-maroon text-white shadow-sm">
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-extrabold bg-qatar-maroon text-white shadow-sm">
                                                     <X className="w-3.5 h-3.5" />{gradeTotal[gradeTotalField].absent}
                                                 </span>
                                             </td>
@@ -350,7 +350,7 @@ function SummaryCard({
                                                 )}
                                             </td>
                                             <td className="py-3.5 px-4">
-                                                <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-black bg-white text-slate-700 border border-slate-300 shadow-sm">
+                                                <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-extrabold bg-white text-slate-700 border border-slate-300 shadow-sm">
                                                     {gradeTotal.total}
                                                 </span>
                                             </td>
@@ -392,7 +392,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
                     <div className="flex gap-1.5 flex-wrap">
                         {availableGrades.map(g => (
                             <button key={g} onClick={() => setSelectedGrade(g)}
-                                className={`px-4 py-2 rounded-xl font-black text-sm transition-all border ${selectedGrade === g
+                                className={`px-4 py-2 rounded-xl font-extrabold text-sm transition-all border ${selectedGrade === g
                                     ? "bg-qatar-maroon text-white border-qatar-maroon shadow-sm"
                                     : "bg-white text-slate-600 border-slate-200 hover:border-qatar-maroon/40 hover:text-qatar-maroon"
                                     }`}
@@ -405,7 +405,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
                         <select
                             value={selectedPeriod ?? ""}
                             onChange={e => setSelectedPeriod(e.target.value === "" ? undefined : parseInt(e.target.value))}
-                            className="bg-qatar-gray-bg border border-qatar-gray-border rounded-xl px-3 py-2 font-black text-sm text-slate-700 outline-none cursor-pointer"
+                            className="bg-qatar-gray-bg border border-qatar-gray-border rounded-xl px-3 py-2 font-extrabold text-sm text-slate-700 outline-none cursor-pointer"
                         >
                             <option value="">جميع الحصص</option>
                             {periodOptions.map(p => (
@@ -455,7 +455,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
                                 <table className="border-collapse text-center" style={{ minWidth: "100%" }}>
                                     <thead>
                                         <tr style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)" }}>
-                                            <th className="text-white font-black text-sm px-4 py-3.5 text-right sticky right-0 z-10 min-w-[130px] border-b border-slate-700"
+                                            <th className="text-white font-extrabold text-sm px-4 py-3.5 text-right sticky right-0 z-10 min-w-[130px] border-b border-slate-700"
                                                 style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)" }}>
                                                 الصف
                                             </th>
@@ -463,7 +463,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
                                                 const active = cls.hasData && (cls.presentCount > 0 || cls.absentCount > 0);
                                                 return (
                                                     <th key={cls.classId}
-                                                        className={`font-black text-sm px-4 py-3.5 min-w-[100px] border-b whitespace-nowrap transition-colors ${active
+                                                        className={`font-extrabold text-sm px-4 py-3.5 min-w-[100px] border-b whitespace-nowrap transition-colors ${active
                                                             ? "bg-emerald-700 text-white border-emerald-800"
                                                             : "bg-slate-600 text-slate-300 border-slate-700"
                                                             }`}
@@ -475,7 +475,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
                                                     </th>
                                                 );
                                             })}
-                                            <th className="bg-qatar-maroon text-white font-black text-sm px-4 py-3.5 min-w-[100px] border-b border-rose-800 whitespace-nowrap">
+                                            <th className="bg-qatar-maroon text-white font-extrabold text-sm px-4 py-3.5 min-w-[100px] border-b border-rose-800 whitespace-nowrap">
                                                 {GRADE_LABELS[selectedGrade]}
                                             </th>
                                         </tr>
@@ -483,7 +483,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
                                     <tbody>
                                         {/* Total students row */}
                                         <tr>
-                                            <td className="bg-slate-700 text-white font-black text-sm px-4 py-3 text-right sticky right-0 z-10 border-b border-slate-600 whitespace-nowrap">
+                                            <td className="bg-slate-700 text-white font-extrabold text-sm px-4 py-3 text-right sticky right-0 z-10 border-b border-slate-600 whitespace-nowrap">
                                                 العدد الكلي
                                             </td>
                                             {gradeClasses.map((cls: any) => (
@@ -492,7 +492,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
                                                 </td>
                                             ))}
                                             <td className="bg-slate-100 px-3 py-3 border-b border-slate-200">
-                                                <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-black bg-white text-slate-700 border border-slate-300 shadow-sm">
+                                                <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-extrabold bg-white text-slate-700 border border-slate-300 shadow-sm">
                                                     {gradeTotal?.totalStudents ?? 0}
                                                 </span>
                                             </td>
@@ -500,7 +500,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
 
                                         {/* Present count row */}
                                         <tr>
-                                            <td className="bg-emerald-600 text-white font-black text-sm px-4 py-3 text-right sticky right-0 z-10 border-b border-emerald-700 whitespace-nowrap">
+                                            <td className="bg-emerald-600 text-white font-extrabold text-sm px-4 py-3 text-right sticky right-0 z-10 border-b border-emerald-700 whitespace-nowrap">
                                                 الحاضرون
                                             </td>
                                             {gradeClasses.map((cls: any) => (
@@ -509,7 +509,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
                                                 </td>
                                             ))}
                                             <td className="bg-emerald-100 px-3 py-3 border-b border-emerald-200">
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-black bg-emerald-600 text-white shadow-sm">
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-extrabold bg-emerald-600 text-white shadow-sm">
                                                     <Check className="w-3.5 h-3.5" />{gradeTotal?.presentCount ?? 0}
                                                 </span>
                                             </td>
@@ -517,7 +517,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
 
                                         {/* Attendance % row */}
                                         <tr>
-                                            <td className="bg-emerald-50 text-emerald-800 font-black text-sm px-4 py-3 text-right sticky right-0 z-10 border-b border-emerald-100 whitespace-nowrap">
+                                            <td className="bg-emerald-50 text-emerald-800 font-extrabold text-sm px-4 py-3 text-right sticky right-0 z-10 border-b border-emerald-100 whitespace-nowrap">
                                                 نسبة الحضور
                                             </td>
                                             {gradeClasses.map((cls: any) => (
@@ -535,7 +535,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
 
                                         {/* Absent count row */}
                                         <tr>
-                                            <td className="bg-rose-600 text-white font-black text-sm px-4 py-3 text-right sticky right-0 z-10 border-b border-rose-700 whitespace-nowrap">
+                                            <td className="bg-rose-600 text-white font-extrabold text-sm px-4 py-3 text-right sticky right-0 z-10 border-b border-rose-700 whitespace-nowrap">
                                                 الغائبون
                                             </td>
                                             {gradeClasses.map((cls: any) => (
@@ -544,7 +544,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
                                                 </td>
                                             ))}
                                             <td className="bg-rose-100 px-3 py-3 border-b border-rose-200">
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-black bg-qatar-maroon text-white shadow-sm">
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-extrabold bg-qatar-maroon text-white shadow-sm">
                                                     <X className="w-3.5 h-3.5" />{gradeTotal?.absentCount ?? 0}
                                                 </span>
                                             </td>
@@ -552,7 +552,7 @@ function MatrixTab({ date, periodsPerDay, availableGrades }: { date: string; per
 
                                         {/* Absence % row */}
                                         <tr>
-                                            <td className="bg-rose-50 text-rose-800 font-black text-sm px-4 py-3 text-right sticky right-0 z-10 border-b border-rose-100 whitespace-nowrap">
+                                            <td className="bg-rose-50 text-rose-800 font-extrabold text-sm px-4 py-3 text-right sticky right-0 z-10 border-b border-rose-100 whitespace-nowrap">
                                                 نسبة الغياب
                                             </td>
                                             {gradeClasses.map((cls: any) => (
@@ -644,13 +644,13 @@ function FrequentAbsencesTab({ schoolId, date }: { schoolId: string; date: strin
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <span className="bg-white/20 text-white text-sm font-black px-4 py-1.5 rounded-xl border border-white/20">
+                        <span className="bg-white/20 text-white text-sm font-extrabold px-4 py-1.5 rounded-xl border border-white/20">
                             {students.length} طالب
                         </span>
                         <button
                             onClick={handleExport}
                             disabled={students.length === 0}
-                            className="flex items-center gap-2 bg-white text-qatar-maroon font-black text-sm px-5 py-2 rounded-xl hover:bg-rose-50 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow"
+                            className="flex items-center gap-2 bg-white text-qatar-maroon font-extrabold text-sm px-5 py-2 rounded-xl hover:bg-rose-50 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow"
                         >
                             <Download className="w-4 h-4" />
                             تصدير Excel
@@ -688,7 +688,7 @@ function FrequentAbsencesTab({ schoolId, date }: { schoolId: string; date: strin
                                     <div key={className}>
                                         {/* Class separator header */}
                                         <div className="flex items-center gap-3 px-5 py-2.5 bg-slate-50 border-b border-slate-200">
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black bg-qatar-maroon text-white shadow-sm">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-qatar-maroon text-white shadow-sm">
                                                 {className}
                                             </span>
                                             <span className="text-xs font-bold text-slate-400">
@@ -701,10 +701,10 @@ function FrequentAbsencesTab({ schoolId, date }: { schoolId: string; date: strin
                                             {globalIdx === 0 && (
                                                 <thead>
                                                     <tr style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)" }}>
-                                                        <th className="text-slate-300 py-3 px-4 border border-slate-700/40 text-center w-12 font-black text-xs">م</th>
+                                                        <th className="text-slate-300 py-3 px-4 border border-slate-700/40 text-center w-12 font-bold text-xs">م</th>
                                                         <th className="text-white py-3 px-5 border border-slate-700/40 text-right font-black">اسم الطالب</th>
-                                                        <th className="text-slate-300 py-3 px-4 border border-slate-700/40 text-center font-black text-xs">رقم الجوال</th>
-                                                        <th className="text-rose-300 py-3 px-4 border border-slate-700/40 text-center font-black text-xs">عدد الحصص الغائب فيها</th>
+                                                        <th className="text-slate-300 py-3 px-4 border border-slate-700/40 text-center font-bold text-xs">رقم الجوال</th>
+                                                        <th className="text-rose-300 py-3 px-4 border border-slate-700/40 text-center font-bold text-xs">عدد الحصص الغائب فيها</th>
                                                     </tr>
                                                 </thead>
                                             )}
@@ -718,7 +718,7 @@ function FrequentAbsencesTab({ schoolId, date }: { schoolId: string; date: strin
                                                             <td className="py-3 px-5 border border-slate-100 text-slate-800 font-black text-right group-hover:text-qatar-maroon transition-colors">{row.studentName}</td>
                                                             <td className="py-3 px-4 border border-slate-100 text-center text-slate-500 text-xs" dir="ltr">{row.phone || "—"}</td>
                                                             <td className="py-3 px-4 border border-slate-100 text-center">
-                                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-black border shadow-sm ${row.absentCount >= 10 ? "bg-rose-700 text-white border-rose-800" :
+                                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-extrabold border shadow-sm ${row.absentCount >= 10 ? "bg-rose-700 text-white border-rose-800" :
                                                                     row.absentCount >= 5 ? "bg-rose-100 text-rose-800 border-rose-300" :
                                                                         "bg-orange-50 text-orange-700 border-orange-200"
                                                                     }`}>

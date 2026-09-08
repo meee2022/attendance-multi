@@ -81,7 +81,7 @@ export default function LateStudentsPage() {
         <div className="max-w-7xl mx-auto space-y-6 pb-20 font-sans animate-in fade-in duration-500">
 
             {/* ── Hero Header ── */}
-            <div className="rounded-2xl overflow-hidden qatar-card-shadow"
+            <div className="app-page-heading overflow-hidden"
                 style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 55%, #9B1239 100%)" }}>
                 <div className="p-6 sm:p-8">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
@@ -121,7 +121,7 @@ export default function LateStudentsPage() {
                         <button
                             key={g}
                             onClick={() => { setSelectedGrade(g); setSelectedClassId("all"); }}
-                            className={`px-3 py-1.5 rounded-full text-xs font-black transition-all border ${selectedGrade === g
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${selectedGrade === g
                                 ? "bg-white text-qatar-maroon border-white shadow-md"
                                 : "bg-white/15 text-white/80 border-white/20 hover:bg-white/25"
                             }`}
@@ -146,7 +146,7 @@ export default function LateStudentsPage() {
                                 <select
                                     value={selectedClassId}
                                     onChange={(e) => setSelectedClassId(e.target.value)}
-                                    className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 font-black text-sm outline-none focus:border-qatar-maroon transition-colors"
+                                    className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 font-extrabold text-sm outline-none focus:border-qatar-maroon transition-colors"
                                 >
                                     <option value="all">— اختر الشعبة لعرض الطلاب —</option>
                                     {gradeClasses.map((c: any) => (
@@ -214,14 +214,14 @@ export default function LateStudentsPage() {
                                             >
                                                 <div className="flex items-center gap-3 min-w-0">
                                                     {/* Avatar circle */}
-                                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0 ${late
+                                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-extrabold flex-shrink-0 ${late
                                                         ? "bg-rose-100 text-rose-600"
                                                         : "bg-slate-100 text-slate-500"
                                                     }`}>
                                                         {student.fullName.charAt(0)}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className={`font-black text-sm truncate transition-colors ${late ? "text-rose-700" : "text-slate-800 group-hover:text-qatar-maroon"}`}>
+                                                        <p className={`font-extrabold text-sm truncate transition-colors ${late ? "text-rose-700" : "text-slate-800 group-hover:text-qatar-maroon"}`}>
                                                             {student.fullName}
                                                         </p>
                                                         {late && (
@@ -234,7 +234,7 @@ export default function LateStudentsPage() {
 
                                                 <button
                                                     onClick={() => handleToggleLate(student._id, late)}
-                                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all active:scale-95 flex-shrink-0 ${late
+                                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 flex-shrink-0 ${late
                                                         ? "bg-rose-500 text-white hover:bg-rose-600 shadow-sm"
                                                         : "bg-slate-100 text-slate-500 hover:bg-qatar-maroon hover:text-white"
                                                     }`}
@@ -263,7 +263,7 @@ export default function LateStudentsPage() {
                                 </div>
                                 <h2 className="font-black text-rose-800 text-sm">متأخرو اليوم</h2>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-black ${lateCount > 0 ? "bg-rose-500 text-white" : "bg-slate-100 text-slate-500"}`}>
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${lateCount > 0 ? "bg-rose-500 text-white" : "bg-slate-100 text-slate-500"}`}>
                                 {lateCount} طالب
                             </span>
                         </div>
@@ -278,7 +278,7 @@ export default function LateStudentsPage() {
                                     <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
                                         <UserCheck className="w-8 h-8 text-emerald-400" />
                                     </div>
-                                    <p className="font-black text-sm text-emerald-600">لا يوجد متأخرون اليوم</p>
+                                    <p className="font-extrabold text-sm text-emerald-600">لا يوجد متأخرون اليوم</p>
                                     <p className="text-xs font-medium text-slate-300">جميع الطلاب حضروا في وقتهم</p>
                                 </div>
                             ) : (
@@ -289,7 +289,7 @@ export default function LateStudentsPage() {
                                             <div key={late._id}
                                                 className={`flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/40 transition-colors group ${idx % 2 === 0 ? "bg-white" : "bg-rose-50/20"}`}>
                                                 <div className="flex items-center gap-2.5 min-w-0">
-                                                    <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center text-xs font-black text-rose-700 flex-shrink-0">
+                                                    <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center text-xs font-bold text-rose-700 flex-shrink-0">
                                                         {late.studentName.charAt(0)}
                                                     </div>
                                                     <div className="min-w-0">
@@ -315,7 +315,7 @@ export default function LateStudentsPage() {
                         {lateCount > 0 && (
                             <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
                                 <span className="text-xs font-bold text-slate-400">المجموع الكلي</span>
-                                <span className="text-sm font-black text-qatar-maroon">{lateCount} طالب متأخر</span>
+                                <span className="text-sm font-extrabold text-qatar-maroon">{lateCount} طالب متأخر</span>
                             </div>
                         )}
                     </div>

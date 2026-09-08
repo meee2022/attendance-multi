@@ -155,8 +155,8 @@ export default function ImportStudents() {
         <div className="max-w-5xl mx-auto space-y-8 font-sans animate-in fade-in duration-500 pb-20">
 
             {/* ── Page Header ── */}
-            <div className="rounded-2xl overflow-hidden qatar-card-shadow"
-                style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 50%, #9B1239 100%)" }}>
+            <div className="app-page-heading overflow-hidden"
+                >
                 <div className="p-6 sm:p-8">
                     <h1 className="text-3xl font-black text-white">
                         استيراد بيانات الطلاب
@@ -204,7 +204,7 @@ export default function ImportStudents() {
                             <div key={col.label} className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${col.color}`}>
                                 <div className="flex-shrink-0">{col.icon}</div>
                                 <div>
-                                    <p className="font-black text-sm">{col.label}</p>
+                                    <p className="font-extrabold text-sm">{col.label}</p>
                                     <p className="text-[11px] opacity-70 font-medium">{col.desc}</p>
                                 </div>
                             </div>
@@ -228,7 +228,7 @@ export default function ImportStudents() {
                         {file && parsedRows.length > 0 && (
                             <div className="flex items-center gap-2 bg-white border border-emerald-200 text-emerald-700 px-5 py-2 rounded-full shadow-sm">
                                 <CheckCircle2 className="w-4 h-4" />
-                                <span className="font-black text-sm">{parsedRows.length} طالب جاهز للاستيراد</span>
+                                <span className="font-extrabold text-sm">{parsedRows.length} طالب جاهز للاستيراد</span>
                             </div>
                         )}
                     </div>
@@ -236,7 +236,7 @@ export default function ImportStudents() {
                     {error && (
                         <div className="flex items-center gap-3 bg-rose-50 text-rose-800 px-5 py-4 rounded-xl border border-rose-200">
                             <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                            <p className="text-sm font-black">{error}</p>
+                            <p className="text-sm font-extrabold">{error}</p>
                         </div>
                     )}
 
@@ -249,7 +249,7 @@ export default function ImportStudents() {
                                     <ArrowLeftRight className="w-4 h-4 text-qatar-maroon" />
                                     ربط الأعمدة
                                 </h4>
-                                <span className="text-[11px] font-black text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full">
+                                <span className="text-[11px] font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full">
                                     {shape.headerless
                                         ? "ملف بلا عناوين — قُرئ من أول صف"
                                         : `صف العناوين: ${shape.headerIndex + 1}`}
@@ -264,7 +264,7 @@ export default function ImportStudents() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {(["name", "class", "grade", "section", "phone"] as ColumnKind[]).map(kind => (
                                     <div key={kind} className="flex flex-col gap-1.5">
-                                        <label className="text-[11px] font-black text-slate-500">
+                                        <label className="text-[11px] font-bold text-slate-500">
                                             {COLUMN_LABELS[kind]}
                                             {kind === "name" && <span className="text-rose-500"> *</span>}
                                         </label>
@@ -290,7 +290,7 @@ export default function ImportStudents() {
 
                             {skipped.length > 0 && (
                                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
-                                    <p className="text-xs font-black text-amber-900">
+                                    <p className="text-xs font-bold text-amber-900">
                                         {skipped.length} صف لن يُستورد — بيانات ناقصة في الملف نفسه:
                                     </p>
                                     <ul className="space-y-1 max-h-40 overflow-y-auto">
@@ -321,7 +321,7 @@ export default function ImportStudents() {
                                     <BarChart3 className="w-4 h-4 text-qatar-maroon" />
                                     توزيع الطلاب حسب الصف
                                 </h3>
-                                <span className="text-xs font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
+                                <span className="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
                                     {parsedRows.length} طالب إجمالاً
                                 </span>
                             </div>
@@ -332,9 +332,9 @@ export default function ImportStudents() {
                                         <div key={cn} className="flex items-center gap-2 bg-white border border-qatar-gray-border px-3 py-2 rounded-xl shadow-sm hover:border-qatar-maroon transition-colors">
                                             <span className="font-black text-slate-800 text-sm">{cn}</span>
                                             {cls?.track && (
-                                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full border ${TRACK_COLORS[cls.track] || TRACK_COLORS["عام"]}`}>{cls.track}</span>
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${TRACK_COLORS[cls.track] || TRACK_COLORS["عام"]}`}>{cls.track}</span>
                                             )}
-                                            <span className="bg-qatar-maroon/10 text-qatar-maroon text-xs font-black px-2 py-0.5 rounded-full">{count}</span>
+                                            <span className="bg-qatar-maroon/10 text-qatar-maroon text-xs font-bold px-2 py-0.5 rounded-full">{count}</span>
                                         </div>
                                     );
                                 })}
@@ -345,10 +345,10 @@ export default function ImportStudents() {
                                 <table className="min-w-full text-right border-collapse text-sm">
                                     <thead>
                                         <tr className="bg-qatar-maroon text-white">
-                                            <th className="px-5 py-3 font-black text-xs w-12 text-center">#</th>
-                                            <th className="px-5 py-3 font-black text-xs">اسم الطالب</th>
-                                            <th className="px-5 py-3 font-black text-xs">الشعبة</th>
-                                            <th className="px-5 py-3 font-black text-xs">الهاتف</th>
+                                            <th className="px-5 py-3 font-bold text-xs w-12 text-center">#</th>
+                                            <th className="px-5 py-3 font-bold text-xs">اسم الطالب</th>
+                                            <th className="px-5 py-3 font-bold text-xs">الشعبة</th>
+                                            <th className="px-5 py-3 font-bold text-xs">الهاتف</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-qatar-gray-border">
@@ -357,14 +357,14 @@ export default function ImportStudents() {
                                                 <td className="px-5 py-2.5 text-slate-400 text-center font-bold text-xs">{i + 1}</td>
                                                 <td className="px-5 py-2.5 font-black text-slate-800">{r.fullName}</td>
                                                 <td className="px-5 py-2.5">
-                                                    <span className="bg-rose-50 text-qatar-maroon border border-rose-200 px-2 py-0.5 rounded-lg text-xs font-black">{r.className}</span>
+                                                    <span className="bg-rose-50 text-qatar-maroon border border-rose-200 px-2 py-0.5 rounded-lg text-xs font-bold">{r.className}</span>
                                                 </td>
                                                 <td className="px-5 py-2.5 text-slate-400 text-xs font-mono" dir="ltr">{r.phones || "─"}</td>
                                             </tr>
                                         ))}
                                         {parsedRows.length > 8 && (
                                             <tr className="bg-slate-50">
-                                                <td colSpan={4} className="px-5 py-3 text-center text-xs font-black text-slate-400 italic">
+                                                <td colSpan={4} className="px-5 py-3 text-center text-xs font-bold text-slate-400 italic">
                                                     ... و {parsedRows.length - 8} طلاب آخرين
                                                 </td>
                                             </tr>
@@ -407,12 +407,12 @@ export default function ImportStudents() {
                         <div className="mr-auto text-right flex items-center gap-6">
                             <div>
                                 <div className="text-5xl font-black text-white">{result.importedCount}</div>
-                                <div className="text-white/70 text-xs font-black tracking-widest">طالب جديد</div>
+                                <div className="text-white/70 text-xs font-bold tracking-widest">طالب جديد</div>
                             </div>
                             {result.updatedCount > 0 && (
                                 <div>
                                     <div className="text-5xl font-black text-white/80">{result.updatedCount}</div>
-                                    <div className="text-white/70 text-xs font-black tracking-widest">طالب مُحدَّث</div>
+                                    <div className="text-white/70 text-xs font-bold tracking-widest">طالب مُحدَّث</div>
                                 </div>
                             )}
                         </div>
@@ -438,7 +438,7 @@ export default function ImportStudents() {
                                             </div>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {Object.entries(info.tracks).map(([track, cnt]) => (
-                                                    <span key={track} className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${TRACK_COLORS[track] || TRACK_COLORS["عام"]}`}>
+                                                    <span key={track} className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${TRACK_COLORS[track] || TRACK_COLORS["عام"]}`}>
                                                         {track}: {cnt}
                                                     </span>
                                                 ))}
@@ -466,7 +466,7 @@ export default function ImportStudents() {
                                                 <span className="text-xl font-black text-qatar-maroon">{count}</span>
                                             </div>
                                             {cls?.track && (
-                                                <span className={`inline-block text-[11px] font-black px-2 py-0.5 rounded-full border ${TRACK_COLORS[cls.track] || TRACK_COLORS["عام"]}`}>
+                                                <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded-full border ${TRACK_COLORS[cls.track] || TRACK_COLORS["عام"]}`}>
                                                     {cls.track}
                                                 </span>
                                             )}
@@ -670,7 +670,7 @@ function StudentManagement() {
                                 className="w-full flex items-center justify-between px-6 py-3 bg-slate-100 hover:bg-slate-200 transition-colors"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-qatar-maroon text-white flex items-center justify-center font-black text-sm">{grade}</div>
+                                    <div className="w-8 h-8 rounded-lg bg-qatar-maroon text-white flex items-center justify-center font-extrabold text-sm">{grade}</div>
                                     <span className="font-black text-slate-700">الصف {GRADE_LABELS[grade] || grade}</span>
                                     <span className="text-xs font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full border border-slate-200">
                                         {gradeStudentCount} طالب
@@ -691,7 +691,7 @@ function StudentManagement() {
                                             <Layers className="w-3.5 h-3.5 text-qatar-maroon" />
                                             <span className="font-black text-qatar-maroon text-sm">{cls.name}</span>
                                             {cls.track && (
-                                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full border ${TRACK_COLORS[cls.track] || TRACK_COLORS["عام"]}`}>
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${TRACK_COLORS[cls.track] || TRACK_COLORS["عام"]}`}>
                                                     {cls.track}
                                                 </span>
                                             )}
@@ -839,7 +839,7 @@ function StudentManagement() {
 
             {/* Toast message */}
             {msg && (
-                <div className={`fixed bottom-6 left-6 z-50 max-w-sm px-5 py-3 rounded-xl shadow-xl border font-black text-sm animate-in slide-in-from-left-5 duration-300 ${
+                <div className={`fixed bottom-6 left-6 z-50 max-w-sm px-5 py-3 rounded-xl shadow-xl border font-extrabold text-sm animate-in slide-in-from-left-5 duration-300 ${
                     msg.ok ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
                 }`}>
                     {msg.ok ? '✓ ' : '✗ '}{msg.text}

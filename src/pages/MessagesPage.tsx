@@ -131,8 +131,8 @@ export default function MessagesPage() {
 
       {/* Header */}
       <div
-        className="rounded-2xl overflow-hidden qatar-card-shadow"
-        style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 50%, #9B1239 100%)" }}
+        className="app-page-heading overflow-hidden"
+        
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-8">
           <div>
@@ -153,7 +153,7 @@ export default function MessagesPage() {
                   msgType
                 )
               }
-              className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-5 py-3 rounded-xl font-black text-sm hover:bg-white/30 transition-all border border-white/20 active:scale-95"
+              className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-5 py-3 rounded-xl font-extrabold text-sm hover:bg-white/30 transition-all border border-white/20 active:scale-95"
             >
               <Download className="w-4 h-4" />
               تصدير ملف الرسائل للنظام
@@ -167,7 +167,7 @@ export default function MessagesPage() {
 
         {/* Type toggle */}
         <div className="flex gap-2 flex-wrap">
-          <span className="text-xs font-black text-slate-500 flex items-center gap-1.5 ml-2">
+          <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5 ml-2">
             نوع الرسالة:
           </span>
           {(["absent", "present"] as MessageType[]).map(t => (
@@ -178,7 +178,7 @@ export default function MessagesPage() {
                 setGenerated(null);
                 setPage(0);
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-sm transition-all border ${msgType === t
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-extrabold text-sm transition-all border ${msgType === t
                 ? t === "absent"
                   ? "bg-rose-600 text-white border-rose-600"
                   : "bg-emerald-600 text-white border-emerald-600"
@@ -199,7 +199,7 @@ export default function MessagesPage() {
               setGenerated(null);
               setPage(0);
             }}
-            className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all border ${grade === undefined
+            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all border ${grade === undefined
               ? "bg-qatar-maroon text-white border-qatar-maroon"
               : "bg-slate-50 text-slate-600 border-slate-200 hover:border-qatar-maroon/40"
               }`}
@@ -214,7 +214,7 @@ export default function MessagesPage() {
                 setGenerated(null);
                 setPage(0);
               }}
-              className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all border ${grade === g
+              className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all border ${grade === g
                 ? "bg-qatar-maroon text-white border-qatar-maroon"
                 : "bg-slate-50 text-slate-600 border-slate-200 hover:border-qatar-maroon/40"
                 }`}
@@ -242,7 +242,7 @@ export default function MessagesPage() {
         {/* Template preview */}
         {effectiveBody && (
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
               القالب المستخدم
             </span>
             {effectiveBody}
@@ -258,7 +258,7 @@ export default function MessagesPage() {
           <Send className="w-5 h-5" />
           توليد الرسائل
           {studentsData && (
-            <span className="bg-white/20 text-white text-xs font-black px-2.5 py-1 rounded-full">
+            <span className="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full">
               {studentsCount} طالب (من إجمالي {totalStudents})
             </span>
           )}
@@ -343,7 +343,7 @@ export default function MessagesPage() {
                     msgType
                   )
                 }
-                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-black px-3 py-1.5 rounded-xl border border-white/20 transition-colors"
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-white/20 transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
                 Excel
@@ -354,22 +354,22 @@ export default function MessagesPage() {
               <table className="w-full text-right border-collapse text-sm">
                 <thead>
                   <tr className="bg-slate-50 border-b border-qatar-gray-border">
-                    <th className="py-3 px-4 text-xs font-black text-slate-400 text-center w-10">
+                    <th className="py-3 px-4 text-xs font-bold text-slate-400 text-center w-10">
                       م
                     </th>
-                    <th className="py-3 px-4 text-xs font-black text-slate-600">
+                    <th className="py-3 px-4 text-xs font-bold text-slate-600">
                       اسم الطالب
                     </th>
-                    <th className="py-3 px-4 text-xs font-black text-slate-600 text-center">
+                    <th className="py-3 px-4 text-xs font-bold text-slate-600 text-center">
                       الصف
                     </th>
-                    <th className="py-3 px-4 text-xs font-black text-slate-600 text-center">
+                    <th className="py-3 px-4 text-xs font-bold text-slate-600 text-center">
                       رقم الهاتف
                     </th>
-                    <th className="py-3 px-4 text-xs font-black text-slate-600">
+                    <th className="py-3 px-4 text-xs font-bold text-slate-600">
                       نص الرسالة
                     </th>
-                    <th className="py-3 px-4 text-xs font-black text-slate-400 text-center w-14">
+                    <th className="py-3 px-4 text-xs font-bold text-slate-400 text-center w-14">
                       نسخ
                     </th>
                   </tr>
@@ -384,7 +384,7 @@ export default function MessagesPage() {
                         {row.studentName}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <span className="bg-rose-50 text-qatar-maroon border border-rose-200 px-2 py-0.5 rounded-lg text-xs font-black whitespace-nowrap">
+                        <span className="bg-rose-50 text-qatar-maroon border border-rose-200 px-2 py-0.5 rounded-lg text-xs font-bold whitespace-nowrap">
                           {row.className}
                         </span>
                       </td>

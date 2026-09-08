@@ -38,8 +38,7 @@ export default function SettingsPage() {
     return (
         <div className="max-w-5xl mx-auto space-y-6 font-sans animate-in fade-in duration-500 pb-20">
             {/* Page Header */}
-            <div className="qatar-hero relative rounded-[22px] overflow-hidden qatar-card-shadow">
-                <div className="absolute inset-0 qatar-hero-grid pointer-events-none" />
+            <div className="app-page-heading relative overflow-hidden">
                 <div className="relative flex items-center gap-4 p-6 sm:p-7">
                     <div className="w-12 h-12 rounded-2xl bg-white/12 ring-1 ring-white/20 backdrop-blur-sm flex items-center justify-center text-white flex-shrink-0">
                         <Settings className="w-6 h-6" />
@@ -55,7 +54,7 @@ export default function SettingsPage() {
                         <button
                             key={tab.id}
                             onClick={() => setMainTab(tab.id)}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black whitespace-nowrap transition-all ${mainTab === tab.id
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-extrabold whitespace-nowrap transition-all ${mainTab === tab.id
                                 ? "bg-white text-qatar-maroon shadow-sm"
                                 : "text-white/80 hover:bg-white/15 hover:text-white"
                                 }`}
@@ -178,7 +177,7 @@ function GeneralSettings() {
                         <p className="font-black text-emerald-800 text-lg">{contextSchool?.name}</p>
                         <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs font-bold text-slate-500">كود المدرسة:</span>
-                            <span className="text-xs font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200">
+                            <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200">
                                 {contextSchool?.code}
                             </span>
                         </div>
@@ -212,7 +211,7 @@ function GeneralSettings() {
                             <p className="font-black text-qatar-maroon text-sm">تاريخ اليوم الدراسي</p>
                             <p className="text-[11px] text-slate-400 font-medium">يُطبَّق على جميع صفحات الرفع ولا يمكن تعديله من قِبَل المعلمين</p>
                         </div>
-                        <div className="mr-auto flex items-center gap-1 bg-qatar-maroon/10 text-qatar-maroon text-[10px] font-black px-2 py-1 rounded-full border border-qatar-maroon/20">
+                        <div className="mr-auto flex items-center gap-1 bg-qatar-maroon/10 text-qatar-maroon text-[10px] font-bold px-2 py-1 rounded-full border border-qatar-maroon/20">
                             <Lock className="w-3 h-3" />
                             مقفول
                         </div>
@@ -235,7 +234,7 @@ function GeneralSettings() {
                             حفظ التاريخ وتثبيته
                         </button>
                         {dateSaved && (
-                            <span className="flex items-center gap-1 text-emerald-600 font-black text-sm animate-in fade-in">
+                            <span className="flex items-center gap-1 text-emerald-600 font-extrabold text-sm animate-in fade-in">
                                 <Check className="w-4 h-4" /> تم التثبيت
                             </span>
                         )}
@@ -273,7 +272,7 @@ function GeneralSettings() {
                             حفظ العدد
                         </button>
                         {periodsSaved && (
-                            <span className="flex items-center gap-1 text-emerald-600 font-black text-sm animate-in fade-in">
+                            <span className="flex items-center gap-1 text-emerald-600 font-extrabold text-sm animate-in fade-in">
                                 <Check className="w-4 h-4" /> تم الحفظ
                             </span>
                         )}
@@ -319,7 +318,7 @@ function GeneralSettings() {
                             حفظ العتبة
                         </button>
                         {thresholdSaved && (
-                            <span className="flex items-center gap-1 text-emerald-600 font-black text-sm animate-in fade-in">
+                            <span className="flex items-center gap-1 text-emerald-600 font-extrabold text-sm animate-in fade-in">
                                 <Check className="w-4 h-4" /> تم الحفظ
                             </span>
                         )}
@@ -387,7 +386,7 @@ function RecoverySettings() {
 
             <div className="space-y-4 max-w-xl">
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-slate-500">رمز الدخول الحالي (للتأكيد)</label>
+                    <label className="text-xs font-bold text-slate-500">رمز الدخول الحالي (للتأكيد)</label>
                     <input
                         type="password" value={pin} dir="ltr"
                         onChange={e => { setPin(digits(e.target.value)); setMsg(null); }}
@@ -398,7 +397,7 @@ function RecoverySettings() {
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         onClick={() => run("reveal")} disabled={loading !== null}
-                        className="flex items-center gap-1.5 bg-qatar-maroon text-white text-xs font-black px-4 py-2.5 rounded-xl hover:opacity-90 transition-all disabled:opacity-40"
+                        className="flex items-center gap-1.5 bg-qatar-maroon text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:opacity-90 transition-all disabled:opacity-40"
                     >
                         <Eye className="w-3.5 h-3.5" />
                         {options?.hasRecoveryCode ? "إظهار رمز الاستعادة" : "إنشاء رمز استعادة"}
@@ -406,7 +405,7 @@ function RecoverySettings() {
                     {options?.hasRecoveryCode && (
                         <button
                             onClick={() => run("regen")} disabled={loading !== null}
-                            className="flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-black px-4 py-2.5 rounded-xl hover:bg-slate-200 transition-all disabled:opacity-40"
+                            className="flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-slate-200 transition-all disabled:opacity-40"
                         >
                             <RefreshCw className="w-3.5 h-3.5" />
                             إنشاء رمز بديل
@@ -416,7 +415,7 @@ function RecoverySettings() {
 
                 {code && (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
-                        <p className="text-xs font-black text-amber-800">رمز الاستعادة — انسخه واحفظه:</p>
+                        <p className="text-xs font-bold text-amber-800">رمز الاستعادة — انسخه واحفظه:</p>
                         <div className="flex items-center gap-2">
                             <code className="flex-1 bg-white border border-amber-300 rounded-lg px-3 py-2.5 font-mono font-black tracking-widest text-slate-800 text-center" dir="ltr">
                                 {code}
@@ -434,7 +433,7 @@ function RecoverySettings() {
                 {/* Path 2 toggle */}
                 <div className="flex items-start justify-between gap-4 bg-slate-50 border border-slate-200 rounded-xl p-4">
                     <div className="space-y-1">
-                        <p className="text-xs font-black text-slate-700">السماح بالاستعادة عبر كلمة مرور المدرسة</p>
+                        <p className="text-xs font-bold text-slate-700">السماح بالاستعادة عبر كلمة مرور المدرسة</p>
                         <p className="text-[11px] font-bold text-slate-500 leading-relaxed">
                             ⚠ كل معلّم يعرف كلمة مرور المدرسة — تفعيل هذا الخيار يعني أن أي معلّم
                             يستطيع إعادة تعيين رمز المسؤول والدخول للإعدادات. فعّله فقط إذا كنت وحدك من يعرفها.
@@ -449,7 +448,7 @@ function RecoverySettings() {
                 </div>
 
                 {msg && (
-                    <div className={`text-xs font-black px-4 py-2.5 rounded-xl ${msg.ok ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-600 border border-red-100"}`}>
+                    <div className={`text-xs font-bold px-4 py-2.5 rounded-xl ${msg.ok ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-600 border border-red-100"}`}>
                         {msg.text}
                     </div>
                 )}
@@ -498,7 +497,7 @@ function PinSettings() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl">
                 {/* Current PIN */}
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-slate-500">الرمز الحالي</label>
+                    <label className="text-xs font-bold text-slate-500">الرمز الحالي</label>
                     <div className="relative">
                         <input
                             type={showCurrent ? "text" : "password"}
@@ -515,7 +514,7 @@ function PinSettings() {
                 </div>
                 {/* New PIN */}
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-slate-500">الرمز الجديد</label>
+                    <label className="text-xs font-bold text-slate-500">الرمز الجديد</label>
                     <div className="relative">
                         <input
                             type={showNext ? "text" : "password"}
@@ -532,7 +531,7 @@ function PinSettings() {
                 </div>
                 {/* Confirm PIN */}
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-slate-500">تأكيد الرمز الجديد</label>
+                    <label className="text-xs font-bold text-slate-500">تأكيد الرمز الجديد</label>
                     <input
                         type="password"
                         value={confirm}
@@ -555,7 +554,7 @@ function PinSettings() {
                     حفظ الرمز الجديد
                 </button>
                 {msg && (
-                    <span className={`text-sm font-black ${msg.ok ? "text-emerald-600" : "text-red-600"} animate-in fade-in`}>
+                    <span className={`text-sm font-extrabold ${msg.ok ? "text-emerald-600" : "text-red-600"} animate-in fade-in`}>
                         {msg.ok ? "✓ " : "✗ "}{msg.text}
                     </span>
                 )}
@@ -605,7 +604,7 @@ function SchoolPasswordSettings() {
             <div className="flex flex-col gap-4">
                 {/* Current Password */}
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-slate-500">كلمة المرور الحالية (اتركها فارغة إن لم تكن موجودة)</label>
+                    <label className="text-xs font-bold text-slate-500">كلمة المرور الحالية (اتركها فارغة إن لم تكن موجودة)</label>
                     <div className="relative">
                         <input
                             type={showCurrent ? "text" : "password"}
@@ -621,7 +620,7 @@ function SchoolPasswordSettings() {
                 </div>
                 {/* New Password */}
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-slate-500">كلمة المرور الجديدة</label>
+                    <label className="text-xs font-bold text-slate-500">كلمة المرور الجديدة</label>
                     <div className="relative">
                         <input
                             type={showNext ? "text" : "password"}
@@ -637,7 +636,7 @@ function SchoolPasswordSettings() {
                 </div>
                 {/* Confirm */}
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-slate-500">تأكيد كلمة المرور الجديدة</label>
+                    <label className="text-xs font-bold text-slate-500">تأكيد كلمة المرور الجديدة</label>
                     <input
                         type="password"
                         value={confirm}
@@ -660,7 +659,7 @@ function SchoolPasswordSettings() {
                     حفظ كلمة المرور
                 </button>
                 {msg && (
-                    <span className={`text-sm font-black ${msg.ok ? "text-emerald-600" : "text-red-600"} animate-in fade-in`}>
+                    <span className={`text-sm font-extrabold ${msg.ok ? "text-emerald-600" : "text-red-600"} animate-in fade-in`}>
                         {msg.ok ? "✓ " : "✗ "}{msg.text}
                     </span>
                 )}
@@ -694,7 +693,7 @@ function TabButton({ active, onClick, icon, label }: { active: boolean; onClick:
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black transition-all ${active
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-extrabold transition-all ${active
                 ? "bg-white text-qatar-maroon shadow-sm"
                 : "text-slate-500 hover:text-qatar-maroon"
                 }`}
@@ -768,7 +767,7 @@ function ClassesSection() {
                     >
                         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${collapsed[grade] ? "-rotate-90" : ""}`} />
                         <span className="font-black text-slate-800 text-sm">الصف ال{GRADE_LABELS[grade] || grade}</span>
-                        <span className="text-[11px] font-black text-qatar-maroon bg-qatar-maroon/10 px-2 py-0.5 rounded-full">
+                        <span className="text-[11px] font-bold text-qatar-maroon bg-qatar-maroon/10 px-2 py-0.5 rounded-full">
                             {(grouped.map[grade] || []).length} شعبة
                         </span>
                     </button>
@@ -799,7 +798,7 @@ function ClassesSection() {
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-2 flex-1">
-                                                <span className={`text-xs font-black px-2 py-0.5 rounded-full border ${TRACK_COLORS[cls.track || "عام"] || TRACK_COLORS["عام"]}`}>
+                                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${TRACK_COLORS[cls.track || "عام"] || TRACK_COLORS["عام"]}`}>
                                                     {cls.track || "—"}
                                                 </span>
                                                 <button
@@ -833,7 +832,7 @@ function ClassesSection() {
                 </h3>
                 <div className="flex flex-wrap gap-3 items-end">
                     <div className="flex flex-col gap-1">
-                        <label className="text-xs font-black text-slate-500">اسم الصف (مثال: 11-4)</label>
+                        <label className="text-xs font-bold text-slate-500">اسم الصف (مثال: 11-4)</label>
                         <input
                             value={newName}
                             onChange={e => setNewName(e.target.value)}
@@ -842,13 +841,13 @@ function ClassesSection() {
                         />
                     </div>
                     <div className="flex flex-col gap-1">
-                        <label className="text-xs font-black text-slate-500">الصف</label>
+                        <label className="text-xs font-bold text-slate-500">الصف</label>
                         <select value={newGrade} onChange={e => setNewGrade(Number(e.target.value))} className="border border-slate-300 rounded-xl px-4 py-2.5 font-bold text-slate-700 outline-none bg-white focus:border-qatar-maroon">
                             {[1,2,3,4,5,6,7,8,9,10,11,12].map(g => <option key={g} value={g}>الصف ال{GRADE_LABELS[g]}</option>)}
                         </select>
                     </div>
                     <div className="flex flex-col gap-1">
-                        <label className="text-xs font-black text-slate-500">المسار</label>
+                        <label className="text-xs font-bold text-slate-500">المسار</label>
                         <select value={newTrack} onChange={e => setNewTrack(e.target.value)} className="border border-slate-300 rounded-xl px-4 py-2.5 font-bold text-slate-700 outline-none bg-white focus:border-qatar-maroon">
                             {TRACKS.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
@@ -901,7 +900,7 @@ function SubjectsSection() {
         <div className="space-y-6">
             <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border overflow-hidden">
                 <div className="bg-slate-50 border-b border-qatar-gray-border px-5 py-3.5">
-                    <h2 className="text-slate-800 font-black text-sm">قائمة المواد الدراسية</h2>
+                    <h2 className="text-slate-800 font-extrabold text-sm">قائمة المواد الدراسية</h2>
                 </div>
                 <div className="p-4">
                     {(!data?.subjects || data.subjects.length === 0) ? (
@@ -934,7 +933,7 @@ function SubjectsSection() {
                                     ) : (
                                         <>
                                             <span className="font-black text-slate-800 flex-1">{sub.name}</span>
-                                            <span className="text-xs font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 w-16 text-center">{sub.code}</span>
+                                            <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 w-16 text-center">{sub.code}</span>
                                             <button
                                                 onClick={() => { setEditingId(sub._id); setEditName(sub.name); setEditCode(sub.code); }}
                                                 className="p-1.5 text-slate-400 hover:text-qatar-maroon hover:bg-rose-50 rounded-lg transition-colors"
@@ -964,7 +963,7 @@ function SubjectsSection() {
                 </h3>
                 <div className="flex flex-wrap gap-3 items-end">
                     <div className="flex flex-col gap-1">
-                        <label className="text-xs font-black text-slate-500">اسم المادة</label>
+                        <label className="text-xs font-bold text-slate-500">اسم المادة</label>
                         <input
                             value={newName}
                             onChange={e => setNewName(e.target.value)}
@@ -973,7 +972,7 @@ function SubjectsSection() {
                         />
                     </div>
                     <div className="flex flex-col gap-1">
-                        <label className="text-xs font-black text-slate-500">الكود</label>
+                        <label className="text-xs font-bold text-slate-500">الكود</label>
                         <input
                             value={newCode}
                             onChange={e => setNewCode(e.target.value.toUpperCase())}

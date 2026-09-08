@@ -115,8 +115,8 @@ export default function SeedPage() {
     return (
         <div className="max-w-6xl mx-auto space-y-10 font-sans transition-all animate-in fade-in duration-500 pb-20 mt-6">
 
-            <div className="rounded-2xl overflow-hidden qatar-card-shadow"
-                style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 50%, #9B1239 100%)" }}>
+            <div className="app-page-heading overflow-hidden"
+                >
                 <div className="flex flex-col gap-1 p-5 sm:p-8">
                     <h1 className="text-3xl font-black text-white flex items-center gap-3">
                         <Database className="w-8 h-8 text-white/80" />
@@ -148,7 +148,7 @@ export default function SeedPage() {
                         <button
                             key={s}
                             onClick={() => setStage(s)}
-                            className={`flex-1 md:flex-none px-6 py-3 rounded-xl font-black text-sm transition-all ${stage === s
+                            className={`flex-1 md:flex-none px-6 py-3 rounded-xl font-extrabold text-sm transition-all ${stage === s
                                 ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
                                 : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
                         >
@@ -200,7 +200,7 @@ export default function SeedPage() {
                         </p>
                         <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-2">
                             {currentStageInfo.grades.map((g, idx) => (
-                                <div key={idx} className="flex justify-between text-xs font-black">
+                                <div key={idx} className="flex justify-between text-xs font-bold">
                                     <span className="text-slate-500">{g.label}</span>
                                     <span className="text-qatar-maroon">{g.text}</span>
                                 </div>
@@ -217,7 +217,7 @@ export default function SeedPage() {
                                 {classLoading ? "جاري الإنشاء..." : "تحديث هيكل الصفوف بالكامل"}
                             </button>
                             {classMsg && (
-                                <div className="mt-4 p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-100 text-xs font-black animate-in fade-in">
+                                <div className="mt-4 p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-100 text-xs font-bold animate-in fade-in">
                                     {classMsg}
                                 </div>
                             )}
@@ -254,7 +254,7 @@ export default function SeedPage() {
                                 </button>
                             ) : (
                                 <div className="space-y-3">
-                                    <p className="text-center text-sm font-black text-red-700">هل أنت متأكد؟</p>
+                                    <p className="text-center text-sm font-extrabold text-red-700">هل أنت متأكد؟</p>
                                     <div className="flex gap-3">
                                         <button
                                             onClick={handleDeleteAll}
@@ -327,16 +327,16 @@ export default function SeedPage() {
                                 <div key={grade} className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-xl ${gc.bar} flex items-center justify-center text-white font-black text-sm shadow-sm`}>{grade}</div>
+                                            <div className={`w-10 h-10 rounded-xl ${gc.bar} flex items-center justify-center text-white font-extrabold text-sm shadow-sm`}>{grade}</div>
                                             <div>
                                                 <span className="font-black text-slate-800 text-base">الصف {gradeLabel}</span>
-                                                <span className={`mr-2 text-xs font-black px-2 py-0.5 rounded-full border ${gc.badge}`}>
+                                                <span className={`mr-2 text-xs font-bold px-2 py-0.5 rounded-full border ${gc.badge}`}>
                                                     {gradeTotal} طالب إجمالاً
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="flex flex-col items-end gap-1">
-                                            <span className={`text-[10px] font-black uppercase tracking-widest ${percent >= 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                            <span className={`text-[10px] font-bold uppercase tracking-widest ${percent >= 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
                                                 {existing.length} / {required} صف
                                             </span>
                                             <div className="w-40 h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -369,7 +369,7 @@ export default function SeedPage() {
                 <div className="fixed bottom-10 left-10 max-w-md bg-slate-900 text-white p-6 rounded-2xl shadow-2xl border border-white/10 animate-in slide-in-from-left-10 duration-500 flex items-start gap-4 z-50">
                     <CheckCircle2 className="w-6 h-6 text-emerald-400 flex-shrink-0" />
                     <div>
-                        <p className="text-sm font-black leading-relaxed">{msg}</p>
+                        <p className="text-sm font-extrabold leading-relaxed">{msg}</p>
                         <button onClick={() => setMsg("")} className="mt-3 text-[10px] uppercase font-black tracking-widest text-slate-400 hover:text-white transition-colors">إغلاق</button>
                     </div>
                 </div>

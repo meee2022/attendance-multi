@@ -121,7 +121,7 @@ export default function SuperAdminPage() {
                     />
 
                     {error && (
-                        <div className="flex items-start gap-2 text-red-600 text-sm font-black">
+                        <div className="flex items-start gap-2 text-red-600 text-sm font-extrabold">
                             <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                             {error}
                         </div>
@@ -166,13 +166,13 @@ export default function SuperAdminPage() {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => refresh()} disabled={busy}
-                            className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-600 text-xs font-black px-4 py-2.5 rounded-xl hover:bg-slate-100 disabled:opacity-40"
+                            className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-slate-100 disabled:opacity-40"
                         >
                             <RefreshCw className={`w-3.5 h-3.5 ${busy ? "animate-spin" : ""}`} />تحديث
                         </button>
                         <button
                             onClick={() => { setUnlocked(false); setCode(""); setSchools([]); }}
-                            className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-black px-4 py-2.5 rounded-xl hover:bg-slate-800"
+                            className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-slate-800"
                         >
                             <Lock className="w-3.5 h-3.5" />قفل
                         </button>
@@ -180,12 +180,12 @@ export default function SuperAdminPage() {
                 </div>
 
                 {notice && (
-                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-5 py-3 rounded-xl text-sm font-black">
+                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-5 py-3 rounded-xl text-sm font-extrabold">
                         {notice}
                     </div>
                 )}
                 {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-3 rounded-xl text-sm font-black">
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-3 rounded-xl text-sm font-extrabold">
                         {error}
                     </div>
                 )}
@@ -203,7 +203,7 @@ export default function SuperAdminPage() {
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[11px] font-black text-slate-500">المدرسة المصدر (ستُحذف)</label>
+                            <label className="text-[11px] font-bold text-slate-500">المدرسة المصدر (ستُحذف)</label>
                             <select
                                 value={mergeSource}
                                 onChange={e => { setMergeSource(e.target.value); setMergePlan(null); }}
@@ -218,7 +218,7 @@ export default function SuperAdminPage() {
                             </select>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[11px] font-black text-slate-500">المدرسة الهدف (ستبقى)</label>
+                            <label className="text-[11px] font-bold text-slate-500">المدرسة الهدف (ستبقى)</label>
                             <select
                                 value={mergeTarget}
                                 onChange={e => { setMergeTarget(e.target.value); setMergePlan(null); }}
@@ -245,7 +245,7 @@ export default function SuperAdminPage() {
                                     setMergePlan(plan);
                                 } catch (err: any) { setError(errorText(err, "تعذّرت المعاينة.")); }
                             }}
-                            className="bg-slate-100 text-slate-700 text-xs font-black px-4 py-2.5 rounded-xl hover:bg-slate-200 disabled:opacity-40"
+                            className="bg-slate-100 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-slate-200 disabled:opacity-40"
                         >
                             معاينة الدمج
                         </button>
@@ -260,7 +260,7 @@ export default function SuperAdminPage() {
                                     act(() => mergeSchools({ code: code.trim(), sourceId: mergeSource as any, targetId: mergeTarget as any }))
                                         .then(() => { setMergePlan(null); setMergeSource(""); setMergeTarget(""); });
                                 }}
-                                className="flex items-center gap-1.5 bg-qatar-maroon text-white text-xs font-black px-4 py-2.5 rounded-xl hover:opacity-90 disabled:opacity-40"
+                                className="flex items-center gap-1.5 bg-qatar-maroon text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:opacity-90 disabled:opacity-40"
                             >
                                 تنفيذ الدمج <ArrowRight className="w-3.5 h-3.5" />
                             </button>

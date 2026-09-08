@@ -1,12 +1,47 @@
 @import "tailwindcss";
 
+/* Design tokens ported from the q-edu (elearning) project so both systems
+   share one identity: the burgundy is a direct sample of the logo, and the
+   greys are the logo's own grey and charcoal. */
+:root {
+  --primary: 343 72% 27%;        /* #76132F */
+  --primary-light: 343 60% 37%;
+  --primary-dark: 343 76% 21%;
+  --primary-deep: 343 80% 15%;
+
+  --brand-gray: 0 0% 40.4%;      /* #676767 */
+  --brand-charcoal: 0 0% 18.4%;  /* #2F2F2F */
+
+  --background: 0 0% 98%;
+  --surface: 0 0% 100%;
+  --border: 0 0% 90%;
+  --accent: 343 34% 95%;
+  --muted: 0 0% 96%;
+
+  --radius: 0.5rem;
+
+  --gradient-primary: linear-gradient(135deg, hsl(var(--primary-light)), hsl(var(--primary)));
+  --gradient-hero: linear-gradient(135deg, hsl(var(--primary-dark)), hsl(var(--primary)) 55%, hsl(var(--primary-deep)));
+
+  --shadow-card:
+    0 1px 2px hsl(var(--brand-charcoal) / 0.05),
+    0 10px 28px -12px hsl(var(--primary) / 0.10);
+  --shadow-luxury:
+    0 1px 3px hsl(var(--brand-charcoal) / 0.03),
+    0 6px 16px -4px hsl(var(--brand-charcoal) / 0.05),
+    0 20px 40px -12px hsl(var(--primary) / 0.12);
+
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @theme {
-  --color-qatar-maroon: #9B1239;
-  --color-qatar-maroon-dark: #74092A;
-  --color-qatar-gray-bg: #F4F4F5;
-  --color-qatar-gray-border: #E5E7EB;
-  --color-qatar-gray-text: #6B7280;
-  --color-qatar-gray-dark: #374151;
+  --color-qatar-maroon: hsl(343 72% 27%);
+  --color-qatar-maroon-dark: hsl(343 76% 21%);
+  --color-qatar-maroon-light: hsl(343 60% 37%);
+  --color-qatar-gray-bg: hsl(0 0% 98%);
+  --color-qatar-gray-border: hsl(0 0% 90%);
+  --color-qatar-gray-text: hsl(0 0% 40.4%);
+  --color-qatar-gray-dark: hsl(0 0% 18.4%);
 }
 
 @layer base {
@@ -24,17 +59,13 @@
    Layered and brand-tinted rather than a flat grey drop: a single hard shadow
    is what made the cards read as unfinished. */
 .qatar-card-shadow {
-  box-shadow:
-    0 1px 2px rgba(24, 16, 18, 0.04),
-    0 8px 20px -12px rgba(155, 18, 57, 0.16);
-  transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.25s var(--ease-premium),
+              transform 0.25s var(--ease-premium);
 }
 
 .qatar-card-shadow:hover {
-  box-shadow:
-    0 1px 2px rgba(24, 16, 18, 0.05),
-    0 16px 32px -16px rgba(155, 18, 57, 0.22);
+  box-shadow: var(--shadow-luxury);
 }
 
 /* Inputs and selects: one calm resting state, one clear focus state. */
@@ -48,8 +79,8 @@ input:not([type="checkbox"]):not([type="radio"]):focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   outline: none;
-  border-color: #9B1239;
-  box-shadow: 0 0 0 4px rgba(155, 18, 57, 0.10);
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.12);
 }
 
 /* Buttons feel responsive without needing per-button classes. */
@@ -62,10 +93,28 @@ button:not(:disabled):active {
   transform: scale(0.985);
 }
 
-/* Arabic reads better with a touch more line height at small sizes. */
+/* Arabic typography: a real weight ladder instead of 900 everywhere, and
+   tabular figures so numbers line up in tables and stat tiles. */
 body {
-  line-height: 1.65;
+  line-height: 1.7;
+  font-weight: 500;
+  letter-spacing: 0;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+/* Latin digits inside Arabic text read better slightly tighter and aligned. */
+.font-mono,
+table,
+input[type="number"],
+input[type="date"] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 /* iOS safe-area support */
@@ -94,16 +143,13 @@ html {
 
 /* ── Auth screens: luxury card + hero, built on the project's maroon ── */
 .qatar-luxury-shadow {
-  box-shadow:
-    0 1px 3px rgba(42, 20, 24, 0.02),
-    0 6px 16px -4px rgba(42, 20, 24, 0.05),
-    0 24px 48px -16px rgba(155, 18, 57, 0.16);
+  box-shadow: var(--shadow-luxury);
 }
 
 .qatar-hero {
   background:
-    radial-gradient(120% 120% at 85% 0%, rgba(201, 169, 110, 0.22) 0%, transparent 55%),
-    linear-gradient(135deg, #74092A 0%, #9B1239 55%, #C0184C 100%);
+    radial-gradient(120% 120% at 85% 0%, hsl(0 0% 100% / 0.14) 0%, transparent 55%),
+    var(--gradient-hero);
 }
 
 /* Faint dotted grid, faded out toward the bottom */
@@ -120,9 +166,76 @@ html {
 }
 
 .qatar-rise {
-  animation: qatarRise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: qatarRise 0.45s var(--ease-premium) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .qatar-rise { animation: none; }
+}
+
+
+/* ── Layout patterns ported from the q-edu (elearning) project ───────────
+   Page heading is solid primary; card headings are a soft burgundy tint with
+   primary text rather than a solid slab; tables get a tinted head and striped
+   rows. Same anatomy in both systems. */
+
+.app-page-heading {
+  border-radius: 1rem;
+  background: hsl(var(--primary));
+  color: #fff;
+  box-shadow: var(--shadow-card);
+}
+
+.app-page-heading h1 {
+  font-size: 1.5rem;
+  line-height: 1.6;
+  font-weight: 800;
+  color: inherit;
+}
+
+.app-page-heading p {
+  margin-top: 0.375rem;
+  max-width: 75ch;
+  font-size: 0.875rem;
+  line-height: 1.8;
+  color: hsl(0 0% 100% / 0.85);
+}
+
+@media (max-width: 640px) {
+  .app-page-heading h1 { font-size: 1.25rem; }
+}
+
+.app-card-heading {
+  background: hsl(var(--accent));
+  border-bottom: 1px solid hsl(var(--primary) / 0.12);
+  border-radius: 0.7rem 0.7rem 0 0;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  gap: 0.5rem;
+  color: hsl(var(--primary));
+  font-size: 0.9375rem;
+}
+
+.app-section-strip {
+  border-radius: 0.75rem;
+  background: hsl(var(--accent));
+  padding: 0.875rem 1rem;
+  color: hsl(var(--primary));
+}
+
+.app-table thead th {
+  background: hsl(var(--accent));
+  color: hsl(var(--primary));
+  border-bottom: 1px solid hsl(var(--primary) / 0.18);
+  padding-block: 0.875rem;
+  line-height: 1.6;
+}
+
+.app-table tbody tr:nth-child(even) { background-color: hsl(var(--muted) / 0.5); }
+.app-table tbody tr:hover { background-color: hsl(var(--accent) / 0.65); }
+
+/* Touch-friendly control height, matching the other system. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+select {
+  min-height: 2.5rem;
 }
