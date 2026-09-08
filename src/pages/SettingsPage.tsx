@@ -22,92 +22,109 @@ const TRACK_COLORS: Record<string, string> = {
     "عام": "bg-slate-100 text-slate-700 border-slate-200",
 };
 
-type MainTab = "settings" | "students" | "messages" | "seed";
+type SectionId =
+    | "school" | "security" | "recovery" | "classes" | "subjects"
+    | "students" | "messages" | "seed";
+
+/** Sidebar sections, grouped the way the sibling system groups them. */
+const SECTIONS: {
+    id: SectionId; label: string; icon: React.ReactNode; group: string; description: string;
+}[] = [
+    { id: "school", label: "اليوم الدراسي", icon: <Settings className="w-4 h-4" />, group: "المدرسة",
+      description: "بيانات المدرسة، تاريخ الرصد، عدد الحصص، وقاعدة احتساب الغياب." },
+    { id: "classes", label: "الصفوف الدراسية", icon: <Layers className="w-4 h-4" />, group: "المدرسة",
+      description: "تنظيم الصفوف والشعب والمسارات." },
+    { id: "subjects", label: "المواد الدراسية", icon: <BookOpen className="w-4 h-4" />, group: "المدرسة",
+      description: "إدارة المواد المستخدمة في رصد الغياب." },
+    { id: "students", label: "استيراد الطلاب", icon: <Users className="w-4 h-4" />, group: "المدرسة",
+      description: "رفع قوائم الطلاب من ملف إكسل وتنظيم بياناتهم." },
+    { id: "messages", label: "إعدادات الرسائل", icon: <MessagesSquare className="w-4 h-4" />, group: "التقييم والمتابعة",
+      description: "تخصيص نصوص الرسائل المرسلة لأولياء الأمور." },
+    { id: "security", label: "رمز الدخول", icon: <Lock className="w-4 h-4" />, group: "إدارة النظام",
+      description: "رمز المسؤول وكلمة مرور المدرسة." },
+    { id: "recovery", label: "استعادة الرمز", icon: <LifeBuoy className="w-4 h-4" />, group: "إدارة النظام",
+      description: "رمز الاستعادة الذي يعيد تعيين رمز المسؤول عند نسيانه." },
+    { id: "seed", label: "تهيئة البيانات", icon: <Database className="w-4 h-4" />, group: "إدارة النظام",
+      description: "أدوات تهيئة هيكل المدرسة. لا تستخدمها لمدرسة مهيّأة بالفعل." },
+];
+
+const SECTION_GROUPS = ["المدرسة", "التقييم والمتابعة", "إدارة النظام"];
 
 export default function SettingsPage() {
-    const [mainTab, setMainTab] = useState<MainTab>("settings");
-    const [activeTab, setActiveTab] = useState<"classes" | "subjects">("classes");
-
-    const MAIN_TABS: { id: MainTab; label: string; icon: React.ReactNode }[] = [
-        { id: "settings", label: "الإعدادات العامة", icon: <Settings className="w-4 h-4" /> },
-        { id: "students", label: "بيانات الطلاب", icon: <Users className="w-4 h-4" /> },
-        { id: "messages", label: "إعدادات الرسائل", icon: <MessagesSquare className="w-4 h-4" /> },
-        { id: "seed", label: "تهيئة البيانات", icon: <Database className="w-4 h-4" /> },
-    ];
+    const [section, setSection] = useState<SectionId>("school");
+    const selected = SECTIONS.find(item => item.id === section)!;
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 font-sans animate-in fade-in duration-500 pb-20">
-            {/* Page Header */}
-            <div className="app-page-heading relative overflow-hidden">
+        <div className="settings-page max-w-7xl mx-auto space-y-5 animate-in fade-in duration-500">
+            <div className="workspace-page-header relative rounded-2xl overflow-hidden qatar-card-shadow">
                 <div className="relative flex items-center gap-4 p-6 sm:p-7">
-                    <div className="w-12 h-12 rounded-2xl bg-white/12 ring-1 ring-white/20 backdrop-blur-sm flex items-center justify-center text-white flex-shrink-0">
-                        <Settings className="w-6 h-6" />
-                    </div>
+                    <span className="page-heading-icon">
+                        <Settings className="w-5 h-5" />
+                    </span>
                     <div className="min-w-0">
-                        <h1 className="text-[22px] font-black text-white leading-tight">إعدادات النظام</h1>
-                        <p className="text-white/70 font-bold text-[13px] mt-0.5">إدارة الإعدادات وبيانات الطلاب والرسائل وتهيئة النظام</p>
+                        <h1 className="text-white leading-tight">إعدادات النظام</h1>
+                        <p className="text-white/70">إعدادات المدرسة وخدماتها في مكان واحد</p>
                     </div>
-                </div>
-                {/* Main Tab Bar inside header */}
-                <div className="relative flex gap-1 px-4 pb-3 overflow-x-auto">
-                    {MAIN_TABS.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setMainTab(tab.id)}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-extrabold whitespace-nowrap transition-all ${mainTab === tab.id
-                                ? "bg-white text-qatar-maroon shadow-sm"
-                                : "text-white/80 hover:bg-white/15 hover:text-white"
-                                }`}
-                        >
-                            {tab.icon}
-                            {tab.label}
-                        </button>
-                    ))}
                 </div>
             </div>
 
-            {/* Tab Content */}
-            {mainTab === "settings" && (
-                <div className="space-y-10">
-                    <Section
-                        icon={<Settings className="w-4 h-4" />}
-                        title="بيانات المدرسة"
-                        hint="اسم المدرسة وكودها، وتاريخ اليوم وعدد الحصص وعتبة الغياب."
-                    >
-                        <GeneralSettings />
-                    </Section>
+            <div className="settings-layout">
+                <nav className="settings-sidebar" aria-label="أقسام الإعدادات">
+                    {SECTION_GROUPS.map(group => (
+                        <div key={group} className="settings-nav-group">
+                            <p>{group}</p>
+                            {SECTIONS.filter(item => item.group === group).map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setSection(item.id)}
+                                    aria-pressed={section === item.id}
+                                    className={section === item.id ? "is-active" : ""}
+                                >
+                                    {item.icon}<span>{item.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    ))}
+                </nav>
 
-                    {/* One column: these cards differ a lot in height, and a
-                        two-up grid left the third one dangling on its own row. */}
-                    <Section
-                        icon={<ShieldAlert className="w-4 h-4" />}
-                        title="الأمان والدخول"
-                        hint="رمز المسؤول لصفحات الإدارة، وكلمة مرور المدرسة لكل المستخدمين."
+                <div className="settings-mobile-picker">
+                    <label htmlFor="settings-section">القسم</label>
+                    <select
+                        id="settings-section"
+                        value={section}
+                        onChange={e => setSection(e.target.value as SectionId)}
                     >
+                        {SECTION_GROUPS.map(group => (
+                            <optgroup key={group} label={group}>
+                                {SECTIONS.filter(item => item.group === group).map(item => (
+                                    <option key={item.id} value={item.id}>{item.label}</option>
+                                ))}
+                            </optgroup>
+                        ))}
+                    </select>
+                </div>
+
+                <section className="settings-content" aria-labelledby="settings-section-title">
+                    <header className="settings-section-heading">
+                        <h2 id="settings-section-title">{selected.label}</h2>
+                        <p>{selected.description}</p>
+                    </header>
+
+                    {section === "school" && <GeneralSettings />}
+                    {section === "security" && (
                         <div className="space-y-5">
                             <PinSettings />
                             <SchoolPasswordSettings />
-                            <RecoverySettings />
                         </div>
-                    </Section>
-
-                    <Section
-                        icon={<Layers className="w-4 h-4" />}
-                        title="البنية الأكاديمية"
-                        hint="الصفوف والشعب والمواد المستخدمة في رصد الغياب."
-                    >
-                        <div className="inline-flex gap-1 bg-slate-100 p-1 rounded-xl mb-5">
-                            <TabButton active={activeTab === "classes"} onClick={() => setActiveTab("classes")} icon={<Layers className="w-4 h-4" />} label="الصفوف الدراسية" />
-                            <TabButton active={activeTab === "subjects"} onClick={() => setActiveTab("subjects")} icon={<BookOpen className="w-4 h-4" />} label="المواد الدراسية" />
-                        </div>
-                        {activeTab === "classes" ? <ClassesSection /> : <SubjectsSection />}
-                    </Section>
-                </div>
-            )}
-
-            {mainTab === "students" && <ImportStudents />}
-            {mainTab === "messages" && <MessageTemplatesPage />}
-            {mainTab === "seed" && <SeedPage />}
+                    )}
+                    {section === "recovery" && <RecoverySettings />}
+                    {section === "classes" && <ClassesSection />}
+                    {section === "subjects" && <SubjectsSection />}
+                    {section === "students" && <ImportStudents />}
+                    {section === "messages" && <MessageTemplatesPage />}
+                    {section === "seed" && <SeedPage />}
+                </section>
+            </div>
         </div>
     );
 }
@@ -665,41 +682,6 @@ function SchoolPasswordSettings() {
                 )}
             </div>
         </div>
-    );
-}
-
-/** A titled band of related cards, so the page reads as groups not a stack. */
-function Section({
-    icon, title, hint, children,
-}: { icon: React.ReactNode; title: string; hint?: string; children: React.ReactNode }) {
-    return (
-        <section className="space-y-4">
-            <div className="flex items-start gap-3">
-                <span className="w-9 h-9 rounded-xl bg-qatar-maroon/10 text-qatar-maroon flex items-center justify-center flex-shrink-0 mt-0.5">
-                    {icon}
-                </span>
-                <div className="min-w-0">
-                    <h2 className="font-black text-slate-800 text-base leading-tight">{title}</h2>
-                    {hint && <p className="text-xs font-bold text-slate-400 mt-1 leading-relaxed">{hint}</p>}
-                </div>
-            </div>
-            <div className="h-px bg-qatar-gray-border" />
-            {children}
-        </section>
-    );
-}
-
-function TabButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
-    return (
-        <button
-            onClick={onClick}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-extrabold transition-all ${active
-                ? "bg-white text-qatar-maroon shadow-sm"
-                : "text-slate-500 hover:text-qatar-maroon"
-                }`}
-        >
-            {icon}{label}
-        </button>
     );
 }
 

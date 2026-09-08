@@ -155,7 +155,7 @@ export default function ImportStudents() {
         <div className="max-w-5xl mx-auto space-y-8 font-sans animate-in fade-in duration-500 pb-20">
 
             {/* ── Page Header ── */}
-            <div className="app-page-heading overflow-hidden"
+            <div className="workspace-page-header rounded-2xl overflow-hidden qatar-card-shadow"
                 >
                 <div className="p-6 sm:p-8">
                     <h1 className="text-3xl font-black text-white">

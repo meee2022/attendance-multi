@@ -16,7 +16,7 @@ const PLACEHOLDERS = [
 export default function MessageTemplatesPage() {
     return (
         <div className="max-w-4xl mx-auto space-y-8 font-sans animate-in fade-in duration-500 pb-20">
-            <div className="app-page-heading overflow-hidden"
+            <div className="workspace-page-header rounded-2xl overflow-hidden qatar-card-shadow"
                 >
                 <div className="flex items-center gap-4 p-6 sm:p-8">
                     <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center text-white flex-shrink-0 border border-white/20">

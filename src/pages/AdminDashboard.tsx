@@ -121,7 +121,7 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto space-y-8 font-sans transition-all animate-in fade-in duration-500">
 
             {/* Page Header */}
-            <div className="app-page-heading overflow-hidden"
+            <div className="workspace-page-header rounded-2xl overflow-hidden qatar-card-shadow"
                 >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 sm:p-8">
                     <div className="space-y-1">

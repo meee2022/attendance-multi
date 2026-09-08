@@ -81,7 +81,7 @@ export default function LateStudentsPage() {
         <div className="max-w-7xl mx-auto space-y-6 pb-20 font-sans animate-in fade-in duration-500">
 
             {/* ── Hero Header ── */}
-            <div className="app-page-heading overflow-hidden"
+            <div className="workspace-page-header rounded-2xl overflow-hidden qatar-card-shadow"
                 style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 55%, #9B1239 100%)" }}>
                 <div className="p-6 sm:p-8">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">

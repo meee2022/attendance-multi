@@ -229,7 +229,7 @@ export default function TeacherUpload() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-10 font-sans transition-all animate-in fade-in duration-500 pb-20">
-            <div className="app-page-heading overflow-hidden"
+            <div className="workspace-page-header rounded-2xl overflow-hidden qatar-card-shadow"
                 >
                 <div className="flex flex-col gap-1 p-5 sm:p-8">
                     <h1 className="text-3xl font-black text-white flex items-center gap-3">

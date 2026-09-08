@@ -131,7 +131,7 @@ export default function MessagesPage() {
 
       {/* Header */}
       <div
-        className="app-page-heading overflow-hidden"
+        className="workspace-page-header rounded-2xl overflow-hidden qatar-card-shadow"
         
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-8">

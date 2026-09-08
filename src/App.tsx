@@ -45,10 +45,10 @@ function App() {
 
 function SchoolApp() {
   return (
-      <div className="min-h-screen bg-qatar-gray-bg text-slate-900 font-sans" dir="rtl">
+      <div className="app-shell min-h-screen bg-qatar-gray-bg text-qatar-ink font-sans" dir="rtl">
         <SchoolSetupGuard>
           <Navbar />
-          <main className="max-w-7xl mx-auto py-4 lg:py-10 px-3 sm:px-6 lg:px-8 pb-24 lg:pb-10">
+          <main className="workspace max-w-7xl mx-auto py-4 lg:py-6 px-3 sm:px-6 lg:px-8 pb-28 lg:pb-10">
             <Routes>
               <Route path="/" element={<AdminDashboard />} />
               <Route path="/upload" element={<TeacherUpload />} />
