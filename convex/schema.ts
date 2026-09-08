@@ -80,6 +80,17 @@ export default defineSchema({
         lockedUntil: v.optional(v.number()),
         lastAttemptAt: v.optional(v.number()),
     }).index("by_key", ["key"]),
+    // Early-leave permissions: a student signed out of school during the day.
+    leavePermissions: defineTable({
+        schoolId: v.id("schools"),
+        studentId: v.id("students"),
+        date: v.string(), // YYYY-MM-DD
+        reason: v.string(),
+        leaveTime: v.optional(v.string()), // HH:MM
+        guardianName: v.optional(v.string()),
+        recordedAt: v.number(),
+    }).index("by_school_date", ["schoolId", "date"])
+      .index("by_student", ["studentId"]),
     tardiness: defineTable({
         schoolId: v.id("schools"),
         studentId: v.id("students"),

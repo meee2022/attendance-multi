@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Database, Settings, BarChart3, Upload, Shield, X, MessageSquare, Clock, LogOut } from "lucide-react";
+import { LayoutDashboard, Database, Settings, BarChart3, Upload, Shield, X, MessageSquare, Clock, LogOut, DoorOpen } from "lucide-react";
 import { useState } from "react";
 import TeacherUpload from "./pages/TeacherUpload";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -14,6 +14,7 @@ import AdminGuard, { clearAdminSession } from "./components/AdminGuard";
 import { SchoolProvider, useSchool } from "./lib/SchoolContext";
 import SchoolSetupGuard from "./components/SchoolSetupGuard";
 import LateStudentsPage from "./pages/LateStudentsPage";
+import LeavePermissionsPage from "./pages/LeavePermissionsPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 
 const PUBLIC_NAV = [
@@ -21,6 +22,7 @@ const PUBLIC_NAV = [
   { to: "/upload", icon: <Upload className="w-5 h-5" />, label: "رصد الغياب", admin: false },
   { to: "/reports", icon: <BarChart3 className="w-5 h-5" />, label: "التقارير", admin: false },
   { to: "/lates", icon: <Clock className="w-5 h-5" />, label: "تأخير الطلاب", admin: false },
+  { to: "/leaves", icon: <DoorOpen className="w-5 h-5" />, label: "الاستئذان", admin: false },
   { to: "/messages", icon: <MessageSquare className="w-5 h-5" />, label: "الرسائل", admin: false },
 ];
 
@@ -55,6 +57,7 @@ function SchoolApp() {
               <Route path="/upload" element={<TeacherUpload />} />
               <Route path="/class/:classId" element={<ClassDetails />} />
               <Route path="/lates" element={<LateStudentsPage />} />
+              <Route path="/leaves" element={<LeavePermissionsPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/messages" element={<MessagesPage />} />
               <Route path="/import-students" element={<AdminGuard><ImportStudents /></AdminGuard>} />
