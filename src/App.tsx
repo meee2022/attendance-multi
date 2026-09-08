@@ -14,6 +14,7 @@ import AdminGuard, { clearAdminSession } from "./components/AdminGuard";
 import { SchoolProvider, useSchool } from "./lib/SchoolContext";
 import SchoolSetupGuard from "./components/SchoolSetupGuard";
 import LateStudentsPage from "./pages/LateStudentsPage";
+import SuperAdminPage from "./pages/SuperAdminPage";
 
 const PUBLIC_NAV = [
   { to: "/", icon: <LayoutDashboard className="w-5 h-5" />, label: "المتابعة", admin: false },
@@ -32,6 +33,18 @@ const ALL_NAV = [...PUBLIC_NAV, ...ADMIN_NAV];
 function App() {
   return (
     <SchoolProvider>
+      <Routes>
+        {/* Platform owner console — deliberately outside SchoolSetupGuard, so it
+            works without being logged into any particular school. */}
+        <Route path="/super" element={<SuperAdminPage />} />
+        <Route path="/*" element={<SchoolApp />} />
+      </Routes>
+    </SchoolProvider>
+  );
+}
+
+function SchoolApp() {
+  return (
       <div className="min-h-screen bg-qatar-gray-bg text-slate-900 font-sans" dir="rtl">
         <SchoolSetupGuard>
           <Navbar />
@@ -52,7 +65,6 @@ function App() {
           <BottomNav />
         </SchoolSetupGuard>
       </div>
-    </SchoolProvider>
   );
 }
 

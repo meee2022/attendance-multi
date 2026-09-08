@@ -73,6 +73,13 @@ export default defineSchema({
         body: v.string(),
         isActive: v.boolean(),
     }).index("by_school", ["schoolId"]),
+    // Lockout counter for the platform-wide super admin code.
+    platformSecurity: defineTable({
+        key: v.string(),
+        attempts: v.optional(v.number()),
+        lockedUntil: v.optional(v.number()),
+        lastAttemptAt: v.optional(v.number()),
+    }).index("by_key", ["key"]),
     tardiness: defineTable({
         schoolId: v.id("schools"),
         studentId: v.id("students"),

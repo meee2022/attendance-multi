@@ -14,6 +14,7 @@ import type * as messages from "../messages.js";
 import type * as settings from "../settings.js";
 import type * as setup from "../setup.js";
 import type * as students from "../students.js";
+import type * as superAdmin from "../superAdmin.js";
 import type * as tardiness from "../tardiness.js";
 
 import type {
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   settings: typeof settings;
   setup: typeof setup;
   students: typeof students;
+  superAdmin: typeof superAdmin;
   tardiness: typeof tardiness;
 }>;
 
