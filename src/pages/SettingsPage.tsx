@@ -339,11 +339,13 @@ function RecoverySettings() {
         try {
             const base = { schoolId: school._id as any, pin };
             if (kind === "toggle") {
-                const text = await setPasswordRecovery({ ...base, enabled: !(options?.allowPasswordRecovery === true) });
-                setMsg({ text, ok: true });
+                const res = await setPasswordRecovery({ ...base, enabled: !(options?.allowPasswordRecovery === true) });
+                if (!res.ok) { setMsg({ text: res.error, ok: false }); return; }
+                setMsg({ text: res.message, ok: true });
             } else {
                 const result = kind === "reveal" ? await reveal(base) : await regenerate(base);
-                setCode(result);
+                if (!result.ok) { setMsg({ text: result.error, ok: false }); return; }
+                setCode(result.code);
                 setMsg({ text: kind === "regen" ? "تم إنشاء رمز جديد — الرمز السابق أُلغي." : "هذا هو رمز الاستعادة الحالي.", ok: true });
             }
             setPin("");

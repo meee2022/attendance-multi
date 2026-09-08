@@ -55,7 +55,16 @@ function assertNotLocked(school: Doc<"schools">) {
     }
 }
 
-async function registerFailure(ctx: any, school: Doc<"schools">) {
+/**
+ * Record a failed attempt and describe it.
+ *
+ * Returns the rejection rather than throwing: a Convex mutation that throws is
+ * rolled back in full, which would erase the very counter write below and leave
+ * these public endpoints open to unlimited guessing. Callers must return this.
+ */
+type Denied = { ok: false; error: string };
+
+async function registerFailure(ctx: any, school: Doc<"schools">): Promise<Denied> {
     const attempts = (school.adminResetAttempts ?? 0) + 1;
     const patch: Record<string, unknown> = { adminResetAttempts: attempts };
     if (attempts >= MAX_ATTEMPTS) {
@@ -64,11 +73,20 @@ async function registerFailure(ctx: any, school: Doc<"schools">) {
     }
     await ctx.db.patch(school._id, patch);
     const left = MAX_ATTEMPTS - attempts;
-    throw new ConvexError(
-        left > 0
+    return {
+        ok: false,
+        error: left > 0
             ? `بيانات الاستعادة غير صحيحة. تبقّى ${left} محاولات.`
-            : "بيانات الاستعادة غير صحيحة. تم إيقاف المحاولات 15 دقيقة."
-    );
+            : "بيانات الاستعادة غير صحيحة. تم إيقاف المحاولات 15 دقيقة.",
+    };
+}
+
+/** Lockout check — safe to throw, since nothing has been written yet. */
+function lockoutDenial(school: Doc<"schools">): Denied | null {
+    const until = school.adminResetLockedUntil ?? 0;
+    if (until <= Date.now()) return null;
+    const mins = Math.ceil((until - Date.now()) / 60000);
+    return { ok: false, error: `تم إيقاف محاولات الاستعادة مؤقتاً. حاول بعد ${mins} دقيقة.` };
 }
 
 async function applyNewPin(ctx: any, school: Doc<"schools">, newPin: string) {
@@ -108,9 +126,10 @@ export const revealRecoveryCode = mutation({
     args: { schoolId: v.id("schools"), pin: v.string() },
     handler: async (ctx, args) => {
         const school = await loadSchool(ctx, args.schoolId);
-        assertNotLocked(school);
+        const locked = lockoutDenial(school);
+        if (locked) return locked;
         if (args.pin !== (school.adminPin ?? DEFAULT_PIN)) {
-            await registerFailure(ctx, school);
+            return await registerFailure(ctx, school);
         }
         // Generate on first view for schools created before this feature existed.
         let code = school.adminRecoveryCode;
@@ -119,7 +138,7 @@ export const revealRecoveryCode = mutation({
             await ctx.db.patch(school._id, { adminRecoveryCode: code });
         }
         await ctx.db.patch(school._id, { adminResetAttempts: 0 });
-        return code;
+        return { ok: true as const, code };
     },
 });
 
@@ -128,13 +147,14 @@ export const regenerateRecoveryCode = mutation({
     args: { schoolId: v.id("schools"), pin: v.string() },
     handler: async (ctx, args) => {
         const school = await loadSchool(ctx, args.schoolId);
-        assertNotLocked(school);
+        const locked = lockoutDenial(school);
+        if (locked) return locked;
         if (args.pin !== (school.adminPin ?? DEFAULT_PIN)) {
-            await registerFailure(ctx, school);
+            return await registerFailure(ctx, school);
         }
         const code = generateRecoveryCode();
         await ctx.db.patch(school._id, { adminRecoveryCode: code, adminResetAttempts: 0 });
-        return code;
+        return { ok: true as const, code };
     },
 });
 
@@ -143,15 +163,16 @@ export const resetPinWithRecoveryCode = mutation({
     args: { schoolId: v.id("schools"), recoveryCode: v.string(), newPin: v.string() },
     handler: async (ctx, args) => {
         const school = await loadSchool(ctx, args.schoolId);
-        assertNotLocked(school);
+        const locked = lockoutDenial(school);
+        if (locked) return locked;
         assertValidPin(args.newPin);
         const stored = school.adminRecoveryCode;
         if (!stored) throw new ConvexError("لا يوجد رمز استعادة لهذه المدرسة.");
         if (normalizeCode(args.recoveryCode) !== normalizeCode(stored)) {
-            await registerFailure(ctx, school);
+            return await registerFailure(ctx, school);
         }
         const nextCode = await applyNewPin(ctx, school, args.newPin);
-        return { message: "تم تعيين رمز دخول جديد.", recoveryCode: nextCode };
+        return { ok: true as const, message: "تم تعيين رمز دخول جديد.", recoveryCode: nextCode };
     },
 });
 
@@ -160,16 +181,17 @@ export const resetPinWithSchoolPassword = mutation({
     args: { schoolId: v.id("schools"), password: v.string(), newPin: v.string() },
     handler: async (ctx, args) => {
         const school = await loadSchool(ctx, args.schoolId);
-        assertNotLocked(school);
+        const locked = lockoutDenial(school);
+        if (locked) return locked;
         assertValidPin(args.newPin);
         if (school.allowPasswordRecovery !== true) {
             throw new ConvexError("الاستعادة بكلمة مرور المدرسة غير مفعّلة لهذه المدرسة.");
         }
         if (!school.password || school.password !== args.password) {
-            await registerFailure(ctx, school);
+            return await registerFailure(ctx, school);
         }
         const nextCode = await applyNewPin(ctx, school, args.newPin);
-        return { message: "تم تعيين رمز دخول جديد.", recoveryCode: nextCode };
+        return { ok: true as const, message: "تم تعيين رمز دخول جديد.", recoveryCode: nextCode };
     },
 });
 
@@ -178,16 +200,20 @@ export const setPasswordRecoveryEnabled = mutation({
     args: { schoolId: v.id("schools"), pin: v.string(), enabled: v.boolean() },
     handler: async (ctx, args) => {
         const school = await loadSchool(ctx, args.schoolId);
-        assertNotLocked(school);
+        const locked = lockoutDenial(school);
+        if (locked) return locked;
         if (args.pin !== (school.adminPin ?? DEFAULT_PIN)) {
-            await registerFailure(ctx, school);
+            return await registerFailure(ctx, school);
         }
         await ctx.db.patch(school._id, {
             allowPasswordRecovery: args.enabled,
             adminResetAttempts: 0,
         });
-        return args.enabled
-            ? "تم تفعيل الاستعادة بكلمة مرور المدرسة."
-            : "تم إيقاف الاستعادة بكلمة مرور المدرسة.";
+        return {
+            ok: true as const,
+            message: args.enabled
+                ? "تم تفعيل الاستعادة بكلمة مرور المدرسة."
+                : "تم إيقاف الاستعادة بكلمة مرور المدرسة.",
+        };
     },
 });

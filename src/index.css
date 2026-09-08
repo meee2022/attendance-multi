@@ -52,3 +52,38 @@ html {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
+
+/* ── Auth screens: luxury card + hero, built on the project's maroon ── */
+.qatar-luxury-shadow {
+  box-shadow:
+    0 1px 3px rgba(42, 20, 24, 0.02),
+    0 6px 16px -4px rgba(42, 20, 24, 0.05),
+    0 24px 48px -16px rgba(155, 18, 57, 0.16);
+}
+
+.qatar-hero {
+  background:
+    radial-gradient(120% 120% at 85% 0%, rgba(201, 169, 110, 0.22) 0%, transparent 55%),
+    linear-gradient(135deg, #74092A 0%, #9B1239 55%, #C0184C 100%);
+}
+
+/* Faint dotted grid, faded out toward the bottom */
+.qatar-hero-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+  background-size: 18px 18px;
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent 85%);
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+@keyframes qatarRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.qatar-rise {
+  animation: qatarRise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qatar-rise { animation: none; }
+}

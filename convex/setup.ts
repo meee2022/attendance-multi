@@ -1,16 +1,34 @@
 import { mutation, query } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 
+/** Ignore alef/ya/ta-marbuta spelling and spacing when comparing school names. */
+function normalizeName(value: string): string {
+    return value
+        .replace(/[ً-ْـ]/g, "")
+        .replace(/[أإآٱ]/g, "ا")
+        .replace(/ى/g, "ي")
+        .replace(/ة/g, "ه")
+        // Runs after the ta-marbuta fold above, so match both spellings.
+        .replace(/^\s*مدرس[ةه]\s+/, "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 export const registerOrLoginSchool = mutation({
     args: {
         code: v.string(),
         name: v.optional(v.string()),
-        password: v.optional(v.string())
+        password: v.optional(v.string()),
+        // Creating a school must be an explicit act. Without this flag an
+        // unknown code is an error, not an invitation to create a duplicate —
+        // which is how one school ended up with five near-identical records.
+        allowCreate: v.optional(v.boolean()),
     },
     handler: async (ctx, args) => {
+        const code = args.code.trim().toUpperCase();
         // Use the by_code index to fetch all matching schools
         const existingMatches = await ctx.db.query("schools")
-            .withIndex("by_code", q => q.eq("code", args.code))
+            .withIndex("by_code", q => q.eq("code", code))
             .collect();
 
         if (existingMatches.length > 0) {
@@ -55,22 +73,35 @@ export const registerOrLoginSchool = mutation({
             };
         }
 
+        if (!args.allowCreate) {
+            throw new ConvexError(
+                `لا توجد مدرسة بالكود (${code}). تأكد من الكود — إن أردت تسجيل مدرسة جديدة فعلاً فاختر ذلك صراحةً.`
+            );
+        }
         if (!args.name || args.name.trim() === "") {
             throw new ConvexError("يجب إدخال اسم المدرسة عند التسجيل لأول مرة.");
         }
 
+        // Block a new record whose name matches an existing school: that is a
+        // mistyped code, not a new school.
+        const wanted = normalizeName(args.name);
+        const allSchools = await ctx.db.query("schools").collect();
+        const twin = allSchools.find(s => normalizeName(s.name) === wanted);
+        if (twin) {
+            throw new ConvexError(
+                `توجد مدرسة مسجّلة بنفس الاسم (${twin.name}) وكودها (${twin.code}). ` +
+                `استخدم ذلك الكود بدل إنشاء نسخة جديدة.`
+            );
+        }
+
         const newId = await ctx.db.insert("schools", {
             name: args.name.trim(),
-            code: args.code,
+            code,
             password: args.password,
             createdAt: new Date().toISOString(),
         });
 
-        return {
-            _id: newId,
-            code: args.code,
-            name: args.name.trim()
-        };
+        return { _id: newId, code, name: args.name.trim() };
     }
 });
 

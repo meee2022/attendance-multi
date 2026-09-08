@@ -208,6 +208,7 @@ function RecoverPin({ onCancel, onDone }: { onCancel: () => void; onDone: () => 
             const result = method === "code"
                 ? await resetWithCode({ ...base, recoveryCode: secret.trim() })
                 : await resetWithPassword({ ...base, password: secret.trim() });
+            if (!result.ok) { setError(result.error); return; }
             setNewCode(result.recoveryCode);
         } catch (err: any) {
             const raw = typeof err?.data === "string" ? err.data : err?.message ?? "";

@@ -1,4 +1,5 @@
 import { internalMutation } from "./_generated/server";
+import { v } from "convex/values";
 
 /**
  * Operator escape hatches. These are `internalMutation`s: they are NOT part of
@@ -38,5 +39,32 @@ export const resetSchoolRecoveryLockout = internalMutation({
             }
         }
         return `تم تصفير عدّاد الاستعادة لـ ${cleared} مدرسة.`;
+    },
+});
+
+/** Delete a school by code, with everything scoped to it. Operator-only. */
+export const deleteSchoolByCode = internalMutation({
+    args: { code: v.string() },
+    handler: async (ctx, args) => {
+        const school = await ctx.db
+            .query("schools")
+            .withIndex("by_code", q => q.eq("code", args.code))
+            .first();
+        if (!school) return `لا توجد مدرسة بالكود ${args.code}.`;
+
+        const tables = [
+            "students", "teachers", "subjects", "periods",
+            "attendance", "messageTemplates", "tardiness", "classes",
+        ] as const;
+        let removed = 0;
+        for (const table of tables) {
+            const docs = await ctx.db
+                .query(table)
+                .filter(q => q.eq(q.field("schoolId"), school._id))
+                .collect();
+            for (const doc of docs) { await ctx.db.delete(doc._id); removed++; }
+        }
+        await ctx.db.delete(school._id);
+        return `حُذفت (${school.name} — ${school.code}) و${removed} سجلاً تابعاً.`;
     },
 });
