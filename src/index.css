@@ -20,13 +20,52 @@
   font-family: 'Cairo', sans-serif;
 }
 
-/* Custom shadow for cards */
+/* Card elevation.
+   Layered and brand-tinted rather than a flat grey drop: a single hard shadow
+   is what made the cards read as unfinished. */
 .qatar-card-shadow {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  box-shadow:
+    0 1px 2px rgba(24, 16, 18, 0.04),
+    0 8px 20px -12px rgba(155, 18, 57, 0.16);
+  transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .qatar-card-shadow:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 2px rgba(24, 16, 18, 0.05),
+    0 16px 32px -16px rgba(155, 18, 57, 0.22);
+}
+
+/* Inputs and selects: one calm resting state, one clear focus state. */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: #9B1239;
+  box-shadow: 0 0 0 4px rgba(155, 18, 57, 0.10);
+}
+
+/* Buttons feel responsive without needing per-button classes. */
+button {
+  transition: background-color 0.18s ease, color 0.18s ease,
+              box-shadow 0.18s ease, transform 0.12s ease, opacity 0.18s ease;
+}
+
+button:not(:disabled):active {
+  transform: scale(0.985);
+}
+
+/* Arabic reads better with a touch more line height at small sizes. */
+body {
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* iOS safe-area support */

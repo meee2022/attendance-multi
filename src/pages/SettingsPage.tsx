@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 // @ts-ignore
 import { api } from "../../convex/_generated/api";
-import { Settings, BookOpen, Layers, Plus, Trash2, Pencil, Check, X, Hash, CalendarDays, Lock, KeyRound, Eye, EyeOff, ShieldAlert, Users, Database, MessagesSquare, LifeBuoy, Copy, RefreshCw } from "lucide-react";
+import { Settings, BookOpen, Layers, Plus, Trash2, Pencil, Check, X, Hash, CalendarDays, Lock, KeyRound, Eye, EyeOff, ShieldAlert, Users, Database, MessagesSquare, LifeBuoy, Copy, RefreshCw, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { useSchool } from "../lib/SchoolContext";
 import ImportStudents from "./ImportStudents";
@@ -38,19 +38,19 @@ export default function SettingsPage() {
     return (
         <div className="max-w-5xl mx-auto space-y-6 font-sans animate-in fade-in duration-500 pb-20">
             {/* Page Header */}
-            <div className="rounded-2xl overflow-hidden qatar-card-shadow"
-                style={{ background: "linear-gradient(135deg, #9B1239 0%, #C0184C 50%, #9B1239 100%)" }}>
-                <div className="flex items-center gap-4 p-6 sm:p-8">
-                    <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white border border-white/20">
+            <div className="qatar-hero relative rounded-[22px] overflow-hidden qatar-card-shadow">
+                <div className="absolute inset-0 qatar-hero-grid pointer-events-none" />
+                <div className="relative flex items-center gap-4 p-6 sm:p-7">
+                    <div className="w-12 h-12 rounded-2xl bg-white/12 ring-1 ring-white/20 backdrop-blur-sm flex items-center justify-center text-white flex-shrink-0">
                         <Settings className="w-6 h-6" />
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-black text-white">إعدادات النظام</h1>
-                        <p className="text-white/70 font-medium text-sm">إدارة الإعدادات وبيانات الطلاب والرسائل وتهيئة النظام</p>
+                    <div className="min-w-0">
+                        <h1 className="text-[22px] font-black text-white leading-tight">إعدادات النظام</h1>
+                        <p className="text-white/70 font-bold text-[13px] mt-0.5">إدارة الإعدادات وبيانات الطلاب والرسائل وتهيئة النظام</p>
                     </div>
                 </div>
                 {/* Main Tab Bar inside header */}
-                <div className="flex gap-1 px-4 pb-3 overflow-x-auto">
+                <div className="relative flex gap-1 px-4 pb-3 overflow-x-auto">
                     {MAIN_TABS.map(tab => (
                         <button
                             key={tab.id}
@@ -69,18 +69,40 @@ export default function SettingsPage() {
 
             {/* Tab Content */}
             {mainTab === "settings" && (
-                <div className="space-y-8">
-                    <GeneralSettings />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <PinSettings />
-                        <RecoverySettings />
-                        <SchoolPasswordSettings />
-                    </div>
-                    <div className="flex gap-2">
-                        <TabButton active={activeTab === "classes"} onClick={() => setActiveTab("classes")} icon={<Layers className="w-4 h-4" />} label="الصفوف الدراسية" />
-                        <TabButton active={activeTab === "subjects"} onClick={() => setActiveTab("subjects")} icon={<BookOpen className="w-4 h-4" />} label="المواد الدراسية" />
-                    </div>
-                    {activeTab === "classes" ? <ClassesSection /> : <SubjectsSection />}
+                <div className="space-y-10">
+                    <Section
+                        icon={<Settings className="w-4 h-4" />}
+                        title="بيانات المدرسة"
+                        hint="اسم المدرسة وكودها، وتاريخ اليوم وعدد الحصص وعتبة الغياب."
+                    >
+                        <GeneralSettings />
+                    </Section>
+
+                    {/* One column: these cards differ a lot in height, and a
+                        two-up grid left the third one dangling on its own row. */}
+                    <Section
+                        icon={<ShieldAlert className="w-4 h-4" />}
+                        title="الأمان والدخول"
+                        hint="رمز المسؤول لصفحات الإدارة، وكلمة مرور المدرسة لكل المستخدمين."
+                    >
+                        <div className="space-y-5">
+                            <PinSettings />
+                            <SchoolPasswordSettings />
+                            <RecoverySettings />
+                        </div>
+                    </Section>
+
+                    <Section
+                        icon={<Layers className="w-4 h-4" />}
+                        title="البنية الأكاديمية"
+                        hint="الصفوف والشعب والمواد المستخدمة في رصد الغياب."
+                    >
+                        <div className="inline-flex gap-1 bg-slate-100 p-1 rounded-xl mb-5">
+                            <TabButton active={activeTab === "classes"} onClick={() => setActiveTab("classes")} icon={<Layers className="w-4 h-4" />} label="الصفوف الدراسية" />
+                            <TabButton active={activeTab === "subjects"} onClick={() => setActiveTab("subjects")} icon={<BookOpen className="w-4 h-4" />} label="المواد الدراسية" />
+                        </div>
+                        {activeTab === "classes" ? <ClassesSection /> : <SubjectsSection />}
+                    </Section>
                 </div>
             )}
 
@@ -146,13 +168,8 @@ function GeneralSettings() {
 
     return (
         <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border p-6">
-            <h3 className="font-black text-slate-700 mb-6 flex items-center gap-2 border-b border-qatar-gray-border pb-4">
-                <Settings className="w-4 h-4 text-qatar-maroon" />
-                الإعدادات العامة
-            </h3>
-
             {/* ── Current School Data & Switch ── */}
-            <div className="mb-6 rounded-2xl border-2 border-emerald-300 bg-emerald-50/40 p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
                         <Database className="w-6 h-6" />
@@ -186,9 +203,9 @@ function GeneralSettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 
                 {/* ── Locked Date ── */}
-                <div className="rounded-2xl border-2 border-qatar-maroon/30 bg-rose-50/40 p-5 space-y-4">
+                <div className="rounded-2xl border border-qatar-gray-border bg-white p-5 space-y-4">
                     <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-xl bg-qatar-maroon text-white flex items-center justify-center flex-shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-qatar-maroon/10 text-qatar-maroon flex items-center justify-center flex-shrink-0">
                             <CalendarDays className="w-4 h-4" />
                         </div>
                         <div>
@@ -226,9 +243,9 @@ function GeneralSettings() {
                 </div>
 
                 {/* ── Periods Per Day ── */}
-                <div className="rounded-2xl border-2 border-amber-300 bg-amber-50/40 p-5 space-y-4">
+                <div className="rounded-2xl border border-qatar-gray-border bg-white p-5 space-y-4">
                     <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-qatar-maroon/10 text-qatar-maroon flex items-center justify-center flex-shrink-0">
                             <Hash className="w-4 h-4" />
                         </div>
                         <div>
@@ -243,14 +260,14 @@ function GeneralSettings() {
                         max={10}
                         value={displayPeriods}
                         onChange={e => setPeriodsVal(Math.max(1, Math.min(10, Number(e.target.value))))}
-                        className="w-full border-2 border-amber-300 rounded-xl px-4 py-3 font-black text-slate-700 bg-white outline-none focus:border-amber-500 text-center text-3xl tracking-wider"
+                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 font-black text-slate-700 bg-slate-50 outline-none text-center text-3xl tracking-wider"
                     />
 
                     <div className="flex items-center gap-3">
                         <button
                             onClick={handleSavePeriods}
                             disabled={periodsVal === null}
-                            className="flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-black hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+                            className="flex items-center gap-2 bg-qatar-maroon text-white px-5 py-2.5 rounded-xl font-black hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
                         >
                             <Check className="w-4 h-4" />
                             حفظ العدد
@@ -264,7 +281,7 @@ function GeneralSettings() {
                 </div>
 
                 {/* ── Daily Absence Threshold ── */}
-                <div className="rounded-2xl border-2 border-blue-300 bg-blue-50/40 p-5 space-y-4">
+                <div className="rounded-2xl border border-qatar-gray-border bg-white p-5 space-y-4">
                     <div className="flex items-center gap-2">
                         <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0">
                             <ShieldAlert className="w-4 h-4" />
@@ -281,7 +298,7 @@ function GeneralSettings() {
                         max={currentPeriods}
                         value={displayThreshold}
                         onChange={e => setThresholdVal(Math.max(0, Math.min(currentPeriods, Number(e.target.value))))}
-                        className="w-full border-2 border-blue-300 rounded-xl px-4 py-3 font-black text-slate-700 bg-white outline-none focus:border-blue-500 text-center text-3xl tracking-wider"
+                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 font-black text-slate-700 bg-slate-50 outline-none text-center text-3xl tracking-wider"
                     />
 
                     {/* Contextual explanation */}
@@ -652,14 +669,37 @@ function SchoolPasswordSettings() {
     );
 }
 
+/** A titled band of related cards, so the page reads as groups not a stack. */
+function Section({
+    icon, title, hint, children,
+}: { icon: React.ReactNode; title: string; hint?: string; children: React.ReactNode }) {
+    return (
+        <section className="space-y-4">
+            <div className="flex items-start gap-3">
+                <span className="w-9 h-9 rounded-xl bg-qatar-maroon/10 text-qatar-maroon flex items-center justify-center flex-shrink-0 mt-0.5">
+                    {icon}
+                </span>
+                <div className="min-w-0">
+                    <h2 className="font-black text-slate-800 text-base leading-tight">{title}</h2>
+                    {hint && <p className="text-xs font-bold text-slate-400 mt-1 leading-relaxed">{hint}</p>}
+                </div>
+            </div>
+            <div className="h-px bg-qatar-gray-border" />
+            {children}
+        </section>
+    );
+}
+
 function TabButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-sm transition-colors border ${active ? "bg-qatar-maroon text-white border-qatar-maroon" : "bg-white text-slate-600 border-qatar-gray-border hover:bg-rose-50 hover:text-qatar-maroon"}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black transition-all ${active
+                ? "bg-white text-qatar-maroon shadow-sm"
+                : "text-slate-500 hover:text-qatar-maroon"
+                }`}
         >
-            {icon}
-            {label}
+            {icon}{label}
         </button>
     );
 }
@@ -677,6 +717,7 @@ function ClassesSection() {
     const [addError, setAddError] = useState("");
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTrack, setEditTrack] = useState("");
+    const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
 
     const schoolId = school?._id;
 
@@ -715,19 +756,29 @@ function ClassesSection() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
+            {/* One card with light grade headers. Six full cards, each with a
+                solid maroon bar, made the page long and visually noisy. */}
+            <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border overflow-hidden divide-y divide-qatar-gray-border">
             {grouped.grades.map((grade) => (
-                <div key={grade} className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border overflow-hidden">
-                    <div className="bg-qatar-maroon px-6 py-4">
-                        <h2 className="text-white font-black text-lg">الصف ال{GRADE_LABELS[grade] || grade}</h2>
-                    </div>
-                    <div className="p-4">
+                <div key={grade}>
+                    <button
+                        onClick={() => setCollapsed(c => ({ ...c, [grade]: !c[grade] }))}
+                        className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors text-right"
+                    >
+                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${collapsed[grade] ? "-rotate-90" : ""}`} />
+                        <span className="font-black text-slate-800 text-sm">الصف ال{GRADE_LABELS[grade] || grade}</span>
+                        <span className="text-[11px] font-black text-qatar-maroon bg-qatar-maroon/10 px-2 py-0.5 rounded-full">
+                            {(grouped.map[grade] || []).length} شعبة
+                        </span>
+                    </button>
+                    <div className={collapsed[grade] ? "hidden" : "px-5 pb-5"}>
                         {(grouped.map[grade] || []).length === 0 ? (
                             <p className="text-slate-400 text-sm font-bold text-center py-6">لا توجد صفوف مضافة</p>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {(grouped.map[grade] || []).map((cls: any) => (
-                                    <div key={cls._id} className="flex items-center justify-between gap-2 p-3 rounded-xl border border-qatar-gray-border bg-slate-50">
+                                    <div key={cls._id} className="flex items-center justify-between gap-2 p-3 rounded-xl border border-qatar-gray-border bg-white hover:border-qatar-maroon/30 hover:shadow-sm transition-all">
                                         <span className="font-black text-slate-800 text-sm w-14 flex-shrink-0">{cls.name}</span>
 
                                         {editingId === cls._id ? (
@@ -772,6 +823,7 @@ function ClassesSection() {
                     </div>
                 </div>
             ))}
+            </div>
 
             {/* Add New Class */}
             <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border p-6">
@@ -848,8 +900,8 @@ function SubjectsSection() {
     return (
         <div className="space-y-6">
             <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border overflow-hidden">
-                <div className="bg-qatar-maroon px-6 py-4">
-                    <h2 className="text-white font-black text-lg">قائمة المواد الدراسية</h2>
+                <div className="bg-slate-50 border-b border-qatar-gray-border px-5 py-3.5">
+                    <h2 className="text-slate-800 font-black text-sm">قائمة المواد الدراسية</h2>
                 </div>
                 <div className="p-4">
                     {(!data?.subjects || data.subjects.length === 0) ? (
