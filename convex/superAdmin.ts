@@ -39,45 +39,55 @@ async function getSecurityDoc(ctx: any) {
 }
 
 /**
- * Verify the master code, applying lockout. Throws on any failure.
- * Call this first in every exported function.
+ * Verify the master code, applying lockout.
+ *
+ * Returns a rejection object instead of throwing: a Convex mutation that throws
+ * has its whole transaction rolled back, which would undo the very write that
+ * records the failed attempt — making the lockout useless. So callers must
+ * return this value as-is, letting the transaction commit.
  */
-async function assertSuperAdmin(ctx: any, code: string) {
+type Denied = { ok: false; error: string; needsCode: true };
+
+async function checkSuperAdmin(ctx: any, code: string): Promise<Denied | null> {
     const expected = process.env.SUPER_ADMIN_CODE;
     if (!expected) {
-        throw new ConvexError(
-            "لم يتم ضبط رمز الأدمن العام على الخادم بعد. اضبط SUPER_ADMIN_CODE في متغيّرات بيئة Convex."
-        );
+        return {
+            ok: false, needsCode: true,
+            error: "لم يتم ضبط رمز الأدمن العام على الخادم بعد. اضبط SUPER_ADMIN_CODE في متغيّرات بيئة Convex.",
+        };
     }
 
     const doc = await getSecurityDoc(ctx);
     const lockedUntil = doc?.lockedUntil ?? 0;
     if (lockedUntil > Date.now()) {
         const mins = Math.ceil((lockedUntil - Date.now()) / 60000);
-        throw new ConvexError(`تم إيقاف المحاولات مؤقتاً. حاول بعد ${mins} دقيقة.`);
+        return { ok: false, needsCode: true, error: `تم إيقاف المحاولات مؤقتاً. حاول بعد ${mins} دقيقة.` };
     }
 
-    if (secretsMatch(code, expected)) {
-        if (doc) await ctx.db.patch(doc._id, { attempts: 0, lockedUntil: undefined });
-        return;
+    if (secretsMatch(code.trim(), expected.trim())) {
+        if (doc && (doc.attempts || doc.lockedUntil)) {
+            await ctx.db.patch(doc._id, { attempts: 0, lockedUntil: undefined });
+        }
+        return null;
     }
 
     const attempts = (doc?.attempts ?? 0) + 1;
     const locked = attempts >= MAX_ATTEMPTS;
-    const patch = {
+    const record = {
         key: SECURITY_KEY,
         attempts: locked ? 0 : attempts,
         lockedUntil: locked ? Date.now() + LOCK_MS : undefined,
         lastAttemptAt: Date.now(),
     };
-    if (doc) await ctx.db.patch(doc._id, patch);
-    else await ctx.db.insert("platformSecurity", patch);
+    if (doc) await ctx.db.patch(doc._id, record);
+    else await ctx.db.insert("platformSecurity", record);
 
-    throw new ConvexError(
-        locked
+    return {
+        ok: false, needsCode: true,
+        error: locked
             ? "الرمز غير صحيح. تم إيقاف المحاولات 30 دقيقة."
-            : `الرمز غير صحيح. تبقّى ${MAX_ATTEMPTS - attempts} محاولات.`
-    );
+            : `الرمز غير صحيح. تبقّى ${MAX_ATTEMPTS - attempts} محاولات.`,
+    };
 }
 
 /** Tables that carry a schoolId and must follow the school on a merge. */
@@ -99,7 +109,8 @@ async function collectBySchool(ctx: any, table: string, schoolId: Id<"schools">)
 export const listSchools = mutation({
     args: { code: v.string() },
     handler: async (ctx, args) => {
-        await assertSuperAdmin(ctx, args.code);
+        const denied = await checkSuperAdmin(ctx, args.code);
+        if (denied) return denied;
         const schools = await ctx.db.query("schools").collect();
 
         const rows = [];
@@ -132,41 +143,44 @@ export const listSchools = mutation({
             });
         }
         rows.sort((a, b) => a.name.localeCompare(b.name, "ar") || a.code.localeCompare(b.code));
-        return rows;
+        return { ok: true as const, schools: rows };
     },
 });
 
 export const setSchoolAdminPin = mutation({
     args: { code: v.string(), schoolId: v.id("schools"), newPin: v.string() },
     handler: async (ctx, args) => {
-        await assertSuperAdmin(ctx, args.code);
+        const denied = await checkSuperAdmin(ctx, args.code);
+        if (denied) return denied;
         if (!/^\d{4,8}$/.test(args.newPin)) throw new ConvexError("الرمز يجب أن يكون من 4 إلى 8 أرقام.");
         const school = await ctx.db.get(args.schoolId);
         if (!school) throw new ConvexError("المدرسة غير موجودة.");
         await ctx.db.patch(args.schoolId, { adminPin: args.newPin });
-        return `تم تغيير رمز المسؤول لمدرسة (${school.name}).`;
+        return { ok: true as const, message: `تم تغيير رمز المسؤول لمدرسة (${school.name}).` };
     },
 });
 
 export const setSchoolPassword = mutation({
     args: { code: v.string(), schoolId: v.id("schools"), newPassword: v.string() },
     handler: async (ctx, args) => {
-        await assertSuperAdmin(ctx, args.code);
+        const denied = await checkSuperAdmin(ctx, args.code);
+        if (denied) return denied;
         if (args.newPassword.trim().length < 4) throw new ConvexError("كلمة المرور يجب أن تكون 4 أحرف على الأقل.");
         const school = await ctx.db.get(args.schoolId);
         if (!school) throw new ConvexError("المدرسة غير موجودة.");
         await ctx.db.patch(args.schoolId, { password: args.newPassword.trim() });
-        return `تم تغيير كلمة مرور مدرسة (${school.name}).`;
+        return { ok: true as const, message: `تم تغيير كلمة مرور مدرسة (${school.name}).` };
     },
 });
 
 export const renameSchool = mutation({
     args: { code: v.string(), schoolId: v.id("schools"), name: v.string() },
     handler: async (ctx, args) => {
-        await assertSuperAdmin(ctx, args.code);
+        const denied = await checkSuperAdmin(ctx, args.code);
+        if (denied) return denied;
         if (!args.name.trim()) throw new ConvexError("الاسم مطلوب.");
         await ctx.db.patch(args.schoolId, { name: args.name.trim() });
-        return "تم تعديل الاسم.";
+        return { ok: true as const, message: "تم تعديل الاسم." };
     },
 });
 
@@ -174,7 +188,8 @@ export const renameSchool = mutation({
 export const previewMerge = mutation({
     args: { code: v.string(), sourceId: v.id("schools"), targetId: v.id("schools") },
     handler: async (ctx, args) => {
-        await assertSuperAdmin(ctx, args.code);
+        const denied = await checkSuperAdmin(ctx, args.code);
+        if (denied) return denied;
         if (args.sourceId === args.targetId) throw new ConvexError("لا يمكن دمج المدرسة مع نفسها.");
         const source = await ctx.db.get(args.sourceId);
         const target = await ctx.db.get(args.targetId);
@@ -190,6 +205,7 @@ export const previewMerge = mutation({
         }
 
         return {
+            ok: true as const,
             sourceName: source.name, sourceCode: source.code,
             targetName: target.name, targetCode: target.code,
             counts,
@@ -211,7 +227,8 @@ export const previewMerge = mutation({
 export const mergeSchools = mutation({
     args: { code: v.string(), sourceId: v.id("schools"), targetId: v.id("schools") },
     handler: async (ctx, args) => {
-        await assertSuperAdmin(ctx, args.code);
+        const denied = await checkSuperAdmin(ctx, args.code);
+        if (denied) return denied;
         if (args.sourceId === args.targetId) throw new ConvexError("لا يمكن دمج المدرسة مع نفسها.");
         const source = await ctx.db.get(args.sourceId);
         const target = await ctx.db.get(args.targetId);
@@ -284,7 +301,7 @@ export const mergeSchools = mutation({
         }
         await ctx.db.delete(args.sourceId);
 
-        return `تم دمج (${source.name} — ${source.code}) داخل (${target.name} — ${target.code}).`;
+        return { ok: true as const, message: `تم دمج (${source.name} — ${source.code}) داخل (${target.name} — ${target.code}).` };
     },
 });
 
@@ -295,7 +312,8 @@ export const mergeSchools = mutation({
 export const deleteSchool = mutation({
     args: { code: v.string(), schoolId: v.id("schools"), force: v.optional(v.boolean()) },
     handler: async (ctx, args) => {
-        await assertSuperAdmin(ctx, args.code);
+        const denied = await checkSuperAdmin(ctx, args.code);
+        if (denied) return denied;
         const school = await ctx.db.get(args.schoolId);
         if (!school) throw new ConvexError("المدرسة غير موجودة.");
 
@@ -316,6 +334,6 @@ export const deleteSchool = mutation({
             await ctx.db.delete(cls._id);
         }
         await ctx.db.delete(args.schoolId);
-        return `تم حذف مدرسة (${school.name} — ${school.code}) نهائياً.`;
+        return { ok: true as const, message: `تم حذف مدرسة (${school.name} — ${school.code}) نهائياً.` };
     },
 });

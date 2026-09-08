@@ -48,12 +48,23 @@ export default function SuperAdminPage() {
     const [mergeTarget, setMergeTarget] = useState<string>("");
     const [mergePlan, setMergePlan] = useState<any>(null);
 
+    /** A rejected code sends the user back to the lock screen to re-enter it. */
+    const handleDenied = (result: any) => {
+        setError(result.error);
+        if (result.needsCode) {
+            setUnlocked(false);
+            setSchools([]);
+            setCode("");
+        }
+    };
+
     const refresh = async (withCode = code) => {
         setBusy(true);
         setError("");
         try {
-            const rows = await listSchools({ code: withCode });
-            setSchools(rows as SchoolRow[]);
+            const result = await listSchools({ code: withCode.trim() });
+            if (!result.ok) { handleDenied(result); return false; }
+            setSchools(result.schools as SchoolRow[]);
             setUnlocked(true);
             return true;
         } catch (err: any) {
@@ -69,8 +80,9 @@ export default function SuperAdminPage() {
         setError("");
         setNotice("");
         try {
-            const msg = await fn();
-            if (typeof msg === "string") setNotice(msg);
+            const result = await fn();
+            if (result && result.ok === false) { handleDenied(result); return; }
+            if (result?.message) setNotice(result.message);
             await refresh();
         } catch (err: any) {
             setError(errorText(err, "تعذّر التنفيذ."));
@@ -228,7 +240,9 @@ export default function SuperAdminPage() {
                             onClick={async () => {
                                 setError(""); setNotice("");
                                 try {
-                                    setMergePlan(await previewMerge({ code, sourceId: mergeSource as any, targetId: mergeTarget as any }));
+                                    const plan = await previewMerge({ code: code.trim(), sourceId: mergeSource as any, targetId: mergeTarget as any });
+                                    if (!plan.ok) { handleDenied(plan); return; }
+                                    setMergePlan(plan);
                                 } catch (err: any) { setError(errorText(err, "تعذّرت المعاينة.")); }
                             }}
                             className="bg-slate-100 text-slate-700 text-xs font-black px-4 py-2.5 rounded-xl hover:bg-slate-200 disabled:opacity-40"
@@ -243,7 +257,7 @@ export default function SuperAdminPage() {
                                         `سيتم نقل كل بيانات (${mergePlan.sourceName} — ${mergePlan.sourceCode}) إلى ` +
                                         `(${mergePlan.targetName} — ${mergePlan.targetCode}) ثم حذف المصدر نهائياً. متابعة؟`
                                     )) return;
-                                    act(() => mergeSchools({ code, sourceId: mergeSource as any, targetId: mergeTarget as any }))
+                                    act(() => mergeSchools({ code: code.trim(), sourceId: mergeSource as any, targetId: mergeTarget as any }))
                                         .then(() => { setMergePlan(null); setMergeSource(""); setMergeTarget(""); });
                                 }}
                                 className="flex items-center gap-1.5 bg-qatar-maroon text-white text-xs font-black px-4 py-2.5 rounded-xl hover:opacity-90 disabled:opacity-40"
@@ -315,7 +329,7 @@ export default function SuperAdminPage() {
                                                     title="تغيير رمز المسؤول" disabled={busy}
                                                     onClick={() => {
                                                         const next = window.prompt(`رمز المسؤول الجديد لمدرسة (${s.name}) — من 4 إلى 8 أرقام:`, "");
-                                                        if (next) act(() => setPin({ code, schoolId: s._id as any, newPin: next.trim() }));
+                                                        if (next) act(() => setPin({ code: code.trim(), schoolId: s._id as any, newPin: next.trim() }));
                                                     }}
                                                     className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600"
                                                 >
@@ -325,7 +339,7 @@ export default function SuperAdminPage() {
                                                     title="تغيير كلمة مرور المدرسة" disabled={busy}
                                                     onClick={() => {
                                                         const next = window.prompt(`كلمة مرور جديدة لمدرسة (${s.name}):`, "");
-                                                        if (next) act(() => setPassword({ code, schoolId: s._id as any, newPassword: next.trim() }));
+                                                        if (next) act(() => setPassword({ code: code.trim(), schoolId: s._id as any, newPassword: next.trim() }));
                                                     }}
                                                     className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600"
                                                 >
@@ -335,7 +349,7 @@ export default function SuperAdminPage() {
                                                     title="تعديل الاسم" disabled={busy}
                                                     onClick={() => {
                                                         const next = window.prompt("الاسم الجديد:", s.name);
-                                                        if (next) act(() => renameSchool({ code, schoolId: s._id as any, name: next }));
+                                                        if (next) act(() => renameSchool({ code: code.trim(), schoolId: s._id as any, name: next }));
                                                     }}
                                                     className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600"
                                                 >
@@ -350,7 +364,7 @@ export default function SuperAdminPage() {
                                                             : "";
                                                         if (!window.confirm(`${warning}حذف مدرسة (${s.name} — ${s.code}) نهائياً؟`)) return;
                                                         if (hasData && !window.confirm("تأكيد أخير: هذا الحذف لا يمكن التراجع عنه.")) return;
-                                                        act(() => deleteSchool({ code, schoolId: s._id as any, force: hasData }));
+                                                        act(() => deleteSchool({ code: code.trim(), schoolId: s._id as any, force: hasData }));
                                                     }}
                                                     className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600"
                                                 >
