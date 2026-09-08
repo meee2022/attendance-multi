@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import * as XLSX from "xlsx";
 import {
     Calendar, TrendingUp, Users, UserX, UserCheck, Download,
-    TableProperties, BarChart3, Check, X, AlertTriangle, Clock, ShieldAlert, Search
+    TableProperties, BarChart3, Check, X, AlertTriangle, Clock, ShieldAlert, Search, DoorOpen
 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import StatCard from "../components/StatCard";
@@ -59,7 +59,7 @@ function PctBadge({ pct, type }: { pct: number; type: "present" | "absent" }) {
 /* ─────────────────── Page ─────────────────── */
 export default function ReportsPage() {
     const { school } = useSchool();
-    const [activeTab, setActiveTab] = useState<"summary" | "matrix" | "frequent" | "tardiness" | "warnings">("summary");
+    const [activeTab, setActiveTab] = useState<"summary" | "matrix" | "frequent" | "tardiness" | "leaves" | "warnings">("summary");
     const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
     const schoolId = school?._id;
@@ -100,6 +100,7 @@ export default function ReportsPage() {
         { id: "frequent", label: "الطلاب كثيرو الغياب", icon: <AlertTriangle className="w-4 h-4" /> },
         { id: "warnings", label: "الإنذارات التراكمية", icon: <ShieldAlert className="w-4 h-4" /> },
         { id: "tardiness", label: "إحصائيات التأخير", icon: <Clock className="w-4 h-4" /> },
+        { id: "leaves", label: "تكرار الاستئذان", icon: <DoorOpen className="w-4 h-4" /> },
     ] as const;
 
     return (
@@ -191,6 +192,9 @@ export default function ReportsPage() {
             {activeTab === "tardiness" && schoolId && (
                 <TardinessStatsTab schoolId={schoolId} date={date} availableGrades={availableGrades} />
             )}
+
+            {/* ─── TAB: Frequent early leavers ─── */}
+            {activeTab === "leaves" && schoolId && <LeaveSummaryTab schoolId={schoolId} />}
 
             {/* ─── TAB 5: Cumulative Warnings ─── */}
             {activeTab === "warnings" && schoolId && (
@@ -1153,6 +1157,132 @@ function CumulativeWarningsTab({ schoolId }: { schoolId: string }) {
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+/** Who leaves early, and how often — over a chosen date range. */
+function LeaveSummaryTab({ schoolId }: { schoolId: string }) {
+    const today = format(new Date(), "yyyy-MM-dd");
+    const monthStart = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd");
+    const [from, setFrom] = useState(monthStart);
+    const [to, setTo] = useState(today);
+    const [search, setSearch] = useState("");
+    const [minCount, setMinCount] = useState(1);
+
+    const rows = useQuery(api.leaves.getSummary, { schoolId: schoolId as any, from, to });
+
+    const filtered = (rows ?? []).filter(
+        r => r.count >= minCount && r.studentName.includes(search.trim())
+    );
+    const totalLeaves = (rows ?? []).reduce((sum, r) => sum + r.count, 0);
+    const repeated = (rows ?? []).filter(r => r.count >= 3).length;
+
+    const exportSheet = () => {
+        const sheet = XLSX.utils.json_to_sheet(
+            filtered.map((r, i) => ({
+                "م": i + 1,
+                "اسم الطالبة": r.studentName,
+                "الشعبة": r.className,
+                "عدد مرات الاستئذان": r.count,
+                "آخر استئذان": r.lastDate,
+            }))
+        );
+        const book = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(book, sheet, "تكرار الاستئذان");
+        XLSX.writeFile(book, `تكرار_الاستئذان_${from}_${to}.xlsx`);
+    };
+
+    return (
+        <div className="space-y-5">
+            <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border p-5 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <label className="flex flex-col gap-1.5 text-xs font-bold text-qatar-ink-soft">
+                        من تاريخ
+                        <input type="date" value={from} max={to}
+                            onChange={e => { if (e.target.value) setFrom(e.target.value); }} />
+                    </label>
+                    <label className="flex flex-col gap-1.5 text-xs font-bold text-qatar-ink-soft">
+                        إلى تاريخ
+                        <input type="date" value={to} min={from}
+                            onChange={e => { if (e.target.value) setTo(e.target.value); }} />
+                    </label>
+                    <label className="flex flex-col gap-1.5 text-xs font-bold text-qatar-ink-soft">
+                        أقل عدد مرات
+                        <select value={minCount} onChange={e => setMinCount(Number(e.target.value))}>
+                            {[1, 2, 3, 4, 5].map(n => (
+                                <option key={n} value={n}>{n === 1 ? "الكل" : `${n} مرات فأكثر`}</option>
+                            ))}
+                        </select>
+                    </label>
+                    <label className="flex flex-col gap-1.5 text-xs font-bold text-qatar-ink-soft">
+                        بحث بالاسم
+                        <input type="search" placeholder="اكتب جزءاً من الاسم…"
+                            value={search} onChange={e => setSearch(e.target.value)} />
+                    </label>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    <div className="flex flex-wrap gap-4 text-xs font-bold text-qatar-ink-soft">
+                        <span>إجمالي مرات الاستئذان: <b className="text-qatar-maroon">{rows === undefined ? "…" : totalLeaves}</b></span>
+                        <span>عدد الطالبات: <b className="text-qatar-maroon">{rows === undefined ? "…" : rows.length}</b></span>
+                        <span>تكرر 3 مرات فأكثر: <b className="text-qatar-maroon">{rows === undefined ? "…" : repeated}</b></span>
+                    </div>
+                    <button
+                        onClick={exportSheet}
+                        disabled={filtered.length === 0}
+                        className="flex items-center gap-1.5 bg-qatar-maroon text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-qatar-maroon-dark disabled:opacity-40"
+                    >
+                        <Download className="w-3.5 h-3.5" />تصدير Excel
+                    </button>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border overflow-hidden">
+                {rows === undefined ? (
+                    <p className="p-8 text-center text-sm font-bold text-qatar-gray-text">جارٍ تحميل السجل…</p>
+                ) : filtered.length === 0 ? (
+                    <div className="p-10 text-center space-y-2">
+                        <UserCheck className="w-10 h-10 mx-auto text-qatar-gray-border" />
+                        <h3 className="font-extrabold text-qatar-ink">لا يوجد استئذان في هذه الفترة</h3>
+                        <p className="text-xs font-bold text-qatar-gray-text">
+                            غيّر التاريخين أو قلّل الحد الأدنى لعدد المرات.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-right">
+                            <thead>
+                                <tr className="bg-qatar-cream-dark">
+                                    <th className="px-4 py-3 text-qatar-maroon w-12">م</th>
+                                    <th className="px-4 py-3 text-qatar-maroon">اسم الطالبة</th>
+                                    <th className="px-4 py-3 text-qatar-maroon">الشعبة</th>
+                                    <th className="px-4 py-3 text-qatar-maroon">عدد المرات</th>
+                                    <th className="px-4 py-3 text-qatar-maroon">آخر استئذان</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-qatar-gray-border">
+                                {filtered.map((row, i) => (
+                                    <tr key={row.studentId}>
+                                        <td className="px-4 py-3 text-qatar-gray-text">{i + 1}</td>
+                                        <td className="px-4 py-3 font-extrabold text-qatar-ink">{row.studentName}</td>
+                                        <td className="px-4 py-3 font-mono text-qatar-ink-soft" dir="ltr">{row.className}</td>
+                                        <td className="px-4 py-3">
+                                            {/* Three or more in a period is the point at which follow-up starts. */}
+                                            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-extrabold ${row.count >= 3
+                                                ? "bg-rose-100 text-rose-700"
+                                                : "bg-qatar-cream-dark text-qatar-maroon"}`}>
+                                                {row.count}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 font-mono text-qatar-ink-soft" dir="ltr">{row.lastDate}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
