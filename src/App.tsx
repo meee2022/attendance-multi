@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Database, Settings, BarChart3, Upload, Shield, X, MessageSquare, Clock } from "lucide-react";
+import { LayoutDashboard, Database, Settings, BarChart3, Upload, Shield, X, MessageSquare, Clock, LogOut } from "lucide-react";
 import { useState } from "react";
 import TeacherUpload from "./pages/TeacherUpload";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -56,11 +56,63 @@ function App() {
   );
 }
 
+/**
+ * Leaving a school clears the locally stored school context, so getting back in
+ * needs the school code *and* password again. Worth a confirmation step.
+ */
+function ExitSchoolModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { school, setSchool } = useSchool();
+  if (!open) return null;
+
+  const confirm = () => {
+    clearAdminSession();
+    setSchool(null);
+    window.location.href = "/";
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" dir="rtl">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="w-16 h-16 rounded-full bg-rose-50 border-4 border-rose-100 flex items-center justify-center">
+            <LogOut className="w-7 h-7 text-qatar-maroon" />
+          </div>
+          <h3 className="text-lg font-black text-slate-800">الخروج من المدرسة</h3>
+          <p className="text-sm font-bold text-slate-500 leading-relaxed">
+            ستخرج من <span className="text-qatar-maroon">{school?.name || "المدرسة الحالية"}</span> وتعود
+            لشاشة إدخال الكود. ستحتاج كود المدرسة وكلمة المرور للدخول مرة أخرى.
+          </p>
+          <p className="text-[11px] font-bold text-slate-400">
+            بيانات الطلاب والغياب محفوظة على الخادم ولن تُحذف.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 bg-slate-200 text-slate-700 font-black py-3 rounded-xl hover:bg-slate-300 transition-colors"
+          >
+            إلغاء
+          </button>
+          <button
+            onClick={confirm}
+            className="flex-1 bg-qatar-maroon text-white font-black py-3 rounded-xl hover:opacity-90 transition-all"
+          >
+            تأكيد الخروج
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Navbar() {
+
   const { pathname } = useLocation();
   const isActive = (to: string) => to === "/" ? pathname === "/" : pathname.startsWith(to);
   const isAdminAuthed = sessionStorage.getItem("qatar_admin_auth") === "true";
   const { school } = useSchool();
+  const [showExitSchool, setShowExitSchool] = useState(false);
 
   const handleLogout = () => {
     clearAdminSession();
@@ -126,11 +178,16 @@ function Navbar() {
           {/* Right side: user info */}
           <div className="flex items-center gap-2 flex-shrink-0">
             {isAdminAuthed && (
-              <button onClick={handleLogout}
+              <button onClick={handleLogout} title="إنهاء جلسة المسؤول والبقاء داخل المدرسة"
                 className="hidden sm:flex items-center gap-1.5 text-[11px] font-black text-slate-400 hover:text-qatar-maroon border border-slate-200 hover:border-qatar-maroon/40 px-3 py-1.5 rounded-xl transition-all">
-                <Shield className="w-3.5 h-3.5" />خروج
+                <Shield className="w-3.5 h-3.5" />خروج المسؤول
               </button>
             )}
+            <button onClick={() => setShowExitSchool(true)} title="الخروج من المدرسة وتغييرها"
+              className="flex items-center gap-1.5 text-[11px] font-black text-slate-400 hover:text-qatar-maroon border border-slate-200 hover:border-qatar-maroon/40 px-3 py-1.5 rounded-xl transition-all">
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">خروج من المدرسة</span>
+            </button>
             <div className="hidden sm:flex flex-col items-end leading-tight">
               <span className="text-[10px] font-bold text-slate-400">{isAdminAuthed ? "مسؤول النظام" : "معلم"}</span>
               <span className="text-sm font-black text-slate-700">{isAdminAuthed ? "Admin" : "Teacher"}</span>
@@ -142,6 +199,7 @@ function Navbar() {
           </div>
         </div>
       </div>
+      <ExitSchoolModal open={showExitSchool} onClose={() => setShowExitSchool(false)} />
     </nav>
   );
 }
@@ -151,6 +209,7 @@ function BottomNav() {
   const isActive = (to: string) => to === "/" ? pathname === "/" : pathname.startsWith(to);
   const isAdminAuthed = sessionStorage.getItem("qatar_admin_auth") === "true";
   const [showAdminDrawer, setShowAdminDrawer] = useState(false);
+  const [showExitSchool, setShowExitSchool] = useState(false);
 
   const handleLogout = () => {
     clearAdminSession();
@@ -189,6 +248,10 @@ function BottomNav() {
                   <Shield className="w-5 h-5" />تسجيل الخروج من Admin
                 </button>
               )}
+              <button onClick={() => { setShowAdminDrawer(false); setShowExitSchool(true); }}
+                className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors mt-1">
+                <LogOut className="w-5 h-5" />الخروج من المدرسة / تغييرها
+              </button>
             </div>
             <div className="pb-2" />
           </div>
@@ -221,6 +284,8 @@ function BottomNav() {
           </button>
         </div>
       </nav>
+
+      <ExitSchoolModal open={showExitSchool} onClose={() => setShowExitSchool(false)} />
     </>
   );
 }

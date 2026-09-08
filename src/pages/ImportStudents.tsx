@@ -9,8 +9,10 @@ import {
 import { api } from "../../convex/_generated/api";
 import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
-
-type ParsedRow = { fullName: string; className: string; phones: string };
+import {
+    inspectSheet, extractRows, COLUMN_LABELS,
+    type SheetShape, type ColumnKind, type ParsedRow,
+} from "../lib/parseStudentSheet";
 
 const GRADE_LABELS: Record<number, string> = {
     1: "الأول", 2: "الثاني", 3: "الثالث", 4: "الرابع", 5: "الخامس", 6: "السادس",
@@ -37,6 +39,8 @@ export default function ImportStudents() {
     const [result, setResult] = useState<any>(null);
     const [importedRows, setImportedRows] = useState<ParsedRow[]>([]);
     const [error, setError] = useState("");
+    const [shape, setShape] = useState<SheetShape | null>(null);
+    const [mapping, setMapping] = useState<Record<ColumnKind, number> | null>(null);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const uploadedFile = e.target.files?.[0];
@@ -45,28 +49,43 @@ export default function ImportStudents() {
         setError("");
         setParsedRows([]);
         setResult(null);
+        setShape(null);
+        setMapping(null);
 
         const reader = new FileReader();
         reader.onload = (evt) => {
             try {
-                const wb = xlsx.read(evt.target?.result, { type: "binary" });
-                const ws = wb.Sheets[wb.SheetNames[0]];
-                const rows = xlsx.utils.sheet_to_json<any>(ws);
-                const newRows: ParsedRow[] = [];
-                for (const row of rows) {
-                    const fullName = (row["الاسم"] || row["اسم الطالب"] || row["Name"] || "").toString().trim();
-                    const rawClass = (row["الشعبة الصفية"] || row["الشعبة"] || row["الصف"] || row["Class"] || "").toString().trim().replace(/\//g, "-");
-                    const phones = (row["رقم الهاتف"] || row["رقم التليفون"] || row["الهاتف"] || row["Phone"] || "").toString().trim();
-                    if (fullName && rawClass) newRows.push({ fullName, className: rawClass, phones });
+                const buffer = evt.target?.result as ArrayBuffer;
+                const nextShape = inspectSheet(buffer);
+                setShape(nextShape);
+                setMapping(nextShape.mapping);
+
+                if (nextShape.headerIndex === -1) {
+                    setError("تعذّر التعرف على صف العناوين. اربط الأعمدة يدوياً من القائمة أدناه.");
+                    return;
                 }
-                if (newRows.length === 0) setError("لم يتم العثور على بيانات. تأكد من الأعمدة: الاسم، الشعبة الصفية، رقم الهاتف");
-                setParsedRows(newRows);
+                const rows = extractRows(nextShape);
+                setParsedRows(rows);
+                if (rows.length === 0) {
+                    setError("لم يتم العثور على صفوف طلاب. راجع ربط الأعمدة أدناه.");
+                }
             } catch {
                 setError("فشل في قراءة الملف. تأكد من صيغة Excel.");
                 setParsedRows([]);
+                setShape(null);
             }
         };
-        reader.readAsBinaryString(uploadedFile);
+        reader.readAsArrayBuffer(uploadedFile);
+    };
+
+    /** Re-run extraction when the user corrects a column by hand. */
+    const remap = (kind: ColumnKind, index: number) => {
+        if (!shape || !mapping) return;
+        const next = { ...mapping, [kind]: index };
+        setMapping(next);
+        const rows = extractRows(shape, next);
+        setParsedRows(rows);
+        setError(rows.length === 0 ? "لم يتم العثور على صفوف طلاب بهذا الربط." : "");
     };
 
     const handleSubmit = async () => {
@@ -218,6 +237,61 @@ export default function ImportStudents() {
                         <div className="flex items-center gap-3 bg-rose-50 text-rose-800 px-5 py-4 rounded-xl border border-rose-200">
                             <AlertCircle className="w-5 h-5 flex-shrink-0" />
                             <p className="text-sm font-black">{error}</p>
+                        </div>
+                    )}
+
+                    {/* Column mapping — shown whenever a sheet is loaded, so a
+                        misdetected export can be corrected without a code change. */}
+                    {shape && (
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+                            <div className="flex items-center justify-between gap-3 flex-wrap">
+                                <h4 className="font-black text-slate-700 text-sm flex items-center gap-2">
+                                    <ArrowLeftRight className="w-4 h-4 text-qatar-maroon" />
+                                    ربط الأعمدة
+                                </h4>
+                                {shape.headerIndex !== -1 && (
+                                    <span className="text-[11px] font-black text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full">
+                                        صف العناوين: {shape.headerIndex + 1}
+                                    </span>
+                                )}
+                            </div>
+
+                            {shape.headerIndex === -1 ? (
+                                <p className="text-xs font-bold text-rose-700">
+                                    تعذّر التعرف على صف العناوين في الملف. تأكد أن الملف يحتوي صفاً فيه عناوين الأعمدة (اسم الطالب، الصف/الشعبة).
+                                </p>
+                            ) : (
+                                <>
+                                    <p className="text-[11px] font-bold text-slate-500 leading-relaxed">
+                                        تم التعرف على الأعمدة تلقائياً. عدّلها يدوياً إذا كان الربط خاطئاً — الأرقام تتحدث فوراً.
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        {(["name", "class", "grade", "section", "phone"] as ColumnKind[]).map(kind => (
+                                            <div key={kind} className="flex flex-col gap-1.5">
+                                                <label className="text-[11px] font-black text-slate-500">
+                                                    {COLUMN_LABELS[kind]}
+                                                    {kind === "name" && <span className="text-rose-500"> *</span>}
+                                                </label>
+                                                <select
+                                                    value={mapping?.[kind] ?? -1}
+                                                    onChange={e => remap(kind, parseInt(e.target.value, 10))}
+                                                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-qatar-maroon"
+                                                >
+                                                    <option value={-1}>— غير مستخدم —</option>
+                                                    {shape.headers.map((h, i) => (
+                                                        <option key={i} value={i}>
+                                                            {h?.trim() ? h : `عمود ${i + 1}`}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="text-[11px] font-bold text-slate-400">
+                                        الشعبة الصفية تُؤخذ من عمود واحد إن وُجد، وإلا تُدمج من «الصف» + «الشعبة» (مثال: 10 + 3 ← 10-3).
+                                    </p>
+                                </>
+                            )}
                         </div>
                     )}
 

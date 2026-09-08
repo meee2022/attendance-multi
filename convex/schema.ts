@@ -11,6 +11,10 @@ export default defineSchema({
         periodsPerDay: v.optional(v.number()),
         currentDate: v.optional(v.string()),
         adminPin: v.optional(v.string()), // default "1234"
+        adminRecoveryCode: v.optional(v.string()), // one-time-view code to reset adminPin
+        allowPasswordRecovery: v.optional(v.boolean()), // allow resetting adminPin via school password
+        adminResetAttempts: v.optional(v.number()), // failed recovery attempts (throttling)
+        adminResetLockedUntil: v.optional(v.number()), // epoch ms; recovery locked until
         dailyAbsenceThreshold: v.optional(v.number()), // max absent periods still = present
     }).index("by_code", ["code"]),
     classes: defineTable({

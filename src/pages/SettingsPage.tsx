@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 // @ts-ignore
 import { api } from "../../convex/_generated/api";
-import { Settings, BookOpen, Layers, Plus, Trash2, Pencil, Check, X, Hash, CalendarDays, Lock, KeyRound, Eye, EyeOff, ShieldAlert, Users, Database, MessagesSquare } from "lucide-react";
+import { Settings, BookOpen, Layers, Plus, Trash2, Pencil, Check, X, Hash, CalendarDays, Lock, KeyRound, Eye, EyeOff, ShieldAlert, Users, Database, MessagesSquare, LifeBuoy, Copy, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { useSchool } from "../lib/SchoolContext";
 import ImportStudents from "./ImportStudents";
@@ -73,6 +73,7 @@ export default function SettingsPage() {
                     <GeneralSettings />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <PinSettings />
+                        <RecoverySettings />
                         <SchoolPasswordSettings />
                     </div>
                     <div className="flex gap-2">
@@ -313,7 +314,133 @@ function GeneralSettings() {
     );
 }
 
+function RecoverySettings() {
+    const { school } = useSchool();
+    const options = useQuery(
+        api.adminRecovery.getRecoveryOptions,
+        school?._id ? { schoolId: school._id as any } : "skip"
+    );
+    const reveal = useMutation(api.adminRecovery.revealRecoveryCode);
+    const regenerate = useMutation(api.adminRecovery.regenerateRecoveryCode);
+    const setPasswordRecovery = useMutation(api.adminRecovery.setPasswordRecoveryEnabled);
+
+    const [pin, setPin] = useState("");
+    const [code, setCode] = useState<string | null>(null);
+    const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
+    const [loading, setLoading] = useState<null | "reveal" | "regen" | "toggle">(null);
+
+    const digits = (v: string) => v.replace(/\D/g, "").slice(0, 8);
+
+    const run = async (kind: "reveal" | "regen" | "toggle") => {
+        if (!school?._id) return;
+        if (pin.length < 4) { setMsg({ text: "أدخل رمز الدخول الحالي أولاً.", ok: false }); return; }
+        setLoading(kind);
+        setMsg(null);
+        try {
+            const base = { schoolId: school._id as any, pin };
+            if (kind === "toggle") {
+                const text = await setPasswordRecovery({ ...base, enabled: !(options?.allowPasswordRecovery === true) });
+                setMsg({ text, ok: true });
+            } else {
+                const result = kind === "reveal" ? await reveal(base) : await regenerate(base);
+                setCode(result);
+                setMsg({ text: kind === "regen" ? "تم إنشاء رمز جديد — الرمز السابق أُلغي." : "هذا هو رمز الاستعادة الحالي.", ok: true });
+            }
+            setPin("");
+        } catch (e: any) {
+            const raw = typeof e?.data === "string" ? e.data : e?.message ?? "";
+            setMsg({ text: raw.replace(/^.*ConvexError:\s*/, "").replace(/\[.*\]$/, "").trim() || "تعذّر التنفيذ.", ok: false });
+        } finally {
+            setLoading(null);
+        }
+    };
+
+    return (
+        <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border p-6">
+            <h3 className="font-black text-slate-700 mb-2 flex items-center gap-2 border-b border-qatar-gray-border pb-4">
+                <LifeBuoy className="w-4 h-4 text-qatar-maroon" />
+                استعادة رمز المسؤول
+            </h3>
+            <p className="text-xs text-slate-500 font-bold mb-5 leading-relaxed">
+                رمز الاستعادة يسمح لك بتعيين رمز دخول جديد إذا نسيته — دون الحاجة للوحة Convex.
+                احفظه في مكان آمن؛ من يملكه يستطيع الدخول لصفحات المسؤول.
+            </p>
+
+            <div className="space-y-4 max-w-xl">
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-black text-slate-500">رمز الدخول الحالي (للتأكيد)</label>
+                    <input
+                        type="password" value={pin} dir="ltr"
+                        onChange={e => { setPin(digits(e.target.value)); setMsg(null); }}
+                        className="w-full sm:w-56 px-4 py-2.5 border-2 border-slate-200 rounded-xl bg-slate-50 outline-none focus:bg-white focus:border-qatar-maroon text-center font-black tracking-widest"
+                    />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    <button
+                        onClick={() => run("reveal")} disabled={loading !== null}
+                        className="flex items-center gap-1.5 bg-qatar-maroon text-white text-xs font-black px-4 py-2.5 rounded-xl hover:opacity-90 transition-all disabled:opacity-40"
+                    >
+                        <Eye className="w-3.5 h-3.5" />
+                        {options?.hasRecoveryCode ? "إظهار رمز الاستعادة" : "إنشاء رمز استعادة"}
+                    </button>
+                    {options?.hasRecoveryCode && (
+                        <button
+                            onClick={() => run("regen")} disabled={loading !== null}
+                            className="flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-black px-4 py-2.5 rounded-xl hover:bg-slate-200 transition-all disabled:opacity-40"
+                        >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            إنشاء رمز بديل
+                        </button>
+                    )}
+                </div>
+
+                {code && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+                        <p className="text-xs font-black text-amber-800">رمز الاستعادة — انسخه واحفظه:</p>
+                        <div className="flex items-center gap-2">
+                            <code className="flex-1 bg-white border border-amber-300 rounded-lg px-3 py-2.5 font-mono font-black tracking-widest text-slate-800 text-center" dir="ltr">
+                                {code}
+                            </code>
+                            <button
+                                onClick={() => navigator.clipboard?.writeText(code)}
+                                className="p-2.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 transition-colors" title="نسخ"
+                            >
+                                <Copy className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Path 2 toggle */}
+                <div className="flex items-start justify-between gap-4 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <div className="space-y-1">
+                        <p className="text-xs font-black text-slate-700">السماح بالاستعادة عبر كلمة مرور المدرسة</p>
+                        <p className="text-[11px] font-bold text-slate-500 leading-relaxed">
+                            ⚠ كل معلّم يعرف كلمة مرور المدرسة — تفعيل هذا الخيار يعني أن أي معلّم
+                            يستطيع إعادة تعيين رمز المسؤول والدخول للإعدادات. فعّله فقط إذا كنت وحدك من يعرفها.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => run("toggle")} disabled={loading !== null}
+                        className={`flex-shrink-0 w-14 h-8 rounded-full transition-all relative disabled:opacity-40 ${options?.allowPasswordRecovery ? "bg-qatar-maroon" : "bg-slate-300"}`}
+                    >
+                        <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all ${options?.allowPasswordRecovery ? "right-1" : "right-7"}`} />
+                    </button>
+                </div>
+
+                {msg && (
+                    <div className={`text-xs font-black px-4 py-2.5 rounded-xl ${msg.ok ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-600 border border-red-100"}`}>
+                        {msg.text}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function PinSettings() {
+
     const { school } = useSchool();
     const updateAdminPin = useMutation(api.settings.updateAdminPin);
     const [current, setCurrent] = useState("");
