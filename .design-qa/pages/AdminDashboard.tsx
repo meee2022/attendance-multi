@@ -1,10 +1,10 @@
 import PageHeader from "../components/PageHeader";
 import { useState, useMemo, useEffect } from "react";
-import { useQuery } from "convex/react";
+import { useQuery } from "/.design-qa/mock";
 import { format } from "date-fns";
 import { Calendar, Users, UserCheck, UserX, Activity, BarChart3, Sigma, Check, X, Clock } from "lucide-react";
 // @ts-ignore
-import { api } from "../../convex/_generated/api";
+import { api } from "/.design-qa/mock";
 import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
 

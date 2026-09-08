@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useMutation } from "/.design-qa/mock";
 import {
     ShieldAlert, KeyRound, Users, Layers, ClipboardList, Lock, Unlock,
     Merge, Trash2, Pencil, AlertTriangle, ArrowRight, RefreshCw, Building2,
 } from "lucide-react";
 // @ts-ignore
-import { api } from "../../convex/_generated/api";
+import { api } from "/.design-qa/mock";
 
 type SchoolRow = {
     _id: string;

@@ -1,10 +1,10 @@
 import PageHeader from "../components/PageHeader";
-import { useQuery } from "convex/react";
+import { useQuery } from "/.design-qa/mock";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ArrowRight, AlertTriangle, Check, UserMinus } from "lucide-react";
 // @ts-ignore
-import { api } from "../../convex/_generated/api";
+import { api } from "/.design-qa/mock";
 import { useSchool } from "../lib/SchoolContext";
 
 export default function ClassDetails() {

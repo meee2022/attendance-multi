@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation } from "/.design-qa/mock";
 import { format } from "date-fns";
 import { Clock, Calendar, Check, X, Search, Loader2, Users, UserCheck } from "lucide-react";
-import { api } from "../../convex/_generated/api";
+import { api } from "/.design-qa/mock";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useSchool } from "../lib/SchoolContext";
 

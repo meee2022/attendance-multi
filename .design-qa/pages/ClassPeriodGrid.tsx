@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation } from "/.design-qa/mock";
 import { Trash2, AlertTriangle, X, Check } from "lucide-react";
 // @ts-ignore
-import { api } from "../../convex/_generated/api";
+import { api } from "/.design-qa/mock";
 
 const PERIOD_LABELS = ["الأولى", "الثانية", "الثالثة", "الرابعة", "الخامسة", "السادسة", "السابعة", "الثامنة", "التاسعة", "العاشرة"];
 

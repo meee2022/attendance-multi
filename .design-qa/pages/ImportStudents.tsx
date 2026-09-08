@@ -1,12 +1,13 @@
 import PageHeader from "../components/PageHeader";
 import React, { useState, useMemo } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation } from "/.design-qa/mock";
+import * as xlsx from "xlsx";
 import {
     UserPlus, FileSpreadsheet, CheckCircle2, AlertCircle,
-    Users, GraduationCap, Layers, Phone, BarChart3,
+    Users, GraduationCap, Layers, Phone, BookOpen, BarChart3,
     Search, ArrowLeftRight, Trash2, Pencil, Check, X, ChevronDown, ChevronUp
 } from "lucide-react";
-import { api } from "../../convex/_generated/api";
+import { api } from "/.design-qa/mock";
 import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
 import {
@@ -145,14 +146,6 @@ export default function ImportStudents() {
 
     const totalClasses = data?.classes?.length ?? 0;
 
-    // Real class names from this school, so the example shows what to type.
-    const sampleClassNames = useMemo(
-        () => (data?.classes ?? [])
-            .map((c: any) => c.name as string)
-            .sort((a: string, b: string) => a.localeCompare(b, "ar")),
-        [data]
-    );
-
     if (!data) return (
         <div className="flex items-center justify-center min-h-[400px]">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-qatar-maroon" />
@@ -194,85 +187,21 @@ export default function ImportStudents() {
                 </div>
 
                 <div className="p-8 space-y-6">
-                    {/* What the sheet must look like. Shows the school's own
-                        class names, so nobody has to guess the format. */}
-                    <div className="import-format-guide rounded-2xl border border-qatar-gray-border bg-qatar-cream overflow-hidden">
-                        <div className="flex items-center gap-2 px-5 py-3 border-b border-qatar-gray-border bg-qatar-cream-dark">
-                            <FileSpreadsheet className="w-4 h-4 text-qatar-maroon flex-shrink-0" />
-                            <h3 className="text-qatar-maroon">شكل الملف المطلوب</h3>
-                        </div>
-
-                        <div className="p-5 space-y-4">
-                            <p className="text-[13px] text-qatar-ink-soft">
-                                ثلاثة أعمدة بهذا الترتيب. صف العناوين اختياري — إن لم يكن موجوداً يُقرأ الملف من أول سطر.
-                            </p>
-
-                            <div className="overflow-x-auto rounded-xl border border-qatar-gray-border bg-white">
-                                <table className="w-full text-right">
-                                    <thead>
-                                        <tr className="bg-qatar-cream-dark">
-                                            <th className="px-4 py-2.5 text-qatar-maroon whitespace-nowrap">اسم الطالب</th>
-                                            <th className="px-4 py-2.5 text-qatar-maroon whitespace-nowrap">الصف</th>
-                                            <th className="px-4 py-2.5 text-qatar-maroon whitespace-nowrap">
-                                                رقم الجوال <span className="font-normal opacity-70">(اختياري)</span>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-qatar-gray-border">
-                                        {[
-                                            { name: "فاطمة أحمد محمد الكواري", phone: "55512345" },
-                                            { name: "نورة سالم عبدالله المري", phone: "66678901" },
-                                        ].map((row, i) => (
-                                            <tr key={row.name}>
-                                                <td className="px-4 py-2.5 text-qatar-ink">{row.name}</td>
-                                                <td className="px-4 py-2.5 font-mono text-qatar-ink" dir="ltr">
-                                                    {sampleClassNames[i] ?? sampleClassNames[0] ?? "10-1"}
-                                                </td>
-                                                <td className="px-4 py-2.5 font-mono text-qatar-ink" dir="ltr">{row.phone}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                    {/* Instructions */}
+                    <div className="import-column-guide grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {[
+                            { icon: <BookOpen className="w-4 h-4" />, label: "الاسم", desc: "اسم الطالب الكامل", color: "bg-qatar-cream-dark border-qatar-gray-border text-qatar-maroon" },
+                            { icon: <Layers className="w-4 h-4" />, label: "الشعبة الصفية", desc: "مثال: 11-3 أو 11/3", color: "bg-amber-50 border-amber-200 text-amber-700" },
+                            { icon: <Phone className="w-4 h-4" />, label: "رقم الهاتف", desc: "اختياري", color: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+                        ].map(col => (
+                            <div key={col.label} className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${col.color}`}>
+                                <div className="flex-shrink-0">{col.icon}</div>
+                                <div>
+                                    <p className="font-extrabold text-sm">{col.label}</p>
+                                    <p className="text-[11px] opacity-70 font-medium">{col.desc}</p>
+                                </div>
                             </div>
-
-                            <ul className="space-y-2 text-[12px] text-qatar-ink-soft">
-                                <li className="flex items-start gap-2">
-                                    <Layers className="w-3.5 h-3.5 mt-0.5 text-qatar-maroon flex-shrink-0" />
-                                    <span>
-                                        <b className="text-qatar-ink">صيغة الصف</b> — اكتبه تماماً كما هو مسجّل في مدرستك.
-                                        {sampleClassNames.length > 0 ? (
-                                            <> صفوفك الحالية: <span className="font-mono text-qatar-maroon" dir="ltr">
-                                                {sampleClassNames.slice(0, 6).join("، ")}
-                                            </span>{totalClasses > 6 ? ` وغيرها (${totalClasses} صفاً)` : ""}.</>
-                                        ) : (
-                                            <> مثال: <span className="font-mono" dir="ltr">10-1</span>.</>
-                                        )}
-                                        {" "}الشرطة المائلة مقبولة أيضاً (<span className="font-mono" dir="ltr">10/1</span>).
-                                    </span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <Phone className="w-3.5 h-3.5 mt-0.5 text-qatar-maroon flex-shrink-0" />
-                                    <span>
-                                        <b className="text-qatar-ink">رقم الجوال</b> — اختياري. لو وُضع أكثر من رقم مفصولاً
-                                        بفاصلة، يُؤخذ الأول.
-                                    </span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <Users className="w-3.5 h-3.5 mt-0.5 text-qatar-maroon flex-shrink-0" />
-                                    <span>
-                                        <b className="text-qatar-ink">الطالب الموجود مسبقاً</b> — تُحدَّث شعبته ورقمه ولا يتكرر،
-                                        فرفع الملف مرة أخرى آمن.
-                                    </span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <AlertCircle className="w-3.5 h-3.5 mt-0.5 text-amber-600 flex-shrink-0" />
-                                    <span>
-                                        أي صف ينقصه الاسم أو الصف <b className="text-qatar-ink">لن يُستورد</b>، وسيُعرض لك
-                                        برقمه لتصحّحه.
-                                    </span>
-                                </li>
-                            </ul>
-                        </div>
+                        ))}
                     </div>
 
                     {/* Drop zone */}
@@ -579,6 +508,12 @@ function StudentManagement() {
     const students = allStudents || [];
 
     // Build class lookup
+    const classMap = useMemo(() => {
+        const m: Record<string, any> = {};
+        for (const c of classes) m[c._id] = c;
+        return m;
+    }, [classes]);
+
     // Group classes by grade
     const gradeGroups = useMemo(() => {
         const g: Record<number, any[]> = {};

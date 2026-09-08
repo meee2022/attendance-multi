@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import { useQuery } from "convex/react";
+import { useQuery } from "/.design-qa/mock";
 import { Hash, Layers, ClipboardList, CheckCircle2, Clock } from "lucide-react";
 // @ts-ignore
-import { api } from "../../convex/_generated/api";
+import { api } from "/.design-qa/mock";
 import ClassPeriodGrid from "./ClassPeriodGrid";
 import { useSchool } from "../lib/SchoolContext";
 

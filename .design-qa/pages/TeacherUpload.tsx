@@ -1,11 +1,11 @@
 import PageHeader from "../components/PageHeader";
 import React, { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation } from "/.design-qa/mock";
 import * as xlsx from "xlsx";
 import { format } from "date-fns";
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Layers, Search, Save, RotateCcw, UserCheck, UserX, BookOpen, Calendar, Hash, Lock, ChevronDown } from "lucide-react";
 // @ts-ignore
-import { api } from "../../convex/_generated/api";
+import { api } from "/.design-qa/mock";
 import PeriodGridSection from "./PeriodGridSection";
 import { useSchool } from "../lib/SchoolContext";
 

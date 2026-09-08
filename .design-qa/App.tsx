@@ -92,11 +92,11 @@ function ExitSchoolModal({ open, onClose }: { open: boolean; onClose: () => void
             <LogOut className="w-7 h-7 text-qatar-maroon" />
           </div>
           <h3 className="text-lg font-black text-slate-800">الخروج من المدرسة</h3>
-          <p className="text-sm font-bold text-qatar-gray-text leading-relaxed">
+          <p className="text-sm font-bold text-slate-500 leading-relaxed">
             ستخرج من <span className="text-qatar-maroon">{school?.name || "المدرسة الحالية"}</span> وتعود
             لشاشة إدخال الكود. ستحتاج كود المدرسة وكلمة المرور للدخول مرة أخرى.
           </p>
-          <p className="text-[11px] font-bold text-qatar-gray-text">
+          <p className="text-[11px] font-bold text-slate-400">
             بيانات الطلاب والغياب محفوظة على الخادم ولن تُحذف.
           </p>
         </div>
@@ -146,7 +146,7 @@ function Navbar() {
               style={{ background: "var(--gradient-primary)" }}>Q</div>
             <div className="flex flex-col leading-tight">
               <span className="font-extrabold text-sm text-slate-800 max-w-[150px] sm:max-w-[200px] truncate">{school?.name || "نظام الحضور والغياب"}</span>
-              <span className="hidden sm:block text-[10px] text-qatar-gray-text font-bold uppercase tracking-wider">{school?.code || "QATAR"}</span>
+              <span className="hidden sm:block text-[9px] text-slate-400 font-bold uppercase tracking-wider">{school?.code || "QATAR"}</span>
             </div>
           </Link>
 
@@ -159,7 +159,7 @@ function Navbar() {
                 <Link key={to} to={to} aria-current={isActive(to) ? "page" : undefined}
                   className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-all ${active
                       ? "bg-qatar-maroon text-white shadow-sm"
-                      : "text-qatar-gray-text hover:bg-rose-50 hover:text-qatar-maroon"
+                      : "text-slate-500 hover:bg-rose-50 hover:text-qatar-maroon"
                     }`}
                 >
                   {icon}{label}
@@ -177,7 +177,7 @@ function Navbar() {
                 <Link key={to} to={to} aria-current={isActive(to) ? "page" : undefined}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all ${active
                       ? "bg-qatar-maroon text-white shadow-sm"
-                      : "text-qatar-gray-text hover:bg-rose-50 hover:text-qatar-maroon"
+                      : "text-slate-400 hover:bg-rose-50 hover:text-qatar-maroon"
                     }`}
                 >
                   {icon}
@@ -192,17 +192,17 @@ function Navbar() {
           <div className="flex items-center gap-2 flex-shrink-0">
             {isAdminAuthed && (
               <button onClick={handleLogout} title="إنهاء جلسة المسؤول والبقاء داخل المدرسة"
-                className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-qatar-gray-text hover:text-qatar-maroon border border-slate-200 hover:border-qatar-maroon/40 px-3 py-1.5 rounded-xl transition-all">
+                className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-qatar-maroon border border-slate-200 hover:border-qatar-maroon/40 px-3 py-1.5 rounded-xl transition-all">
                 <Shield className="w-3.5 h-3.5" />خروج المسؤول
               </button>
             )}
             <button onClick={() => setShowExitSchool(true)} title="الخروج من المدرسة وتغييرها"
-              className="flex items-center gap-1.5 text-[11px] font-bold text-qatar-gray-text hover:text-qatar-maroon border border-slate-200 hover:border-qatar-maroon/40 px-3 py-1.5 rounded-xl transition-all">
+              className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-qatar-maroon border border-slate-200 hover:border-qatar-maroon/40 px-3 py-1.5 rounded-xl transition-all">
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden 2xl:inline">خروج من المدرسة</span>
             </button>
             <div className="hidden sm:flex flex-col items-end leading-tight">
-              <span className="text-[10px] font-bold text-qatar-gray-text">{isAdminAuthed ? "مسؤول النظام" : "معلم"}</span>
+              <span className="text-[10px] font-bold text-slate-400">{isAdminAuthed ? "مسؤول النظام" : "معلم"}</span>
               <span className="text-sm font-extrabold text-slate-700">{isAdminAuthed ? "Admin" : "Teacher"}</span>
             </div>
             <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-xs ${isAdminAuthed ? "bg-qatar-maroon text-white border-qatar-maroon" : "bg-qatar-maroon/10 border-qatar-maroon/20 text-qatar-maroon"
@@ -243,7 +243,7 @@ function BottomNav() {
                 <Shield className="w-4 h-4 text-qatar-maroon" />صفحات المسؤول
               </span>
               <button aria-label="إغلاق قائمة الإدارة" onClick={() => setShowAdminDrawer(false)} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-                <X className="w-4 h-4 text-qatar-gray-text" />
+                <X className="w-4 h-4 text-slate-500" />
               </button>
             </div>
             <div className="p-4 space-y-2">
@@ -277,7 +277,7 @@ function BottomNav() {
             const active = isActive(to);
             return (
               <Link key={to} to={to} aria-current={isActive(to) ? "page" : undefined}
-                className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold transition-colors ${active ? "text-qatar-maroon" : "text-qatar-gray-text"
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[9px] font-bold transition-colors ${active ? "text-qatar-maroon" : "text-slate-400"
                   }`}
               >
                 <span className={`transition-all ${active ? "scale-110" : ""}`}>{icon}</span>
@@ -286,7 +286,7 @@ function BottomNav() {
             );
           })}
           <button onClick={() => setShowAdminDrawer(v => !v)}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold transition-colors relative ${isAdminRouteActive || showAdminDrawer ? "text-qatar-maroon" : "text-qatar-gray-text"
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[9px] font-bold transition-colors relative ${isAdminRouteActive || showAdminDrawer ? "text-qatar-maroon" : "text-slate-400"
               }`}
           >
             <Shield className={`w-5 h-5 transition-all ${isAdminRouteActive || showAdminDrawer ? "scale-110" : ""}`} />

@@ -1,13 +1,13 @@
 import PageHeader from "../components/PageHeader";
 import React, { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery } from "/.design-qa/mock";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
 import {
     Calendar, TrendingUp, Users, UserX, UserCheck, Download,
     TableProperties, BarChart3, Check, X, AlertTriangle, Clock, ShieldAlert, Search
 } from "lucide-react";
-import { api } from "../../convex/_generated/api";
+import { api } from "/.design-qa/mock";
 import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
 

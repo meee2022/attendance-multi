@@ -1,0 +1,1 @@
+export const useSchool=()=>({school:{_id:'school',name:'مدرسة التجربة للتعليم الثانوي',code:'DEMO'},setSchool:()=>{},isLoading:false}); export const SchoolProvider=({children})=>children;

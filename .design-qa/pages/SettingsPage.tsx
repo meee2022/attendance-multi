@@ -1,8 +1,8 @@
 import PageHeader from "../components/PageHeader";
 import { useState, useMemo } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation } from "/.design-qa/mock";
 // @ts-ignore
-import { api } from "../../convex/_generated/api";
+import { api } from "/.design-qa/mock";
 import { Settings, BookOpen, Layers, Plus, Trash2, Pencil, Check, X, Hash, CalendarDays, Lock, KeyRound, Eye, EyeOff, ShieldAlert, Users, Database, MessagesSquare, LifeBuoy, Copy, RefreshCw, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { useSchool } from "../lib/SchoolContext";

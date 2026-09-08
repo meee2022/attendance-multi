@@ -1,9 +1,9 @@
 import PageHeader from "../components/PageHeader";
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "/.design-qa/mock";
 import { Database, Trash2, AlertCircle, GraduationCap, Layers, BookOpen, Users, CheckCircle2, CopyPlus, School } from "lucide-react";
 // @ts-ignore
-import { api } from "../../convex/_generated/api";
+import { api } from "/.design-qa/mock";
 import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
 
