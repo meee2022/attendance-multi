@@ -1,6 +1,7 @@
 import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Database, Settings, BarChart3, Upload, Shield, X, MessageSquare, Clock, LogOut, DoorOpen } from "lucide-react";
+import { LayoutDashboard, Database, Settings, BarChart3, Upload, Shield, X, MessageSquare, Clock, LogOut, DoorOpen, ClipboardCheck } from "lucide-react";
 import { useState } from "react";
+import type { ReactNode } from "react";
 import TeacherUpload from "./pages/TeacherUpload";
 import AdminDashboard from "./pages/AdminDashboard";
 import ClassDetails from "./pages/ClassDetails";
@@ -15,18 +16,22 @@ import { SchoolProvider, useSchool } from "./lib/SchoolContext";
 import SchoolSetupGuard from "./components/SchoolSetupGuard";
 import LateStudentsPage from "./pages/LateStudentsPage";
 import LeavePermissionsPage from "./pages/LeavePermissionsPage";
+import FollowUpPage from "./pages/FollowUpPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 
-const PUBLIC_NAV = [
+type NavItem = { to: string; icon: ReactNode; label: string; short?: string; admin: boolean };
+
+const PUBLIC_NAV: NavItem[] = [
   { to: "/", icon: <LayoutDashboard className="w-5 h-5" />, label: "المتابعة", admin: false },
   { to: "/upload", icon: <Upload className="w-5 h-5" />, label: "رصد الغياب", admin: false },
   { to: "/reports", icon: <BarChart3 className="w-5 h-5" />, label: "التقارير", admin: false },
   { to: "/lates", icon: <Clock className="w-5 h-5" />, label: "تأخير الطلاب", admin: false },
   { to: "/leaves", icon: <DoorOpen className="w-5 h-5" />, label: "الاستئذان", admin: false },
+  { to: "/follow-up", icon: <ClipboardCheck className="w-5 h-5" />, label: "مهام المتابعة", short: "المهام", admin: false },
   { to: "/messages", icon: <MessageSquare className="w-5 h-5" />, label: "الرسائل", admin: false },
 ];
 
-const ADMIN_NAV = [
+const ADMIN_NAV: NavItem[] = [
   { to: "/settings", icon: <Settings className="w-5 h-5" />, label: "الإعدادات", admin: true },
 ];
 
@@ -58,6 +63,7 @@ function SchoolApp() {
               <Route path="/class/:classId" element={<ClassDetails />} />
               <Route path="/lates" element={<LateStudentsPage />} />
               <Route path="/leaves" element={<LeavePermissionsPage />} />
+              <Route path="/follow-up" element={<FollowUpPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/messages" element={<MessagesPage />} />
               <Route path="/import-students" element={<AdminGuard><ImportStudents /></AdminGuard>} />
@@ -276,7 +282,7 @@ function BottomNav() {
 
       <nav aria-label="التنقل الرئيسي" className="school-bottom-nav xl:hidden fixed bottom-0 right-0 left-0 z-30 bg-white border-t-2 border-qatar-maroon shadow-[0_-4px_20px_rgba(0,0,0,0.08)]" dir="rtl">
         <div className="flex items-stretch h-16">
-          {PUBLIC_NAV.map(({ to, icon, label }) => {
+          {PUBLIC_NAV.map(({ to, icon, label, short }) => {
             const active = isActive(to);
             return (
               <Link key={to} to={to} aria-current={isActive(to) ? "page" : undefined}
@@ -284,7 +290,7 @@ function BottomNav() {
                   }`}
               >
                 <span className={`transition-all ${active ? "scale-110" : ""}`}>{icon}</span>
-                {label}
+                {short ?? label}
               </Link>
             );
           })}

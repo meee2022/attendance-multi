@@ -16,6 +16,8 @@ export default defineSchema({
         adminResetAttempts: v.optional(v.number()), // failed recovery attempts (throttling)
         adminResetLockedUntil: v.optional(v.number()), // epoch ms; recovery locked until
         dailyAbsenceThreshold: v.optional(v.number()), // max absent periods still = present
+        termStartDate: v.optional(v.string()), // YYYY-MM-DD — absence/tardiness counts start here
+        disciplineInitializedAt: v.optional(v.number()), // first follow-up sync (baseline taken)
     }).index("by_code", ["code"]),
     classes: defineTable({
         schoolId: v.id("schools"),
@@ -65,7 +67,8 @@ export default defineSchema({
         notes: v.optional(v.string()), // For unverified names
     }).index("by_period", ["periodId"])
       .index("by_student", ["studentId"])
-      .index("by_school", ["schoolId"]),
+      .index("by_school", ["schoolId"])
+      .index("by_school_status", ["schoolId", "status"]),
     messageTemplates: defineTable({
         schoolId: v.id("schools"),
         name: v.string(),
@@ -90,6 +93,49 @@ export default defineSchema({
         guardianName: v.optional(v.string()),
         recordedAt: v.number(),
     }).index("by_school_date", ["schoolId", "date"])
+      .index("by_student", ["studentId"]),
+    // Escalation ladder for absence and tardiness: which action is due at
+    // which count. One row per action, mirroring the school's paper matrix.
+    disciplineRules: defineTable({
+        schoolId: v.id("schools"),
+        kind: v.union(v.literal("absence"), v.literal("tardiness")),
+        actionKey: v.string(),
+        label: v.string(),
+        actor: v.string(),     // supervisor | coordinator | social_worker | behavior_team | system
+        recipient: v.string(), // student | guardian | staff
+        counts: v.array(v.number()),
+        minGrade: v.optional(v.number()),
+        maxGrade: v.optional(v.number()),
+        order: v.number(),
+        isActive: v.boolean(),
+    }).index("by_school_kind", ["schoolId", "kind"]),
+    // Last count each student was processed at, so each step fires once.
+    disciplineProgress: defineTable({
+        schoolId: v.id("schools"),
+        studentId: v.id("students"),
+        kind: v.union(v.literal("absence"), v.literal("tardiness")),
+        lastCount: v.number(),
+        updatedAt: v.number(),
+    }).index("by_school", ["schoolId"]),
+    // Generated follow-up tasks. Label/actor are snapshotted so history stays
+    // readable even after a rule is edited.
+    disciplineActions: defineTable({
+        schoolId: v.id("schools"),
+        studentId: v.id("students"),
+        kind: v.union(v.literal("absence"), v.literal("tardiness")),
+        count: v.number(),
+        actionKey: v.string(),
+        label: v.string(),
+        actor: v.string(),
+        recipient: v.string(),
+        dedupeKey: v.string(),
+        status: v.union(v.literal("pending"), v.literal("done"), v.literal("skipped"), v.literal("cancelled")),
+        outcome: v.optional(v.string()),
+        notes: v.optional(v.string()),
+        createdAt: v.number(),
+        completedAt: v.optional(v.number()),
+    }).index("by_school", ["schoolId"])
+      .index("by_school_status", ["schoolId", "status"])
       .index("by_student", ["studentId"]),
     tardiness: defineTable({
         schoolId: v.id("schools"),

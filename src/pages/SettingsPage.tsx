@@ -3,12 +3,13 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 // @ts-ignore
 import { api } from "../../convex/_generated/api";
-import { Settings, BookOpen, Layers, Plus, Trash2, Pencil, Check, X, Hash, CalendarDays, Lock, KeyRound, Eye, EyeOff, ShieldAlert, Users, Database, MessagesSquare, LifeBuoy, Copy, RefreshCw, ChevronDown } from "lucide-react";
+import { Settings, BookOpen, Layers, Plus, Trash2, Pencil, Check, X, Hash, CalendarDays, Lock, KeyRound, Eye, EyeOff, ShieldAlert, Users, Database, MessagesSquare, LifeBuoy, Copy, RefreshCw, ChevronDown, ListChecks } from "lucide-react";
 import { format } from "date-fns";
 import { useSchool } from "../lib/SchoolContext";
 import ImportStudents from "./ImportStudents";
 import MessageTemplatesPage from "./MessageTemplatesPage";
 import SeedPage from "./SeedPage";
+import DisciplineRulesSection from "./DisciplineRulesSection";
 
 const TRACKS = ["عام", "علمي", "أدبي", "تكنولوجي"];
 const GRADE_LABELS: Record<number, string> = {
@@ -25,7 +26,7 @@ const TRACK_COLORS: Record<string, string> = {
 
 type SectionId =
     | "school" | "security" | "recovery" | "classes" | "subjects"
-    | "students" | "messages" | "seed";
+    | "students" | "messages" | "discipline" | "seed";
 
 /** Sidebar sections, grouped the way the sibling system groups them. */
 const SECTIONS: {
@@ -41,6 +42,8 @@ const SECTIONS: {
       description: "رفع قوائم الطلاب من ملف إكسل وتنظيم بياناتهم." },
     { id: "messages", label: "إعدادات الرسائل", icon: <MessagesSquare className="w-4 h-4" />, group: "التقييم والمتابعة",
       description: "تخصيص نصوص الرسائل المرسلة لأولياء الأمور." },
+    { id: "discipline", label: "إجراءات الغياب والتأخير", icon: <ListChecks className="w-4 h-4" />, group: "التقييم والمتابعة",
+      description: "الإجراء المستحق عند كل يوم غياب أو مرة تأخير، وبداية الفصل التي يبدأ منها العدّ." },
     { id: "security", label: "رمز الدخول", icon: <Lock className="w-4 h-4" />, group: "إدارة النظام",
       description: "رمز المسؤول وكلمة مرور المدرسة." },
     { id: "recovery", label: "استعادة الرمز", icon: <LifeBuoy className="w-4 h-4" />, group: "إدارة النظام",
@@ -113,6 +116,7 @@ export default function SettingsPage() {
                     {section === "subjects" && <SubjectsSection />}
                     {section === "students" && <ImportStudents />}
                     {section === "messages" && <MessageTemplatesPage />}
+                    {section === "discipline" && <DisciplineRulesSection />}
                     {section === "seed" && <SeedPage />}
                 </section>
             </div>
