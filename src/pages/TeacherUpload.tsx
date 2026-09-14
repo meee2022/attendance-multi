@@ -8,6 +8,7 @@ import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Layers, Search, Sav
 import { api } from "../../convex/_generated/api";
 import PeriodGridSection from "./PeriodGridSection";
 import { useSchool } from "../lib/SchoolContext";
+import { pinnedDate, todayInQatar } from "../lib/schoolDate";
 
 /**
  * Parses raw Microsoft Teams attendance CSV exports.
@@ -71,10 +72,10 @@ export default function TeacherUpload() {
 
     const [selectedClass, setSelectedClass] = useState("");
     const [selectedSubject, setSelectedSubject] = useState("");
-    const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
-    // Override with locked date from settings as soon as it loads
-    const lockedDate: string | undefined = data?.schools?.[0]?.currentDate;
-    const activeDate = lockedDate ?? date;
+    // Uploads are recorded under the school day: the pinned date in manual
+    // mode, otherwise today — recomputed each render so it rolls over at midnight.
+    const lockedDate = pinnedDate(data?.schools?.[0]);
+    const activeDate = lockedDate ?? todayInQatar();
     const [periodNumber, setPeriodNumber] = useState("1");
     const [file, setFile] = useState<File | null>(null);
     const [parsedNames, setParsedNames] = useState<string[]>([]);

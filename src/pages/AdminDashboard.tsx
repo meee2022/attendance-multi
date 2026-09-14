@@ -7,6 +7,7 @@ import { Calendar, Users, UserCheck, UserX, Activity, BarChart3, Sigma, Check, X
 import { api } from "../../convex/_generated/api";
 import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
+import { pinnedDate, todayInQatar } from "../lib/schoolDate";
 
 function sortClassNameAscending(nameA: string, nameB: string): number {
     const [gradeA, sectionA] = nameA.split("-").map(Number);
@@ -62,8 +63,10 @@ function PctBadge({ pct }: { pct: number }) {
 export default function AdminDashboard() {
     const { school } = useSchool();
     const initData = useQuery(api.setup.getInitialData, school?._id ? { schoolId: school._id as any } : "skip");
-    const lockedDate: string | undefined = initData?.schools?.[0]?.currentDate;
-    const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+    const lockedDate = pinnedDate(initData?.schools?.[0]);
+    // null = follow today; set when the admin browses another day.
+    const [browsedDate, setDate] = useState<string | null>(null);
+    const date = browsedDate ?? todayInQatar();
     // Use the school's locked date as default once loaded (matches where TeacherUpload saves data)
     const activeDate = lockedDate ?? date;
     const [selectedGrade, setSelectedGrade] = useState<number | null>(null);

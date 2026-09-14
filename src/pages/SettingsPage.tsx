@@ -6,6 +6,7 @@ import { api } from "../../convex/_generated/api";
 import { Settings, BookOpen, Layers, Plus, Trash2, Pencil, Check, X, Hash, CalendarDays, Lock, KeyRound, Eye, EyeOff, ShieldAlert, Users, Database, MessagesSquare, LifeBuoy, Copy, RefreshCw, ChevronDown, ListChecks } from "lucide-react";
 import { format } from "date-fns";
 import { useSchool } from "../lib/SchoolContext";
+import { resolveDateMode, todayInQatar } from "../lib/schoolDate";
 import ImportStudents from "./ImportStudents";
 import MessageTemplatesPage from "./MessageTemplatesPage";
 import SeedPage from "./SeedPage";
@@ -129,6 +130,7 @@ function GeneralSettings() {
     const data = useQuery(api.setup.getInitialData, contextSchool?._id ? { schoolId: contextSchool._id as any } : "skip");
     const updatePeriodsPerDay = useMutation(api.settings.updatePeriodsPerDay);
     const updateCurrentDate = useMutation(api.settings.updateCurrentDate);
+    const updateDateMode = useMutation(api.settings.updateDateMode);
     const updateDailyAbsenceThreshold = useMutation(api.settings.updateDailyAbsenceThreshold);
 
     const school = data?.schools?.[0];
@@ -139,8 +141,10 @@ function GeneralSettings() {
     const [periodsSaved, setPeriodsSaved] = useState(false);
 
     // Date state
-    const todayISO = format(new Date(), "yyyy-MM-dd");
+    const todayISO = todayInQatar();
     const currentDate = school?.currentDate ?? todayISO;
+    const dateMode = resolveDateMode(school);
+    const [modeSaving, setModeSaving] = useState(false);
     const [dateVal, setDateVal] = useState<string | null>(null);
     const [dateSaved, setDateSaved] = useState(false);
 
@@ -167,6 +171,22 @@ function GeneralSettings() {
         setDateVal(null);
         setDateSaved(true);
         setTimeout(() => setDateSaved(false), 2500);
+    };
+
+    const handleDateMode = async (mode: "auto" | "manual") => {
+        if (!contextSchool?._id || mode === dateMode) return;
+        setModeSaving(true);
+        try {
+            // Pinning with no date saved yet pins today, so uploads never lose a date.
+            if (mode === "manual" && !school?.currentDate) {
+                await updateCurrentDate({ schoolId: contextSchool._id as any, date: todayISO });
+            } else {
+                await updateDateMode({ schoolId: contextSchool._id as any, mode });
+            }
+            setDateVal(null);
+        } finally {
+            setModeSaving(false);
+        }
     };
 
     const handleSaveThreshold = async () => {
@@ -213,7 +233,7 @@ function GeneralSettings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 
-                {/* ── Locked Date ── */}
+                {/* ── School date: follow today, or pin a date ── */}
                 <div className="rounded-2xl border border-qatar-gray-border bg-white p-5 space-y-4">
                     <div className="flex items-center gap-2">
                         <div className="w-9 h-9 rounded-xl bg-qatar-maroon/10 text-qatar-maroon flex items-center justify-center flex-shrink-0">
@@ -221,36 +241,68 @@ function GeneralSettings() {
                         </div>
                         <div>
                             <p className="font-black text-qatar-maroon text-sm">تاريخ اليوم الدراسي</p>
-                            <p className="text-[11px] text-slate-400 font-medium">يُطبَّق على جميع صفحات الرفع ولا يمكن تعديله من قِبَل المعلمين</p>
+                            <p className="text-[11px] text-slate-400 font-medium">التاريخ الذي يُسجَّل به الرصد في صفحة رفع الغياب</p>
                         </div>
                         <div className="mr-auto flex items-center gap-1 bg-qatar-maroon/10 text-qatar-maroon text-[10px] font-bold px-2 py-1 rounded-full border border-qatar-maroon/20">
-                            <Lock className="w-3 h-3" />
-                            مقفول
+                            {dateMode === "auto" ? <RefreshCw className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                            {dateMode === "auto" ? "تلقائي" : "مثبّت"}
                         </div>
                     </div>
 
-                    <input
-                        type="date"
-                        value={displayDate}
-                        onChange={e => setDateVal(e.target.value)}
-                        className="w-full border-2 border-qatar-maroon/20 rounded-xl px-4 py-3 font-black text-slate-700 bg-white outline-none focus:border-qatar-maroon text-center text-lg tracking-wider"
-                    />
-
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleSaveDate}
-                            disabled={dateVal === null}
-                            className="flex items-center gap-2 bg-qatar-maroon text-white px-5 py-2.5 rounded-xl font-black hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed text-sm"
-                        >
-                            <Check className="w-4 h-4" />
-                            حفظ التاريخ وتثبيته
-                        </button>
-                        {dateSaved && (
-                            <span className="flex items-center gap-1 text-emerald-600 font-extrabold text-sm animate-in fade-in">
-                                <Check className="w-4 h-4" /> تم التثبيت
-                            </span>
-                        )}
+                    <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-qatar-cream-dark" role="group" aria-label="طريقة تحديد التاريخ">
+                        {([["auto", "تلقائي كل يوم"], ["manual", "تثبيت يدوي"]] as const).map(([mode, label]) => (
+                            <button
+                                key={mode} type="button" aria-pressed={dateMode === mode} disabled={modeSaving}
+                                onClick={() => handleDateMode(mode)}
+                                className={`py-2 rounded-lg text-xs font-extrabold transition-all disabled:opacity-60 ${dateMode === mode ? "bg-qatar-maroon text-white shadow-sm" : "text-qatar-ink-soft hover:bg-white"}`}
+                            >
+                                {label}
+                            </button>
+                        ))}
                     </div>
+
+                    {dateMode === "auto" ? (
+                        <>
+                            <div className="w-full rounded-xl px-4 py-3 bg-qatar-cream text-center font-black text-slate-700 text-lg tracking-wider" dir="ltr">
+                                {todayISO}
+                            </div>
+                            <p className="text-[11px] text-slate-500 font-bold leading-relaxed">
+                                يتحدث التاريخ تلقائياً عند منتصف الليل بتوقيت قطر — لا حاجة لتثبيته كل يوم.
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <input
+                                type="date"
+                                value={displayDate}
+                                onChange={e => setDateVal(e.target.value)}
+                                className="w-full border-2 border-qatar-maroon/20 rounded-xl px-4 py-3 font-black text-slate-700 bg-white outline-none focus:border-qatar-maroon text-center text-lg tracking-wider"
+                            />
+                            {currentDate !== todayISO && (
+                                <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-[11px] font-bold text-amber-800 leading-relaxed">
+                                    <ShieldAlert className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                                    <span>
+                                        التاريخ المثبّت <bdi dir="ltr">{currentDate}</bdi> ليس تاريخ اليوم — كل رصد يُسجَّل به حتى تغيّره أو تختار «تلقائي».
+                                    </span>
+                                </div>
+                            )}
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={handleSaveDate}
+                                    disabled={dateVal === null}
+                                    className="flex items-center gap-2 bg-qatar-maroon text-white px-5 py-2.5 rounded-xl font-black hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+                                >
+                                    <Check className="w-4 h-4" />
+                                    حفظ التاريخ وتثبيته
+                                </button>
+                                {dateSaved && (
+                                    <span className="flex items-center gap-1 text-emerald-600 font-extrabold text-sm animate-in fade-in">
+                                        <Check className="w-4 h-4" /> تم التثبيت
+                                    </span>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* ── Periods Per Day ── */}

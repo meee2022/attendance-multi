@@ -10,6 +10,8 @@ export default defineSchema({
         createdAt: v.string(),
         periodsPerDay: v.optional(v.number()),
         currentDate: v.optional(v.string()),
+        // "auto": the school day is today, every day. "manual": pinned to currentDate.
+        dateMode: v.optional(v.union(v.literal("auto"), v.literal("manual"))),
         adminPin: v.optional(v.string()), // default "1234"
         adminRecoveryCode: v.optional(v.string()), // one-time-view code to reset adminPin
         allowPasswordRecovery: v.optional(v.boolean()), // allow resetting adminPin via school password

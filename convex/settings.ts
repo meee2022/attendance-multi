@@ -41,7 +41,8 @@ export const updateCurrentDate = mutation({
     handler: async (ctx, args) => {
         const school = await ctx.db.get(args.schoolId);
         if (!school) throw new Error("لا توجد مدرسة.");
-        await ctx.db.patch(school._id, { currentDate: args.date });
+        // Saving a specific date is an explicit choice to pin it.
+        await ctx.db.patch(school._id, { currentDate: args.date, dateMode: "manual" });
         return "تم حفظ التاريخ.";
     },
 });
@@ -157,4 +158,15 @@ export const deleteClass = mutation({
     handler: async (ctx, args) => {
         await ctx.db.delete(args.id);
     }
+});
+
+/** Switch between following today automatically and a pinned school date. */
+export const updateDateMode = mutation({
+    args: { schoolId: v.id("schools"), mode: v.union(v.literal("auto"), v.literal("manual")) },
+    handler: async (ctx, args) => {
+        const school = await ctx.db.get(args.schoolId);
+        if (!school) throw new Error("لا توجد مدرسة.");
+        await ctx.db.patch(school._id, { dateMode: args.mode });
+        return args.mode === "auto" ? "صار التاريخ يتحدث تلقائياً كل يوم." : "صار التاريخ مثبّتاً يدوياً.";
+    },
 });
