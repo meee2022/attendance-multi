@@ -18,6 +18,7 @@ import LateStudentsPage from "./pages/LateStudentsPage";
 import LeavePermissionsPage from "./pages/LeavePermissionsPage";
 import FollowUpPage from "./pages/FollowUpPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
+import PrintRoutes from "./pages/PrintPage";
 
 type NavItem = { to: string; icon: ReactNode; label: string; short?: string; admin: boolean };
 
@@ -44,6 +45,8 @@ function App() {
         {/* Platform owner console — deliberately outside SchoolSetupGuard, so it
             works without being logged into any particular school. */}
         <Route path="/super" element={<SuperAdminPage />} />
+        {/* Printed forms: no navigation bars, but still need a logged-in school. */}
+        <Route path="/print/*" element={<SchoolSetupGuard><PrintRoutes /></SchoolSetupGuard>} />
         <Route path="/*" element={<SchoolApp />} />
       </Routes>
     </SchoolProvider>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { format } from "date-fns";
 import {
-    ClipboardCheck, RefreshCw, Phone, Check, SkipForward, RotateCcw, Search,
+    ClipboardCheck, RefreshCw, Phone, Check, SkipForward, RotateCcw, Search, Printer,
     Loader2, UserX, Clock, Users, ListChecks, CalendarRange,
 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
@@ -10,6 +10,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 import PageHeader from "../components/PageHeader";
 import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
+import { formsForAction } from "../forms/registry";
 import {
     ACTOR_LABELS, RECIPIENT_LABELS, KIND_LABELS, CALL_OUTCOMES,
     stepLabel, type DisciplineKind,
@@ -262,6 +263,13 @@ export default function FollowUpPage() {
                                                     </div>
 
                                                     <div className="followup-buttons">
+                                                        {formsForAction(task.kind, task.actionKey).length > 0 && (
+                                                            <a className="late-action is-cancel" href={`/print/action/${task._id}`}
+                                                                target="_blank" rel="noopener noreferrer"
+                                                                title="طباعة النموذج" aria-label={`طباعة نموذج ${task.label}`}>
+                                                                <Printer size={15} />
+                                                            </a>
+                                                        )}
                                                         {view === "pending" ? (
                                                             <>
                                                                 <button type="button" className="late-action" disabled={pending !== null}

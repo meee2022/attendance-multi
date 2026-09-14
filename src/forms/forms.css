@@ -1,0 +1,112 @@
+/* Printed forms. Kept apart from the app's workspace styles so an official
+   design can replace this file without touching the rest of the interface. */
+
+.print-root {
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+  background: #e9e4dc;
+  color: #1f1a1b;
+  direction: rtl;
+  font-family: 'Cairo', 'Segoe UI', sans-serif;
+}
+
+.print-toolbar {
+  max-width: 210mm;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #e8d8c4;
+  border-radius: 14px;
+}
+.print-toolbar strong { color: #5C1523; font-size: 15px; }
+.print-toolbar .hint { font-size: 12px; color: #6b5058; margin-top: 2px; }
+.print-toolbar .actions { display: flex; gap: 8px; }
+.print-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; background: #5C1523; color: #FCF9F2; font-size: 14px; font-weight: 700; }
+.print-btn.is-ghost { background: transparent; color: #5C1523; border: 1px solid #e8d8c4; }
+.print-state { max-width: 210mm; margin: 40px auto; padding: 32px; background: #fff; border-radius: 14px; text-align: center; color: #6b5058; }
+
+.form-sheet {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto 20px;
+  padding: 14mm 16mm 12mm;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.form-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 2px solid #5C1523; }
+.form-header-right { font-size: 12.5px; line-height: 1.75; font-weight: 700; }
+.form-header-left { font-size: 12px; line-height: 2; text-align: left; }
+.form-logo { width: 66px; height: 66px; border-radius: 50%; border: 1.5px solid #C9A96E; display: grid; place-items: center; overflow: hidden; color: #8a7a72; font-size: 10.5px; line-height: 1.3; text-align: center; }
+.form-logo img { width: 100%; height: 100%; object-fit: contain; }
+
+.form-title { margin: 4px 0 2px; text-align: center; font-size: 20px; font-weight: 800; color: #5C1523; }
+.form-subtitle { margin-bottom: 12px; text-align: center; font-size: 12.5px; color: #6b5058; }
+
+.form-body { font-size: 14px; line-height: 2.05; text-align: justify; }
+.form-body p { margin: 0 0 8px; }
+.form-muted { color: #6b5058; font-size: 12px; }
+.form-section-title { margin: 10px 0 4px; font-size: 13.5px; font-weight: 800; color: #5C1523; }
+
+.form-table { width: 100%; margin: 6px 0 12px; border-collapse: collapse; font-size: 13px; line-height: 1.7; }
+.form-table th, .form-table td { padding: 4px 8px; border: 1px solid #bfb3a6; text-align: right; vertical-align: middle; }
+.form-table th { width: 30%; background: #f3ece0; font-weight: 700; }
+.form-table.is-dates th { width: auto; text-align: center; }
+.form-table.is-dates td { text-align: center; }
+.form-dates { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; }
+.form-dates .form-table { margin-top: 0; }
+
+.fill {
+  display: inline-block;
+  min-width: 110px;
+  min-height: 0 !important;
+  height: auto;
+  padding: 0 4px;
+  border: 0;
+  border-bottom: 1px dotted #7a6a58;
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
+  text-align: center;
+  vertical-align: baseline;
+  outline: none;
+}
+.fill.is-wide { min-width: 240px; }
+.fill:focus, .fill:focus-visible { background: #fcf9f2; box-shadow: none !important; border-color: #5C1523; }
+.fill::placeholder { color: #b5a89b; font-size: 11px; }
+
+.form-lines .line { height: 28px; border-bottom: 1px dotted #7a6a58; }
+
+.form-signatures { display: grid; gap: 16px; margin-top: auto; padding-top: 22px; text-align: center; font-size: 13px; }
+.form-signatures .sig-title { font-weight: 800; }
+.form-signatures .sig-line { margin-top: 36px; padding-top: 4px; border-top: 1px dotted #7a6a58; color: #6b5058; font-size: 11.5px; }
+
+.form-footer { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 6px; border-top: 1px solid #e0d6c8; font-size: 10.5px; color: #8a7a72; }
+
+@page { size: A4; margin: 0; }
+
+@media print {
+  html, body { background: #fff !important; }
+  .print-root { padding: 0; background: #fff; }
+  .no-print { display: none !important; }
+  .form-sheet { margin: 0; box-shadow: none; break-after: page; page-break-after: always; }
+  .form-sheet:last-child { break-after: auto; page-break-after: auto; }
+  .fill::placeholder { color: transparent; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+@media screen and (max-width: 840px) {
+  .form-sheet { width: 100%; min-height: auto; padding: 18px; }
+  .form-header { grid-template-columns: 1fr; }
+  .form-header-left { text-align: right; }
+  .form-logo { display: none; }
+  .form-dates { grid-template-columns: 1fr; }
+}

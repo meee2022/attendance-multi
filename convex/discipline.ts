@@ -460,3 +460,72 @@ export const reopenAction = mutation({
         await ctx.db.patch(args.id, { status: "pending", outcome: undefined, completedAt: undefined });
     },
 });
+
+// ─── Printable forms ────────────────────────────────────────────────────────
+
+/**
+ * Everything a printed form needs for one task: the student, her class, the
+ * actual absence/late dates this term, and the steps already taken — so a
+ * referral can show what was tried before. Never returns school secrets.
+ */
+export const getActionForm = query({
+    args: { actionId: v.id("disciplineActions") },
+    handler: async (ctx, args) => {
+        const action = await ctx.db.get(args.actionId);
+        if (!action) return null;
+        const school = await ctx.db.get(action.schoolId);
+        const student = await ctx.db.get(action.studentId);
+        if (!school || !student) return null;
+        const cls = await ctx.db.get(student.classId);
+
+        const termStart = school.termStartDate ?? defaultTermStart();
+        const threshold = school.dailyAbsenceThreshold ?? 0;
+
+        const records = await ctx.db.query("attendance")
+            .withIndex("by_student", q => q.eq("studentId", student._id))
+            .collect();
+        const missedPerDate = new Map<string, number>();
+        for (const record of records) {
+            if (record.status !== "absent") continue;
+            const period = await ctx.db.get(record.periodId);
+            if (!period || period.date < termStart) continue;
+            missedPerDate.set(period.date, (missedPerDate.get(period.date) ?? 0) + 1);
+        }
+        const absenceDates = [...missedPerDate.entries()]
+            .filter(([, missed]) => missed > threshold)
+            .map(([date]) => date)
+            .sort();
+
+        const lates = await ctx.db.query("tardiness")
+            .withIndex("by_student", q => q.eq("studentId", student._id))
+            .collect();
+        const lateDates = lates.map(l => l.date).filter(d => d >= termStart).sort();
+
+        const history = (await ctx.db.query("disciplineActions")
+            .withIndex("by_student", q => q.eq("studentId", student._id))
+            .collect())
+            .filter(a => a.kind === action.kind && a.status === "done" && a._id !== action._id && a.actor !== "system")
+            .sort((a, b) => a.count - b.count || a.createdAt - b.createdAt)
+            .map(a => ({ label: a.label, count: a.count, completedAt: a.completedAt ?? null, outcome: a.outcome ?? null }));
+
+        return {
+            actionId: action._id,
+            kind: action.kind,
+            count: action.count,
+            actionKey: action.actionKey,
+            label: action.label,
+            actor: action.actor,
+            schoolName: school.name,
+            schoolCode: school.code,
+            studentName: student.fullName,
+            className: cls?.name ?? "",
+            grade: cls?.grade ?? null,
+            guardianPhone: student.guardianPhone ?? null,
+            nationalId: student.nationalId ?? null,
+            termStart,
+            absenceDates,
+            lateDates,
+            history,
+        };
+    },
+});

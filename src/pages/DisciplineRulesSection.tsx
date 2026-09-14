@@ -4,6 +4,7 @@ import { CalendarRange, Plus, RotateCcw, Trash2, Info, Loader2 } from "lucide-re
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useSchool } from "../lib/SchoolContext";
+import { FORMS } from "../forms/registry";
 import {
     ACTOR_LABELS, RECIPIENT_LABELS, KIND_LABELS, COUNT_AS_ABSENCE,
     type DisciplineKind,
@@ -210,6 +211,24 @@ export default function DisciplineRulesSection() {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Printable forms */}
+            <div className="settings-rows">
+                <div className="settings-row">
+                    <div>
+                        <label>النماذج المطبوعة</label>
+                        <p>تُطبع من صفحة «مهام المتابعة» بزر الطابعة بجانب كل مهمة لها نموذج، وتُملأ ببيانات الطالبة وتواريخها تلقائياً.
+                            الصيغ الحالية مؤقتة، وتُستبدل بالنماذج المعتمدة عند وصولها.</p>
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignContent: "flex-start" }}>
+                        {Object.entries(FORMS).map(([id, form]) => (
+                            <a key={id} href={`/print/preview/${id}`} target="_blank" rel="noopener noreferrer" className="late-action is-cancel">
+                                {form.title}
+                            </a>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* Add an action the paper does not have */}
