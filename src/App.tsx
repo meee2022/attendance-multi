@@ -163,18 +163,20 @@ function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden xl:flex items-center gap-1 flex-1 justify-center">
+          {/* The bar is capped at max-w-7xl on every screen, so eight tabs always use
+              the compact spacing and short labels — wider screens gain no extra room. */}
+          <div className="hidden xl:flex items-center gap-0.5 flex-1 justify-center">
             {/* Public tabs */}
-            {PUBLIC_NAV.map(({ to, icon, label }) => {
+            {PUBLIC_NAV.map(({ to, icon, label, short }) => {
               const active = isActive(to);
               return (
-                <Link key={to} to={to} aria-current={isActive(to) ? "page" : undefined}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-all ${active
+                <Link key={to} to={to} aria-current={isActive(to) ? "page" : undefined} title={label}
+                  className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${active
                       ? "bg-qatar-maroon text-white shadow-sm"
                       : "text-qatar-gray-text hover:bg-rose-50 hover:text-qatar-maroon"
                     }`}
                 >
-                  {icon}{label}
+                  {icon}{short ?? label}
                 </Link>
               );
             })}
@@ -211,9 +213,9 @@ function Navbar() {
             <button onClick={() => setShowExitSchool(true)} title="الخروج من المدرسة وتغييرها"
               className="flex items-center gap-1.5 text-[11px] font-bold text-qatar-gray-text hover:text-qatar-maroon border border-slate-200 hover:border-qatar-maroon/40 px-3 py-1.5 rounded-xl transition-all">
               <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden 2xl:inline">خروج من المدرسة</span>
             </button>
-            <div className="hidden sm:flex flex-col items-end leading-tight">
+            {/* Hidden on desktop, where the eight tabs need the room. */}
+            <div className="hidden sm:flex xl:hidden flex-col items-end leading-tight">
               <span className="text-[10px] font-bold text-qatar-gray-text">{isAdminAuthed ? "مسؤول النظام" : "معلم"}</span>
               <span className="text-sm font-extrabold text-slate-700">{isAdminAuthed ? "Admin" : "Teacher"}</span>
             </div>
