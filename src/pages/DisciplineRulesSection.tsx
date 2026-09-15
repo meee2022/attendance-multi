@@ -4,7 +4,7 @@ import { CalendarRange, Plus, RotateCcw, Trash2, Info, Loader2 } from "lucide-re
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useSchool } from "../lib/SchoolContext";
-import { FORMS } from "../forms/registry";
+import { FORMS, OFFICIAL_WARNING_COUNTS } from "../forms/registry";
 import {
     ACTOR_LABELS, RECIPIENT_LABELS, KIND_LABELS, COUNT_AS_ABSENCE,
     type DisciplineKind,
@@ -219,14 +219,20 @@ export default function DisciplineRulesSection() {
                     <div>
                         <label>النماذج المطبوعة</label>
                         <p>تُطبع من صفحة «مهام المتابعة» بزر الطابعة بجانب كل مهمة لها نموذج، وتُملأ ببيانات الطالبة وتواريخها تلقائياً.
-                            الصيغ الحالية مؤقتة، وتُستبدل بالنماذج المعتمدة عند وصولها.</p>
+                            «إنذار وتعهد (غياب)» مطابق لنماذج الوزارة المعتمدة؛ باقي النماذج صيغ مؤقتة تُستبدل عند وصول المعتمد منها.</p>
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignContent: "flex-start" }}>
-                        {Object.entries(FORMS).map(([id, form]) => (
-                            <a key={id} href={`/print/preview/${id}`} target="_blank" rel="noopener noreferrer" className="late-action is-cancel">
-                                {form.title}
-                            </a>
-                        ))}
+                        {Object.entries(FORMS).map(([id, form]) => id === "guardian_warning"
+                            ? OFFICIAL_WARNING_COUNTS.map(n => (
+                                <a key={`${id}-${n}`} href={`/print/preview/${id}?count=${n}`} target="_blank" rel="noopener noreferrer" className="late-action is-cancel">
+                                    {form.title} ({n})
+                                </a>
+                            ))
+                            : (
+                                <a key={id} href={`/print/preview/${id}`} target="_blank" rel="noopener noreferrer" className="late-action is-cancel">
+                                    {form.title}
+                                </a>
+                            ))}
                     </div>
                 </div>
             </div>

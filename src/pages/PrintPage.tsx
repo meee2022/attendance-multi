@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Routes, Route, useParams } from "react-router-dom";
+import { Routes, Route, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { Printer, X, Loader2 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
@@ -105,6 +105,7 @@ function ActionPrint() {
 
 function PreviewPrint() {
     const { formId } = useParams();
+    const [search] = useSearchParams();
     const { school } = useSchool();
     const entry = FORMS[formId as FormId];
     usePrintTitle(entry ? `معاينة - ${entry.title}` : null);
@@ -112,7 +113,8 @@ function PreviewPrint() {
     if (!entry) {
         return <div className="print-root"><div className="print-state">النموذج غير موجود.</div></div>;
     }
-    const data: FormData = { ...SAMPLE_DATA, schoolName: school?.name ?? SAMPLE_DATA.schoolName, issueDate: todayInQatar() };
+    const count = Number(search.get("count")) || SAMPLE_DATA.count;
+    const data: FormData = { ...SAMPLE_DATA, count, absenceDates: SAMPLE_DATA.absenceDates.slice(0, count), schoolName: school?.name ?? SAMPLE_DATA.schoolName, issueDate: todayInQatar() };
     return (
         <div className="print-root">
             <Toolbar title={`معاينة: ${entry.title} — ببيانات تجريبية`} count={1} />

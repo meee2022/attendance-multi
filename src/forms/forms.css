@@ -110,3 +110,98 @@
   .form-logo { display: none; }
   .form-dates { grid-template-columns: 1fr; }
 }
+
+/* ─── Ministry absence warning (moeAbsenceWarning.tsx) ─────────────────────
+   Measured from the ministry's PDFs: A4 in points, body 12pt, titles 14pt,
+   signature table 10pt, note 11pt. Calibri carries Arabic on Windows, which is
+   what the originals were typeset in; Tajawal is the closest web fallback. */
+.moe-sheet {
+  width: 595pt;
+  min-height: 842pt;
+  padding: 14pt 44pt 18pt;
+  font-family: Calibri, 'Tajawal', 'Segoe UI', sans-serif;
+  font-size: 12pt;
+  line-height: 1.55;
+  color: #000;
+}
+.moe-header { display: block; width: 244pt; height: auto; margin-inline-start: 0; margin-bottom: 18pt; margin-right: -26pt; }
+.moe-series { margin: -2pt 0 14pt; font-size: 13pt; color: #830505; }
+.moe-title-row { position: relative; display: flex; justify-content: center; }
+.moe-title {
+  width: 226pt;
+  padding: 8pt 0 7pt;
+  border: 1pt solid #000;
+  border-radius: 13pt;
+  text-align: center;
+  font-size: 14pt;
+  font-weight: 700;
+  line-height: 1.75;
+}
+.moe-date { margin: 12pt 0 8pt; text-align: left; direction: rtl; }
+.moe-title-row.has-date .moe-date { position: absolute; left: 0; bottom: 4pt; margin: 0; white-space: nowrap; }
+/* Beside the title box the date must stay clear of it, as on the 8/10/11/13-day originals. */
+.moe-title-row.has-date .moe-blank { min-width: 1.3em !important; }
+.moe-title-row.has-date + .moe-line { margin-top: 18pt; }
+.moe-line { margin: 0 0 12pt; }
+.moe-para { margin: 0 0 10pt; line-height: 1.95; text-align: justify; }
+.moe-para u, .moe-note u { text-underline-offset: 3pt; }
+.moe-pledge-title { margin: 6pt 0 12pt; text-align: center; font-size: 14pt; font-weight: 700; text-decoration: underline; text-underline-offset: 4pt; }
+
+.moe-blank {
+  display: inline-block;
+  min-width: 4em;
+  padding: 0 2pt;
+  border-bottom: 1.2pt dotted #000;
+  line-height: 1.2;
+  text-align: center;
+  vertical-align: baseline;
+  outline: none;
+}
+.moe-blank:focus { background: #fcf9f2; }
+.moe-dates td .moe-blank { border-bottom-color: transparent; min-width: 100%; }
+
+.moe-table { width: 100%; border-collapse: collapse; }
+.moe-table th, .moe-table td { border: 0.75pt solid #000; padding: 0 5pt; font-weight: 400; text-align: right; vertical-align: middle; }
+.moe-dates { margin: 2pt 0 6pt; }
+.moe-dates th, .moe-dates td { height: 23pt; }
+.moe-dates.is-dense th, .moe-dates.is-dense td { height: 19.5pt; }
+/* The originals push «م» to the outer edge of each half of the table. */
+.moe-dates .is-num { text-align: right; }
+.moe-dates .is-num.is-left { text-align: left; }
+.moe-dates.is-single .is-num { text-align: center; }
+.moe-dates td.is-empty { background: #d8d9d8; }
+.moe-dates .c-num { width: 8%; }
+.moe-dates .c-day { width: 19%; }
+.moe-dates .c-date { width: 23%; }
+.moe-dates.is-single { width: 280pt; margin-inline: auto; }
+.moe-dates.is-single .is-num { width: 22pt; }
+.moe-dates.is-single th:nth-child(2) { width: 126pt; }
+
+.moe-signatures { margin: 8pt 0 12pt; font-size: 10pt; }
+.moe-signatures th, .moe-signatures td { height: 29pt; }
+.moe-signatures .c-label { width: 24%; }
+.moe-signatures .c-value { width: 18%; }
+.moe-signatures .c-mid { width: 38%; }
+.moe-signatures .c-end { width: 20%; }
+.moe-signatures .is-center { text-align: center; }
+.moe-signatures .moe-blank { min-width: 2em; }
+
+.moe-note {
+  margin: 4pt 12pt 0;
+  padding: 7pt 14pt;
+  border: 1pt solid #000;
+  border-radius: 12pt;
+  font-size: 11pt;
+  font-weight: 700;
+  line-height: 2;
+  text-align: center;
+}
+.moe-note-label { font-size: 14pt; text-decoration: underline; text-underline-offset: 3pt; }
+
+@media print {
+  .moe-blank:focus { background: transparent; }
+}
+@media screen and (max-width: 840px) {
+  .moe-sheet { width: 595pt; min-height: 842pt; padding: 14pt 44pt 18pt; }
+  .print-root:has(.moe-sheet) { overflow-x: auto; }
+}

@@ -1,9 +1,10 @@
 import type { ComponentType } from "react";
 import type { FormData, FormOptions, FormProps } from "./formKit";
 import {
-    StudentPledge, GuardianPledge, GuardianWarning, GuardianNotice,
+    StudentPledge, GuardianPledge, GuardianNotice,
     GuardianSummons, Referral, ExamNotice,
 } from "./templates";
+import { MoeAbsenceWarning } from "./moeAbsenceWarning";
 
 /** The printable forms, and which follow-up action prints which. */
 
@@ -14,7 +15,7 @@ export type FormId =
 export const FORMS: Record<FormId, { title: string; Component: ComponentType<FormProps> }> = {
     student_pledge: { title: "تعهد الطالبة", Component: StudentPledge },
     guardian_pledge: { title: "تعهد ولي الأمر", Component: GuardianPledge },
-    guardian_warning: { title: "إنذار لولي الأمر", Component: GuardianWarning },
+    guardian_warning: { title: "إنذار وتعهد (غياب)", Component: MoeAbsenceWarning },
     guardian_notice: { title: "إشعار من المنسقة", Component: GuardianNotice },
     guardian_summons: { title: "استدعاء ولي الأمر", Component: GuardianSummons },
     referral: { title: "نموذج تحويل", Component: Referral },
@@ -47,6 +48,9 @@ export function formsForAction(kind: string, actionKey: string): FormRef[] {
     return FORMS_BY_ACTION[`${kind}:${actionKey}`] ?? [];
 }
 
+/** Day counts the ministry issued a warning-and-pledge form for. */
+export const OFFICIAL_WARNING_COUNTS = [3, 5, 7, 8, 10, 11, 13, 14];
+
 /** Placeholder data for previewing a form from the settings screen. */
 export const SAMPLE_DATA: FormData = {
     schoolName: "اسم المدرسة",
@@ -62,7 +66,8 @@ export const SAMPLE_DATA: FormData = {
     actor: "supervisor",
     termStart: "2026-08-01",
     issueDate: "",
-    absenceDates: ["2026-08-24", "2026-08-31", "2026-09-07", "2026-09-08", "2026-09-14"],
+    absenceDates: ["2026-08-24", "2026-08-31", "2026-09-07", "2026-09-08", "2026-09-14", "2026-09-21", "2026-09-28",
+        "2026-10-05", "2026-10-12", "2026-10-19", "2026-10-26", "2026-11-02", "2026-11-09", "2026-11-16"],
     lateDates: ["2026-08-26", "2026-09-02"],
     history: [
         { label: "اتصال هاتفي بولي الأمر", count: 1, completedAt: Date.UTC(2026, 7, 24, 7), outcome: "تم الرد" },

@@ -73,31 +73,7 @@ export function GuardianPledge(props: FormProps) {
     );
 }
 
-// ─── إنذار لولي الأمر ───────────────────────────────────────────────────────
-export function GuardianWarning(props: FormProps) {
-    const { data } = props;
-    const absence = isAbsence(props);
-    return (
-        <FormSheet
-            data={data}
-            title={absence ? "إنذار بشأن غياب الطالبة" : "إنذار بشأن تأخر الطالبة"}
-            subtitle={stepPhrase(data)}
-            signatures={["المشرفة الإدارية", "مديرة المدرسة"]}
-        >
-            <p>المكرّم ولي أمر الطالبة / <b>{data.studentName}</b> &nbsp;&nbsp; المحترم</p>
-            <p>السلام عليكم ورحمة الله وبركاته، وبعد:</p>
-            <p>
-                نود إفادتكم بأن ابنتكم الطالبة بالصف <bdi dir="ltr">{data.className}</bdi> قد بلغ{" "}
-                {absence ? "عدد أيام غيابها" : "عدد مرات تأخرها الصباحي"} منذ بداية الفصل الدراسي {countPhrase(data)} وفق البيان أدناه.
-                وحرصاً على مصلحتها وتحصيلها الدراسي، نأمل منكم متابعة {absence ? "انتظامها في الحضور وتزويد المدرسة بالأعذار في حينها" : "حضورها في الموعد المحدد"}،
-                علماً بأن استمرار ذلك يستوجب اتخاذ الإجراءات المتبعة في المدرسة.
-            </p>
-            <p>شاكرين لكم حسن تعاونكم.</p>
-            <DatesTable data={data} />
-            <GuardianReceipt />
-        </FormSheet>
-    );
-}
+// «إنذار لولي الأمر» is the ministry's official form — see moeAbsenceWarning.tsx.
 
 // ─── إشعار من المنسقة لولي الأمر ────────────────────────────────────────────
 export function GuardianNotice(props: FormProps) {

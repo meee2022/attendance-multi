@@ -9,4 +9,6 @@ export const FORM_HEADER = {
     /** Path under /public, e.g. "/logo.png". Null prints a placeholder circle. */
     logoUrl: null as string | null,
     footer: "نموذج متابعة الغياب والتأخير",
+    /** Letterhead cropped from the ministry's PDFs, used by the official forms. */
+    moeHeaderUrl: "/forms/moe-header.png" as string | null,
 };
