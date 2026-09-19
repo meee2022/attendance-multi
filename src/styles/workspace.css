@@ -494,17 +494,22 @@
   }
 }
 
-/* Actions report (ActionsReportTab): printing shows only the report itself. */
-.actions-report-print-title { display: none; }
+/* Printing any report (the «تصدير PDF» button) shows only the open report:
+   no menus, tabs or controls — the reader saves it as PDF from the dialog. */
+.actions-report-print-title, .reports-print-title { display: none; }
 @media print {
-  body:has(.actions-report) * { visibility: hidden; }
-  .actions-report, .actions-report * { visibility: visible; }
-  .actions-report { position: absolute; inset: 0 0 auto 0; }
-  .actions-report .no-print { display: none !important; }
-  .actions-report-print-title { display: block; margin: 0 0 8px; font-size: 16px; font-weight: 800; color: #5C1523; text-align: center; }
-  .actions-report .overflow-x-auto { overflow: visible; }
-  .actions-report table { font-size: 10.5px; }
-  .actions-report tr { break-inside: avoid; }
+  body:has(.reports-page) * { visibility: hidden; }
+  .reports-page, .reports-page * { visibility: visible; }
+  .reports-page { position: absolute; inset: 0 0 auto 0; margin: 0; padding: 0; }
+  .reports-page .no-print, .reports-page .report-pdf-button,
+  .reports-page .school-date-field, .reports-page button { display: none !important; }
+  .reports-print-title, .actions-report-print-title {
+    display: block; margin: 0 0 10px; font-size: 15px; font-weight: 800; color: #5C1523; text-align: center;
+  }
+  .reports-page .overflow-x-auto { overflow: visible !important; }
+  .reports-page table { font-size: 10.5px; width: 100%; }
+  .reports-page tr, .reports-page .qatar-card-shadow { break-inside: avoid; }
+  .reports-page .qatar-card-shadow { box-shadow: none !important; }
 }
 
 /* «تصفير الإجراءات» — a destructive action, set apart in red. */

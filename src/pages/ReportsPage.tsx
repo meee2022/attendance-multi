@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import * as XLSX from "xlsx";
 import {
     Calendar, TrendingUp, Users, UserX, UserCheck, Download,
-    TableProperties, BarChart3, Check, X, AlertTriangle, Clock, ShieldAlert, Search, DoorOpen, ClipboardCheck
+    TableProperties, BarChart3, Check, X, AlertTriangle, Clock, ShieldAlert, Search, DoorOpen, ClipboardCheck, FileDown
 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import StatCard from "../components/StatCard";
@@ -112,7 +112,7 @@ export default function ReportsPage() {
             <PageHeader title="التقارير الإحصائية" description="راجع ملخص الحضور وتفاصيل الغياب والتأخير والإنذارات." icon={TrendingUp} actions={<label className="school-date-field"><span><Calendar size={16} /> تاريخ التقرير</span><input type="date" aria-label="تاريخ التقرير" value={date} onChange={e => { if(e.target.value) setDate(e.target.value); }} /></label>} />
 
             {/* Tabs */}
-            <div className="workspace-tabs report-tabs">
+            <div className="workspace-tabs report-tabs no-print">
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
@@ -127,6 +127,16 @@ export default function ReportsPage() {
                         {tab.label}
                     </button>
                 ))}
+                {/* Printing the page gives a PDF with real Arabic text, unlike a generated one. */}
+                <button type="button" onClick={() => window.print()} title="يفتح نافذة الطباعة — اختر «حفظ كـ PDF»"
+                    className="report-pdf-button flex items-center gap-2 px-5 py-2.5 rounded-xl font-extrabold text-sm text-qatar-maroon border border-qatar-maroon/40 hover:bg-rose-50">
+                    <FileDown className="w-4 h-4" />تصدير PDF
+                </button>
+            </div>
+
+            {/* Shown only on the printed page. */}
+            <div className="reports-print-title">
+                {tabs.find(t => t.id === activeTab)?.label} — {school?.name ?? ""} — <bdi dir="ltr">{date}</bdi>
             </div>
 
             {/* ─── TAB 1: Summary ─── */}
