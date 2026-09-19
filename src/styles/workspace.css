@@ -493,3 +493,16 @@
     .dr-matrix .dr-rule-col { min-width: 200px; max-width: 200px; }
   }
 }
+
+/* Actions report (ActionsReportTab): printing shows only the report itself. */
+.actions-report-print-title { display: none; }
+@media print {
+  body:has(.actions-report) * { visibility: hidden; }
+  .actions-report, .actions-report * { visibility: visible; }
+  .actions-report { position: absolute; inset: 0 0 auto 0; }
+  .actions-report .no-print { display: none !important; }
+  .actions-report-print-title { display: block; margin: 0 0 8px; font-size: 16px; font-weight: 800; color: #5C1523; text-align: center; }
+  .actions-report .overflow-x-auto { overflow: visible; }
+  .actions-report table { font-size: 10.5px; }
+  .actions-report tr { break-inside: avoid; }
+}

@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type QueryCtx } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 
@@ -48,7 +48,8 @@ const DEFAULT_RULES: Record<Kind, RuleSeed[]> = {
     tardiness: [
         { actionKey: "oral_warning", label: "تنبيه شفهي للطالبة", actor: "supervisor", recipient: "student", counts: [1], minGrade: 4, maxGrade: 6 },
         { actionKey: "phone_call", label: "اتصال هاتفي بولي الأمر", actor: "supervisor", recipient: "guardian", counts: [1, 2, 3, 4, 5] },
-        { actionKey: "student_pledge", label: "تعهد الطالبة", actor: "supervisor", recipient: "student", counts: [2, 3, 5] },
+        // Grades 1–3 are never asked to sign a pledge.
+        { actionKey: "student_pledge", label: "تعهد الطالبة", actor: "supervisor", recipient: "student", counts: [2, 3, 5], minGrade: 4, maxGrade: 6 },
         { actionKey: "refer_social_worker", label: "تحويل إلى الأخصائية الاجتماعية", actor: "supervisor", recipient: "staff", counts: [3, 5] },
         { actionKey: "refer_coordinator", label: "تحويل إلى المنسقة", actor: "supervisor", recipient: "staff", counts: [4, 6] },
         { actionKey: "coordinator_refer_social", label: "تحويل من المنسقة إلى الأخصائية الاجتماعية", actor: "coordinator", recipient: "staff", counts: [4] },
@@ -352,6 +353,21 @@ export const syncActions = mutation({
                     });
                 }
             }
+
+            // Rules edited since a task was raised (grade range narrowed, a day
+            // unticked, the rule switched off): its pending tasks are no longer due.
+            for (const action of existingActions) {
+                if (action.studentId !== student._id || action.status !== "pending") continue;
+                const rule = activeRules.find(r => r.kind === action.kind && r.actionKey === action.actionKey);
+                const applies = !!rule && rule.counts.includes(action.count)
+                    && !(rule.minGrade && grade && grade < rule.minGrade)
+                    && !(rule.maxGrade && grade && grade > rule.maxGrade);
+                if (applies) continue;
+                const fresh = await ctx.db.get(action._id);
+                if (fresh?.status !== "pending") continue; // already cancelled above in this sync
+                await ctx.db.patch(action._id, { status: "cancelled", notes: "لم يعد الإجراء ينطبق بعد تعديل القواعد" });
+                cancelled++;
+            }
         }
 
         if (!initialized) await ctx.db.patch(args.schoolId, { disciplineInitializedAt: now });
@@ -384,48 +400,77 @@ export const getTasks = query({
                 .slice(0, 300);
         }
 
-        const progressRows = await ctx.db.query("disciplineProgress")
-            .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
-            .collect();
-        const countOf = new Map(progressRows.map(p => [`${p.studentId}:${p.kind}`, p.lastCount]));
+        return actionRows(ctx, args.schoolId, actions);
+    },
+});
 
-        const studentCache = new Map<string, any>();
-        const classCache = new Map<string, any>();
-        const rows = [];
-        for (const action of actions) {
-            let student = studentCache.get(action.studentId);
-            if (student === undefined) {
-                student = await ctx.db.get(action.studentId);
-                studentCache.set(action.studentId, student);
-            }
-            if (!student) continue;
-            let cls = classCache.get(student.classId);
-            if (cls === undefined) {
-                cls = await ctx.db.get(student.classId);
-                classCache.set(student.classId, cls);
-            }
-            rows.push({
-                _id: action._id,
-                studentId: action.studentId,
-                studentName: student.fullName as string,
-                className: (cls?.name ?? "غير محدد") as string,
-                guardianPhone: (student.guardianPhone ?? null) as string | null,
-                absenceCount: countOf.get(`${action.studentId}:absence`) ?? 0,
-                tardinessCount: countOf.get(`${action.studentId}:tardiness`) ?? 0,
-                kind: action.kind,
-                count: action.count,
-                actionKey: action.actionKey,
-                label: action.label,
-                actor: action.actor,
-                recipient: action.recipient,
-                status: action.status,
-                outcome: action.outcome ?? null,
-                notes: action.notes ?? null,
-                createdAt: action.createdAt,
-                completedAt: action.completedAt ?? null,
-            });
+/** Actions joined with the student, class and running counts, as the task list and report show them. */
+async function actionRows(ctx: QueryCtx, schoolId: Id<"schools">, actions: Doc<"disciplineActions">[]) {
+    const progressRows = await ctx.db.query("disciplineProgress")
+        .withIndex("by_school", q => q.eq("schoolId", schoolId))
+        .collect();
+    const countOf = new Map(progressRows.map(p => [`${p.studentId}:${p.kind}`, p.lastCount]));
+
+    const studentCache = new Map<string, any>();
+    const classCache = new Map<string, any>();
+    const rows = [];
+    for (const action of actions) {
+        let student = studentCache.get(action.studentId);
+        if (student === undefined) {
+            student = await ctx.db.get(action.studentId);
+            studentCache.set(action.studentId, student);
         }
-        return rows;
+        if (!student) continue;
+        let cls = classCache.get(student.classId);
+        if (cls === undefined) {
+            cls = await ctx.db.get(student.classId);
+            classCache.set(student.classId, cls);
+        }
+        rows.push({
+            _id: action._id,
+            studentId: action.studentId,
+            studentName: student.fullName as string,
+            className: (cls?.name ?? "غير محدد") as string,
+            grade: (cls?.grade ?? null) as number | null,
+            guardianPhone: (student.guardianPhone ?? null) as string | null,
+            absenceCount: countOf.get(`${action.studentId}:absence`) ?? 0,
+            tardinessCount: countOf.get(`${action.studentId}:tardiness`) ?? 0,
+            kind: action.kind,
+            count: action.count,
+            actionKey: action.actionKey,
+            label: action.label,
+            actor: action.actor,
+            recipient: action.recipient,
+            status: action.status,
+            outcome: action.outcome ?? null,
+            notes: action.notes ?? null,
+            createdAt: action.createdAt,
+            completedAt: action.completedAt ?? null,
+        });
+    }
+    return rows;
+}
+
+const qatarDay = (ms: number) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Qatar", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ms));
+
+/**
+ * Every action raised between two school days (inclusive, Qatar time) in
+ * any status but cancelled — unlike the task list, nothing is capped.
+ */
+export const getActionsReport = query({
+    args: { schoolId: v.id("schools"), from: v.string(), to: v.string() },
+    handler: async (ctx, args) => {
+        const actions = (await ctx.db.query("disciplineActions")
+            .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
+            .collect())
+            .filter(a => a.status !== "cancelled")
+            .filter(a => {
+                const day = qatarDay(a.createdAt);
+                return day >= args.from && day <= args.to;
+            })
+            .sort((a, b) => a.createdAt - b.createdAt);
+        return actionRows(ctx, args.schoolId, actions);
     },
 });
 

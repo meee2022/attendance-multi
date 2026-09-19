@@ -5,11 +5,12 @@ import { format } from "date-fns";
 import * as XLSX from "xlsx";
 import {
     Calendar, TrendingUp, Users, UserX, UserCheck, Download,
-    TableProperties, BarChart3, Check, X, AlertTriangle, Clock, ShieldAlert, Search, DoorOpen
+    TableProperties, BarChart3, Check, X, AlertTriangle, Clock, ShieldAlert, Search, DoorOpen, ClipboardCheck
 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
+import ActionsReportTab from "./ActionsReportTab";
 
 const GRADE_LABELS: Record<number, string> = {
     1: "الأول", 2: "الثاني", 3: "الثالث", 4: "الرابع", 5: "الخامس", 6: "السادس",
@@ -59,7 +60,7 @@ function PctBadge({ pct, type }: { pct: number; type: "present" | "absent" }) {
 /* ─────────────────── Page ─────────────────── */
 export default function ReportsPage() {
     const { school } = useSchool();
-    const [activeTab, setActiveTab] = useState<"summary" | "matrix" | "frequent" | "tardiness" | "leaves" | "warnings">("summary");
+    const [activeTab, setActiveTab] = useState<"summary" | "matrix" | "frequent" | "tardiness" | "leaves" | "warnings" | "actions">("summary");
     const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
     const schoolId = school?._id;
@@ -101,6 +102,7 @@ export default function ReportsPage() {
         { id: "warnings", label: "الإنذارات التراكمية", icon: <ShieldAlert className="w-4 h-4" /> },
         { id: "tardiness", label: "إحصائيات التأخير", icon: <Clock className="w-4 h-4" /> },
         { id: "leaves", label: "تكرار الاستئذان", icon: <DoorOpen className="w-4 h-4" /> },
+        { id: "actions", label: "تقرير الإجراءات", icon: <ClipboardCheck className="w-4 h-4" /> },
     ] as const;
 
     return (
@@ -195,6 +197,8 @@ export default function ReportsPage() {
 
             {/* ─── TAB: Frequent early leavers ─── */}
             {activeTab === "leaves" && schoolId && <LeaveSummaryTab schoolId={schoolId} />}
+
+            {activeTab === "actions" && schoolId && <ActionsReportTab schoolId={schoolId} />}
 
             {/* ─── TAB 5: Cumulative Warnings ─── */}
             {activeTab === "warnings" && schoolId && (
