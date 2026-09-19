@@ -1,0 +1,79 @@
+/* «إنذار — غياب بدون عذر» (moeAbsenceWarning.tsx), measured from the school's
+   Word forms: Arial, side margins 42.5pt, the title box 298pt with a 1.5pt
+   border, dates and signature tables with the originals' column proportions.
+   The originals are 14pt, but a browser sets Arial's Arabic wider than Word
+   does, so 13pt gives the same line breaks. Printed on A4, the size the
+   school's printers use. */
+
+.moe-sheet {
+  width: 595pt;
+  min-height: 842pt;
+  padding: 14pt 42.5pt 11pt;
+  font-family: Arial, 'Segoe UI', sans-serif;
+  font-size: 13pt;
+  line-height: 1.15;
+  color: #000;
+}
+.moe-sheet p { margin: 0 0 9pt; }
+
+.moe-header { display: block; width: 425pt; max-width: 100%; height: auto; margin: 0 auto 6pt; }
+.moe-series { margin: 0 0 6pt; font-weight: 700; color: #c00000; text-align: right; }
+
+/* Title box in the right three-quarters, date at the top of the left quarter. */
+.moe-top { display: grid; grid-template-columns: 370pt 128pt; justify-content: center; align-items: start; margin-bottom: 12pt; }
+.moe-title-cell { display: flex; justify-content: center; }
+.moe-title { width: 298pt; padding: 5pt 0; border: 1.5pt solid #000; text-align: center; font-weight: 700; line-height: 1.6; }
+.moe-date { text-align: right; white-space: nowrap; }
+
+.moe-center { text-align: center; white-space: nowrap; }
+.moe-para { text-align: justify; line-height: 1.5; }
+.moe-para u, .moe-note u { text-underline-offset: 3pt; }
+.moe-pledge-title { margin: 0 0 9pt; text-align: center; font-size: 13pt; font-weight: 700; text-decoration: underline; text-underline-offset: 4pt; }
+
+.moe-blank {
+  display: inline-block;
+  min-width: 3em;
+  padding: 0 2pt;
+  border-bottom: 1.2pt dotted #000;
+  line-height: 1.2;
+  text-align: center;
+  vertical-align: baseline;
+  outline: none;
+}
+.moe-blank:focus { background: #fcf9f2; }
+
+.moe-table { border-collapse: collapse; margin: 0 auto 10pt; }
+.moe-table th, .moe-table td { border: 0.75pt solid #000; padding: 2pt 5pt; font-weight: 400; vertical-align: middle; }
+
+/* Dates: 3 columns up to 3 days, then two halves of 3. Widths from the originals' grid. */
+.moe-dates th, .moe-dates td { height: 19pt; text-align: center; }
+.moe-dates td .moe-blank { border-bottom-color: transparent; min-width: 100%; }
+.moe-dates td.is-empty { background: #d9d9d9; }
+.moe-dates { width: 431pt; }
+.moe-dates .c-num { width: 40pt; }
+.moe-dates .c-day { width: 85pt; }
+.moe-dates .c-date { width: 91pt; }
+.moe-dates.is-single { width: 315pt; }
+.moe-dates.is-single .c-num { width: 45pt; }
+.moe-dates.is-single .c-day { width: 128pt; }
+.moe-dates.is-single .c-date { width: 142pt; }
+
+/* Signatures, with the note as the table's last row (originals' proportions 22/26/29/23%). */
+.moe-signatures { width: 490pt; }
+.moe-signatures .c-1 { width: 22%; }
+.moe-signatures .c-2 { width: 26%; }
+.moe-signatures .c-3 { width: 29%; }
+.moe-signatures .c-4 { width: 23%; }
+.moe-signatures th, .moe-signatures td { height: 22pt; text-align: right; line-height: 1.5; white-space: nowrap; }
+.moe-signatures th.is-wrap { white-space: normal; }
+.moe-signatures .is-center { text-align: center; }
+.moe-signatures .moe-blank { min-width: 2em; }
+.moe-signatures .moe-note td { border-width: 1.25pt; padding: 5pt 10pt; font-weight: 700; text-align: center; line-height: 1.8; white-space: normal; }
+
+@media print {
+  .moe-blank:focus { background: transparent; }
+}
+@media screen and (max-width: 840px) {
+  .moe-sheet { width: 595pt; min-height: 842pt; padding: 14pt 42.5pt 11pt; }
+  .print-root:has(.moe-sheet) { overflow-x: auto; }
+}
