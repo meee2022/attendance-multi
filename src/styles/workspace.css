@@ -506,3 +506,8 @@
   .actions-report table { font-size: 10.5px; }
   .actions-report tr { break-inside: avoid; }
 }
+
+/* «تصفير الإجراءات» — a destructive action, set apart in red. */
+.dr-reset { border-color: #fecaca; background: #fff7f7; }
+.dr-reset-button { background: #b91c1c !important; color: #fff !important; border-color: #b91c1c !important; }
+.dr-reset-button:disabled { opacity: 0.5; }

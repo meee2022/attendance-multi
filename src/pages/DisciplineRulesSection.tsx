@@ -4,6 +4,7 @@ import { CalendarRange, Plus, RotateCcw, Trash2, Info, Loader2 } from "lucide-re
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useSchool } from "../lib/SchoolContext";
+import { todayInQatar } from "../lib/schoolDate";
 import { FORMS, OFFICIAL_WARNING_COUNTS } from "../forms/registry";
 import {
     ACTOR_LABELS, RECIPIENT_LABELS, KIND_LABELS, COUNT_AS_ABSENCE,
@@ -34,8 +35,11 @@ export default function DisciplineRulesSection() {
     const addRule = useMutation(api.discipline.addRule);
     const deleteRule = useMutation(api.discipline.deleteRule);
     const setTermStart = useMutation(api.discipline.setTermStart);
+    const resetDiscipline = useMutation(api.discipline.resetDiscipline);
+    const totals = useQuery(api.discipline.getDisciplineTotals, schoolId ? { schoolId } : "skip");
 
     const [kind, setKind] = useState<DisciplineKind>("absence");
+    const [resetFrom, setResetFrom] = useState(todayInQatar());
     const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
     const [termDraft, setTermDraft] = useState<string | null>(null);
     const [newLabel, setNewLabel] = useState("");
@@ -97,6 +101,43 @@ export default function DisciplineRulesSection() {
                                 run(() => setTermStart({ schoolId, date: termValue })).then(() => setTermDraft(null));
                             }}>
                             <CalendarRange size={14} className="inline ml-1" />حفظ
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Reset the follow-up history once the trial period is over. */}
+            <div className="settings-rows dr-reset">
+                <div className="settings-row">
+                    <div>
+                        <label htmlFor="reset-from">تصفير الإجراءات</label>
+                        <p>
+                            يحذف كل مهام المتابعة والإنذارات المسجّلة (المنفّذة والمعلّقة والمتخطّاة) ويُصفّر عدّاد كل طالبة،
+                            ثم يبدأ العدّ من التاريخ المختار. <b>لا يمس</b> بيانات الطالبات ولا الغياب ولا التأخير ولا القواعد.
+                        </p>
+                        <p className="settings-row-hint">
+                            المسجّل حالياً: {totals === undefined ? "…" : `${totals.actions} إجراءً (تم ${totals.done}، معلّقة ${totals.pending})`}
+                        </p>
+                    </div>
+                    <div className="settings-row-control">
+                        <label htmlFor="reset-from" className="sr-only">يبدأ العدّ من</label>
+                        <input id="reset-from" type="date" value={resetFrom} onChange={e => e.target.value && setResetFrom(e.target.value)} />
+                        <button type="button" className="dr-reset-button" disabled={!schoolId || !resetFrom}
+                            onClick={() => {
+                                if (!schoolId) return;
+                                const count = totals?.actions ?? 0;
+                                if (!window.confirm(`سيُحذف ${count} إجراءً نهائياً ويبدأ العدّ من ${resetFrom}. بيانات الطالبات والغياب تبقى كما هي. متابعة؟`)) return;
+                                if (window.prompt("للتأكيد اكتب كلمة: تصفير")?.trim() !== "تصفير") {
+                                    setMsg({ ok: false, text: "لم يتم التصفير — كلمة التأكيد غير صحيحة." });
+                                    return;
+                                }
+                                run(async () => {
+                                    const result = await resetDiscipline({ schoolId, countFrom: resetFrom });
+                                    setTermDraft(null);
+                                    return `تم التصفير: حُذف ${result.deleted} إجراءً، ويبدأ العدّ من ${result.countFrom}.`;
+                                });
+                            }}>
+                            <Trash2 size={14} className="inline ml-1" />تصفير
                         </button>
                     </div>
                 </div>

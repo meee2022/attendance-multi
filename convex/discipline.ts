@@ -206,6 +206,51 @@ export const setTermStart = mutation({
     },
 });
 
+/** How much follow-up history a reset would remove, for the confirmation. */
+export const getDisciplineTotals = query({
+    args: { schoolId: v.id("schools") },
+    handler: async (ctx, args) => {
+        const actions = await ctx.db.query("disciplineActions")
+            .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
+            .collect();
+        return {
+            actions: actions.length,
+            done: actions.filter(a => a.status === "done").length,
+            pending: actions.filter(a => a.status === "pending").length,
+        };
+    },
+});
+
+/**
+ * Admin «تصفير الإجراءات»: wipes the follow-up history — every task (done,
+ * pending, skipped, cancelled) and every student's counter — and restarts
+ * counting from `countFrom`. Students, attendance, lates and the rules are
+ * left untouched; only absences and lates on or after `countFrom` will raise
+ * tasks again.
+ */
+export const resetDiscipline = mutation({
+    args: { schoolId: v.id("schools"), countFrom: v.string() },
+    handler: async (ctx, args) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(args.countFrom)) throw new ConvexError("تاريخ غير صالح.");
+        const school = await ctx.db.get(args.schoolId);
+        if (!school) throw new ConvexError("لا توجد مدرسة.");
+
+        const actions = await ctx.db.query("disciplineActions")
+            .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
+            .collect();
+        for (const action of actions) await ctx.db.delete(action._id);
+
+        const progress = await ctx.db.query("disciplineProgress")
+            .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
+            .collect();
+        for (const row of progress) await ctx.db.delete(row._id);
+
+        // Counting starts afresh, so every step from the first is raised again.
+        await ctx.db.patch(args.schoolId, { termStartDate: args.countFrom, disciplineInitializedAt: Date.now() });
+        return { deleted: actions.length, countFrom: args.countFrom };
+    },
+});
+
 // ─── Counting and task generation ───────────────────────────────────────────
 
 export const syncActions = mutation({
