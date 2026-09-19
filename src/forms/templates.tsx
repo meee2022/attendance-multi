@@ -110,7 +110,7 @@ export function GuardianSummons(props: FormProps) {
             data={data}
             title="استدعاء ولي أمر"
             subtitle={stepPhrase(data)}
-            signatures={["منسقة شؤون الطلاب", "مديرة المدرسة"]}
+            signatures={["منسقة شؤون الطلاب"]}
         >
             <p>المكرّم ولي أمر الطالبة / <b>{data.studentName}</b> &nbsp;&nbsp; المحترم</p>
             <p>السلام عليكم ورحمة الله وبركاته، وبعد:</p>
