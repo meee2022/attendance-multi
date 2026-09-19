@@ -29,7 +29,8 @@ const FORMS_BY_ACTION: Record<string, FormRef[]> = {
     "absence:student_pledge": [{ id: "student_pledge" }],
     "absence:refer_coordinator": [{ id: "referral", options: { to: "coordinator" } }],
     "absence:guardian_warning": [{ id: "guardian_warning" }],
-    "absence:coordinator_message": [{ id: "guardian_notice" }],
+    // The coordinator's letter goes home with the guardian's pledge to sign.
+    "absence:coordinator_message": [{ id: "guardian_notice" }, { id: "guardian_pledge" }],
     "absence:behavior_meeting": [{ id: "guardian_summons", options: { meetingWith: "فريق إدارة السلوك" } }],
     "absence:refer_behavior": [{ id: "referral", options: { to: "behavior_team" } }],
     "absence:exam_notice": [{ id: "exam_notice" }],
