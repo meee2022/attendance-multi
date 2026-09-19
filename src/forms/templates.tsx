@@ -24,7 +24,7 @@ export function StudentPledge(props: FormProps) {
             data={data}
             title={absence ? "تعهد طالبة بالانتظام في الحضور" : "تعهد طالبة بالالتزام بموعد الحضور الصباحي"}
             subtitle={stepPhrase(data)}
-            signatures={["الطالبة", "المشرفة الإدارية", "ولي الأمر (للاطلاع)"]}
+            signatures={["الطالبة", "المشرفة الإدارية"]}
         >
             <StudentInfo data={data} />
             <p>

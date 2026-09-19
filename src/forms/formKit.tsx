@@ -53,7 +53,9 @@ export function countPhrase(data: FormData): string {
     return n === 1 ? "مرة واحدة" : n === 2 ? "مرتين" : n <= 10 ? `${n} مرات` : `${n} مرة`;
 }
 
-export const kindDates = (data: FormData) => (data.kind === "absence" ? data.absenceDates : data.lateDates);
+/** The dates that made up the action's count — later ones happened after this step. */
+export const kindDates = (data: FormData) =>
+    [...(data.kind === "absence" ? data.absenceDates : data.lateDates)].sort().slice(0, data.count);
 
 const GRADE_NAMES: Record<number, string> = {
     1: "الأول", 2: "الثاني", 3: "الثالث", 4: "الرابع", 5: "الخامس", 6: "السادس",
@@ -82,19 +84,34 @@ export function FormSheet({ data, title, subtitle, signatures, children }: {
 }) {
     return (
         <section className="form-sheet">
-            <header className="form-header">
-                <div className="form-header-right">
-                    {FORM_HEADER.lines.map(line => <div key={line}>{line}</div>)}
-                    <div>{data.schoolName}</div>
-                </div>
-                <div className="form-logo">
-                    {FORM_HEADER.logoUrl ? <img src={FORM_HEADER.logoUrl} alt="" /> : <span>شعار<br />المدرسة</span>}
-                </div>
-                <div className="form-header-left">
-                    <div>التاريخ: <bdi dir="ltr">{data.issueDate}</bdi></div>
-                    <div>الرقم: <Fill placeholder="......" /></div>
-                </div>
-            </header>
+            {FORM_HEADER.moeHeaderUrl ? (
+                /* Same ministry letterhead as the official warning form. */
+                <header className="form-header has-moe">
+                    <img className="form-moe-header" src={FORM_HEADER.moeHeaderUrl}
+                        alt="وزارة التربية والتعليم والتعليم العالي — إدارة شؤون المدارس والطلبة" />
+                    <div className="form-header-meta">
+                        <div className="form-header-right">{data.schoolName}</div>
+                        <div className="form-header-left">
+                            <div>التاريخ: <bdi dir="ltr">{data.issueDate}</bdi></div>
+                            <div>الرقم: <Fill placeholder="......" /></div>
+                        </div>
+                    </div>
+                </header>
+            ) : (
+                <header className="form-header">
+                    <div className="form-header-right">
+                        {FORM_HEADER.lines.map(line => <div key={line}>{line}</div>)}
+                        <div>{data.schoolName}</div>
+                    </div>
+                    <div className="form-logo">
+                        {FORM_HEADER.logoUrl ? <img src={FORM_HEADER.logoUrl} alt="" /> : <span>شعار<br />المدرسة</span>}
+                    </div>
+                    <div className="form-header-left">
+                        <div>التاريخ: <bdi dir="ltr">{data.issueDate}</bdi></div>
+                        <div>الرقم: <Fill placeholder="......" /></div>
+                    </div>
+                </header>
+            )}
 
             <h1 className="form-title">{title}</h1>
             {subtitle && <p className="form-subtitle">{subtitle}</p>}

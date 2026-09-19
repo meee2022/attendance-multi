@@ -72,10 +72,14 @@ export default function TeacherUpload() {
 
     const [selectedClass, setSelectedClass] = useState("");
     const [selectedSubject, setSelectedSubject] = useState("");
-    // Uploads are recorded under the school day: the pinned date in manual
-    // mode, otherwise today — recomputed each render so it rolls over at midnight.
+    // Uploads default to the school day — the pinned date in manual mode,
+    // otherwise today (recomputed each render so it rolls over at midnight) —
+    // and the calendar can move them to an earlier day that was missed.
     const lockedDate = pinnedDate(data?.schools?.[0]);
-    const activeDate = lockedDate ?? todayInQatar();
+    const today = todayInQatar();
+    const defaultDate = lockedDate ?? today;
+    const [pickedDate, setPickedDate] = useState<string | null>(null);
+    const activeDate = pickedDate ?? defaultDate;
     const [periodNumber, setPeriodNumber] = useState("1");
     const [file, setFile] = useState<File | null>(null);
     const [parsedNames, setParsedNames] = useState<string[]>([]);
@@ -288,23 +292,51 @@ export default function TeacherUpload() {
                                 </select>
                             </div>
 
-                            {/* Date — locked, read-only */}
-                            <div className="rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-4">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
-                                        <Calendar className="w-4 h-4" />
+                            {/* Date — defaults to the school day; the calendar records a missed period on an earlier day. */}
+                            {(() => {
+                                const isEarlier = pickedDate !== null;
+                                const maxDate = defaultDate > today ? defaultDate : today;
+                                return (
+                                    <div className={`rounded-2xl border-2 p-4 ${isEarlier ? "border-amber-300 bg-amber-50" : "border-emerald-300 bg-emerald-50"}`}>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className={`w-8 h-8 rounded-lg text-white flex items-center justify-center ${isEarlier ? "bg-amber-600" : "bg-emerald-600"}`}>
+                                                <Calendar className="w-4 h-4" />
+                                            </div>
+                                            <label htmlFor="period-date" className={`text-xs font-bold ${isEarlier ? "text-amber-800" : "text-emerald-700"}`}>تاريخ الحصة</label>
+                                            <span className={`mr-auto flex items-center gap-1 text-[10px] text-white px-2 py-0.5 rounded-full font-black ${isEarlier ? "bg-amber-600" : "bg-emerald-600"}`}>
+                                                {isEarlier ? (activeDate < defaultDate ? "يوم سابق" : "يوم آخر") : lockedDate ? <><Lock className="w-2.5 h-2.5" />مثبَّت</> : "اليوم"}
+                                            </span>
+                                        </div>
+                                        <input
+                                            id="period-date"
+                                            type="date"
+                                            value={activeDate}
+                                            max={maxDate}
+                                            disabled={!!draftResult}
+                                            onChange={e => {
+                                                const v = e.target.value;
+                                                if (!v || v > maxDate) return;
+                                                setPickedDate(v === defaultDate ? null : v);
+                                            }}
+                                            className={`w-full rounded-xl px-3 py-2.5 font-extrabold text-sm bg-white border text-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 ${isEarlier ? "text-amber-900 border-amber-300" : "text-emerald-900 border-emerald-300"}`}
+                                        />
+                                        {isEarlier ? (
+                                            <p className="mt-1.5 text-[11px] text-amber-800 font-bold text-center leading-relaxed">
+                                                ستُسجَّل الحصة بتاريخ <bdi dir="ltr">{activeDate}</bdi> وليس <bdi dir="ltr">{defaultDate}</bdi>.{" "}
+                                                {!draftResult && (
+                                                    <button type="button" onClick={() => setPickedDate(null)} className="underline underline-offset-2 hover:text-amber-950">
+                                                        الرجوع لتاريخ اليوم
+                                                    </button>
+                                                )}
+                                            </p>
+                                        ) : (
+                                            <p className="mt-1.5 text-[10px] text-emerald-700/80 font-bold text-center">
+                                                {lockedDate ? "التاريخ المثبَّت من الإعدادات" : "تاريخ اليوم تلقائياً"} — اضغط لاختيار يوم سابق
+                                            </p>
+                                        )}
                                     </div>
-                                    <span className="text-xs font-bold text-emerald-700">تاريخ الحصة</span>
-                                    <span className="mr-auto flex items-center gap-1 text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-black">
-                                        <Lock className="w-2.5 h-2.5" />
-                                        مثبَّت
-                                    </span>
-                                </div>
-                                <div className="w-full rounded-xl px-3 py-2.5 font-extrabold text-sm text-emerald-900 bg-white border border-emerald-300 text-center tracking-widest select-none">
-                                    {activeDate}
-                                </div>
-                                <p className="mt-1.5 text-[10px] text-emerald-600/70 font-bold text-center">يُحدَّد من صفحة الإعدادات فقط</p>
-                            </div>
+                                );
+                            })()}
 
                             {/* Period Number */}
                             <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 hover:border-amber-400 transition-all">
