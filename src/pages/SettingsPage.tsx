@@ -132,6 +132,8 @@ function GeneralSettings() {
     const updateCurrentDate = useMutation(api.settings.updateCurrentDate);
     const updateDateMode = useMutation(api.settings.updateDateMode);
     const updateDailyAbsenceThreshold = useMutation(api.settings.updateDailyAbsenceThreshold);
+    const updatePeriodUploadEnabled = useMutation(api.settings.updatePeriodUploadEnabled);
+    const [periodUploadSaving, setPeriodUploadSaving] = useState(false);
 
     const school = data?.schools?.[0];
 
@@ -232,6 +234,52 @@ function GeneralSettings() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+
+                {/* ── Per-period recording: closed unless the admin opens it ── */}
+                <div className="rounded-2xl border border-qatar-gray-border bg-white p-5 space-y-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-qatar-maroon/10 text-qatar-maroon flex items-center justify-center flex-shrink-0">
+                            <Lock className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <p className="font-black text-qatar-maroon text-sm">رصد الحصص (رفع كشف حضور)</p>
+                            <p className="text-[11px] text-slate-400 font-medium">الرصد اليومي يبقى متاحاً دائماً</p>
+                        </div>
+                    </div>
+
+                    <p className="text-[11px] font-bold text-qatar-gray-text leading-relaxed">
+                        عند الإقفال يختفي وضع «رفع كشف حصة» من صفحة رصد الغياب، ولا يبقى إلا «رصد يومي».
+                        الحصص المرصودة سابقاً تبقى محفوظة كما هي.
+                    </p>
+
+                    <div className="flex items-center justify-between gap-3">
+                        <span className={`text-xs font-black px-3 py-1.5 rounded-xl border ${school?.periodUploadEnabled
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                            {school?.periodUploadEnabled ? "مفعّل" : "مقفل"}
+                        </span>
+                        <button
+                            type="button"
+                            disabled={!contextSchool?._id || periodUploadSaving}
+                            onClick={async () => {
+                                if (!contextSchool?._id) return;
+                                setPeriodUploadSaving(true);
+                                try {
+                                    await updatePeriodUploadEnabled({
+                                        schoolId: contextSchool._id as any,
+                                        enabled: !school?.periodUploadEnabled,
+                                    });
+                                } finally {
+                                    setPeriodUploadSaving(false);
+                                }
+                            }}
+                            className={`px-5 py-2.5 rounded-xl font-black text-sm transition-colors disabled:opacity-50 ${school?.periodUploadEnabled
+                                ? "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                                : "bg-qatar-maroon text-white hover:bg-qatar-maroon-dark"}`}>
+                            {school?.periodUploadEnabled ? "إقفال رصد الحصص" : "تفعيل رصد الحصص"}
+                        </button>
+                    </div>
+                </div>
 
                 {/* ── School date: follow today, or pin a date ── */}
                 <div className="rounded-2xl border border-qatar-gray-border bg-white p-5 space-y-4">

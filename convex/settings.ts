@@ -68,6 +68,17 @@ export const updateDailyAbsenceThreshold = mutation({
     },
 });
 
+/** Opens or closes «رفع كشف حصة»; daily recording is unaffected. */
+export const updatePeriodUploadEnabled = mutation({
+    args: { schoolId: v.id("schools"), enabled: v.boolean() },
+    handler: async (ctx, args) => {
+        const school = await ctx.db.get(args.schoolId);
+        if (!school) throw new Error("لا توجد مدرسة.");
+        await ctx.db.patch(school._id, { periodUploadEnabled: args.enabled });
+        return args.enabled ? "تم تفعيل رصد الحصص." : "تم إقفال رصد الحصص.";
+    },
+});
+
 export const updateClass = mutation({
     args: {
         id: v.id("classes"),

@@ -18,6 +18,9 @@ export default defineSchema({
         adminResetAttempts: v.optional(v.number()), // failed recovery attempts (throttling)
         adminResetLockedUntil: v.optional(v.number()), // epoch ms; recovery locked until
         dailyAbsenceThreshold: v.optional(v.number()), // max absent periods still = present
+        // Per-period recording (the uploaded sheet) is off unless the admin turns it on;
+        // daily recording is always available.
+        periodUploadEnabled: v.optional(v.boolean()),
         termStartDate: v.optional(v.string()), // YYYY-MM-DD — absence/tardiness counts start here
         disciplineInitializedAt: v.optional(v.number()), // first follow-up sync (baseline taken)
     }).index("by_code", ["code"]),

@@ -236,7 +236,11 @@ export default function TeacherUpload() {
         </div>
     );
 
-    const modeTabs = (
+    // Per-period recording stays closed until an admin opens it in the settings.
+    const periodUploadEnabled = data?.schools?.[0]?.periodUploadEnabled ?? false;
+    const activeMode = periodUploadEnabled ? mode : "daily";
+
+    const modeTabs = !periodUploadEnabled ? null : (
         <div className="workspace-tabs" role="group" aria-label="طريقة الرصد">
             {([["daily", "رصد يومي"], ["periods", "رفع كشف حصة"]] as const).map(([value, label]) => (
                 <button key={value} type="button" aria-pressed={mode === value} onClick={() => setMode(value)}
@@ -249,7 +253,7 @@ export default function TeacherUpload() {
         </div>
     );
 
-    if (mode === "daily") {
+    if (activeMode === "daily") {
         return (
             <div className="upload-page max-w-7xl mx-auto space-y-6 font-sans animate-in fade-in duration-500 pb-20">
                 <PageHeader title="رصد الغياب اليومي" description="حدّد الغائبات عن اليوم كاملاً لكل صف، دون حصص." icon={Upload} />
