@@ -1,4 +1,5 @@
 import PageHeader from "../components/PageHeader";
+import DailyAttendanceSection from "./DailyAttendanceSection";
 import React, { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import * as xlsx from "xlsx";
@@ -81,6 +82,8 @@ export default function TeacherUpload() {
     const [pickedDate, setPickedDate] = useState<string | null>(null);
     const activeDate = pickedDate ?? defaultDate;
     const [periodNumber, setPeriodNumber] = useState("1");
+    // Two ways to record: a sheet per period (remote lessons), or the whole day at once.
+    const [mode, setMode] = useState<"periods" | "daily">("periods");
     const [file, setFile] = useState<File | null>(null);
     const [parsedNames, setParsedNames] = useState<string[]>([]);
 
@@ -233,9 +236,33 @@ export default function TeacherUpload() {
         </div>
     );
 
+    const modeTabs = (
+        <div className="workspace-tabs" role="group" aria-label="طريقة الرصد">
+            {([["daily", "رصد يومي"], ["periods", "رفع كشف حصة"]] as const).map(([value, label]) => (
+                <button key={value} type="button" aria-pressed={mode === value} onClick={() => setMode(value)}
+                    className={`px-5 py-2.5 rounded-xl font-extrabold text-sm transition-all ${mode === value
+                        ? "bg-qatar-maroon text-white shadow-md"
+                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}>
+                    {label}
+                </button>
+            ))}
+        </div>
+    );
+
+    if (mode === "daily") {
+        return (
+            <div className="upload-page max-w-7xl mx-auto space-y-6 font-sans animate-in fade-in duration-500 pb-20">
+                <PageHeader title="رصد الغياب اليومي" description="حدّد الغائبات عن اليوم كاملاً لكل صف، دون حصص." icon={Upload} />
+                {modeTabs}
+                <DailyAttendanceSection />
+            </div>
+        );
+    }
+
     return (
         <div className="upload-page max-w-7xl mx-auto space-y-10 font-sans transition-all animate-in fade-in duration-500 pb-20">
             <PageHeader title="رصد حضور الحصص" description="اختر تفاصيل الحصة، ثم ارفع ملف الحضور وراجع الأسماء قبل الحفظ." icon={Upload} />
+            {modeTabs}
 
             {/* Step 1: Configuration & Upload */}
             {!draftResult && (

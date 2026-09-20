@@ -10,6 +10,7 @@
 
 import type * as adminRecovery from "../adminRecovery.js";
 import type * as attendance from "../attendance.js";
+import type * as dailyAttendance from "../dailyAttendance.js";
 import type * as discipline from "../discipline.js";
 import type * as leaves from "../leaves.js";
 import type * as maintenance from "../maintenance.js";
@@ -29,6 +30,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   adminRecovery: typeof adminRecovery;
   attendance: typeof attendance;
+  dailyAttendance: typeof dailyAttendance;
   discipline: typeof discipline;
   leaves: typeof leaves;
   maintenance: typeof maintenance;
