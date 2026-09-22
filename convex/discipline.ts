@@ -415,6 +415,16 @@ export const syncActions = mutation({
             }
         }
 
+        // A student hidden by the yearly register (graduated or moved away) has no more follow-up.
+        const activeIds = new Set(students.map(s => s._id as string));
+        for (const action of existingActions) {
+            if (action.status !== "pending" || activeIds.has(action.studentId as string)) continue;
+            const fresh = await ctx.db.get(action._id);
+            if (fresh?.status !== "pending") continue;
+            await ctx.db.patch(action._id, { status: "cancelled", notes: "الطالبة لم تعد في سجل المدرسة" });
+            cancelled++;
+        }
+
         if (!initialized) await ctx.db.patch(args.schoolId, { disciplineInitializedAt: now });
         return { generated, cancelled, termStart, syncedAt: now };
     },
