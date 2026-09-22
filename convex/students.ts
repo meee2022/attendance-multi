@@ -19,11 +19,15 @@ export const importStudentsFromSheet = mutation({
             fullName: v.string(),
             className: v.string(),  // Already normalized (e.g. "10-1", "11-3")
             phones: v.string()
-        }))
+        })),
+        // The register is the whole school for the year: anyone not in it has
+        // graduated or left, and is hidden (not deleted, so history stays).
+        hideMissing: v.optional(v.boolean()),
     },
     handler: async (ctx, args) => {
         let importedCount = 0;
         let updatedCount = 0;
+        const seen = new Set<string>();
 
         // Fetch existing classes for this school
         const existingClasses = await ctx.db.query("classes")
@@ -105,6 +109,7 @@ export const importStudentsFromSheet = mutation({
                     ...(guardianPhone ? { guardianPhone } : {}),
                     isActive: true,
                 });
+                seen.add(existingId);
                 updatedCount++;
                 continue;
             }
@@ -117,11 +122,41 @@ export const importStudentsFromSheet = mutation({
                 isActive: true,
             });
             existingByName.set(normalizeStudentName(row.fullName), newId);
+            seen.add(newId);
             importedCount++;
         }
 
-        return { importedCount, updatedCount };
+        let hiddenCount = 0;
+        if (args.hideMissing && seen.size > 0) {
+            for (const student of existingStudents) {
+                if (student.isActive && !seen.has(student._id)) {
+                    await ctx.db.patch(student._id, { isActive: false });
+                    hiddenCount++;
+                }
+            }
+        }
+
+        return { importedCount, updatedCount, hiddenCount };
     }
+});
+
+/** Active students the register does not list — who an import with hideMissing would hide. */
+export const previewMissingFromRegister = query({
+    args: { schoolId: v.id("schools"), names: v.array(v.string()) },
+    handler: async (ctx, args) => {
+        const inFile = new Set(args.names.map(normalizeStudentName).filter(Boolean));
+        const classes = await ctx.db.query("classes")
+            .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
+            .collect();
+        const className = new Map(classes.map(c => [c._id as string, c.name]));
+        const students = await ctx.db.query("students")
+            .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
+            .collect();
+        return students
+            .filter(s => s.isActive && !inFile.has(normalizeStudentName(s.fullName)))
+            .map(s => ({ fullName: s.fullName, className: className.get(s.classId as string) ?? "" }))
+            .sort((a, b) => a.className.localeCompare(b.className) || a.fullName.localeCompare(b.fullName, "ar"));
+    },
 });
 
 export const deleteAllStudentsAndAttendance = mutation({

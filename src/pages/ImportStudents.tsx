@@ -38,6 +38,15 @@ export default function ImportStudents() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [result, setResult] = useState<any>(null);
     const [importedRows, setImportedRows] = useState<ParsedRow[]>([]);
+    // The register is the whole school for the year: whoever is not in it is hidden.
+    const [hideMissing, setHideMissing] = useState(true);
+    const [showMissing, setShowMissing] = useState(false);
+    const missing = useQuery(
+        api.students.previewMissingFromRegister,
+        school?._id && parsedRows.length > 0
+            ? { schoolId: school._id as any, names: parsedRows.map(r => r.fullName) }
+            : "skip"
+    );
     const [error, setError] = useState("");
     const [shape, setShape] = useState<SheetShape | null>(null);
     const [mapping, setMapping] = useState<Record<ColumnKind, number> | null>(null);
@@ -95,7 +104,7 @@ export default function ImportStudents() {
         setIsProcessing(true);
         setError("");
         try {
-            const res = await importStudents({ schoolId: schoolId as any, rows: parsedRows });
+            const res = await importStudents({ schoolId: schoolId as any, rows: parsedRows, hideMissing });
             setResult(res);
             setImportedRows(parsedRows);
             setParsedRows([]);
@@ -439,6 +448,39 @@ export default function ImportStudents() {
                         </div>
                     )}
 
+                    {/* Who this register leaves out: graduated or moved away */}
+                    {parsedRows.length > 0 && missing && missing.length > 0 && (
+                        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 space-y-3">
+                            <label className="flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox" className="mt-1 w-4 h-4 accent-qatar-maroon"
+                                    checked={hideMissing} onChange={e => setHideMissing(e.target.checked)} />
+                                <span>
+                                    <span className="block font-black text-amber-900">
+                                        إخفاء {missing.length} طالبة غير موجودة في هذا الملف
+                                    </span>
+                                    <span className="block text-xs font-bold text-amber-800 mt-1 leading-relaxed">
+                                        السجل يمثل كل طالبات المدرسة لهذه السنة، فمن ليست فيه تخرّجت أو انتقلت. تختفي من الرصد
+                                        والتقارير والمهام، ولا تُحذف، فيبقى سجل غيابها القديم محفوظاً.
+                                    </span>
+                                </span>
+                            </label>
+                            <button type="button" onClick={() => setShowMissing(v => !v)}
+                                className="text-xs font-black text-amber-900 underline underline-offset-2">
+                                {showMissing ? "إخفاء القائمة" : "عرض الأسماء"}
+                            </button>
+                            {showMissing && (
+                                <div className="max-h-64 overflow-y-auto rounded-xl bg-white border border-amber-200 divide-y divide-amber-100">
+                                    {missing.map((m, i) => (
+                                        <div key={i} className="flex justify-between gap-3 px-3 py-1.5 text-sm">
+                                            <span className="font-bold text-slate-700">{m.fullName}</span>
+                                            <span className="font-mono text-slate-500" dir="ltr">{m.className}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Submit Button */}
                     <div className="flex justify-center pt-2">
                         <button
@@ -477,6 +519,12 @@ export default function ImportStudents() {
                                 <div>
                                     <div className="text-5xl font-black text-white/80">{result.updatedCount}</div>
                                     <div className="text-white/70 text-xs font-bold tracking-widest">طالب مُحدَّث</div>
+                                </div>
+                            )}
+                            {result.hiddenCount > 0 && (
+                                <div>
+                                    <div className="text-5xl font-black text-white/80">{result.hiddenCount}</div>
+                                    <div className="text-white/70 text-xs font-bold tracking-widest">طالبة أُخفيت</div>
                                 </div>
                             )}
                         </div>
