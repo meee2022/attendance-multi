@@ -491,6 +491,8 @@ async function actionRows(ctx: QueryCtx, schoolId: Id<"schools">, actions: Doc<"
             notes: action.notes ?? null,
             createdAt: action.createdAt,
             completedAt: action.completedAt ?? null,
+            doneByRole: action.doneByRole ?? null,
+            doneByName: action.doneByName ?? null,
         });
     }
     return rows;
@@ -519,8 +521,10 @@ export const getActionsReport = query({
     },
 });
 
+const doneByArgs = { doneByRole: v.optional(v.string()), doneByName: v.optional(v.string()) };
+
 export const completeAction = mutation({
-    args: { id: v.id("disciplineActions"), outcome: v.optional(v.string()), notes: v.optional(v.string()) },
+    args: { id: v.id("disciplineActions"), outcome: v.optional(v.string()), notes: v.optional(v.string()), ...doneByArgs },
     handler: async (ctx, args) => {
         const action = await ctx.db.get(args.id);
         if (!action) throw new ConvexError("المهمة غير موجودة.");
@@ -529,16 +533,24 @@ export const completeAction = mutation({
             outcome: args.outcome?.trim() || undefined,
             notes: args.notes?.trim() || undefined,
             completedAt: Date.now(),
+            doneByRole: args.doneByRole || undefined,
+            doneByName: args.doneByName?.trim() || undefined,
         });
     },
 });
 
 export const skipAction = mutation({
-    args: { id: v.id("disciplineActions"), notes: v.optional(v.string()) },
+    args: { id: v.id("disciplineActions"), notes: v.optional(v.string()), ...doneByArgs },
     handler: async (ctx, args) => {
         const action = await ctx.db.get(args.id);
         if (!action) throw new ConvexError("المهمة غير موجودة.");
-        await ctx.db.patch(args.id, { status: "skipped", notes: args.notes?.trim() || undefined, completedAt: Date.now() });
+        await ctx.db.patch(args.id, {
+            status: "skipped",
+            notes: args.notes?.trim() || undefined,
+            completedAt: Date.now(),
+            doneByRole: args.doneByRole || undefined,
+            doneByName: args.doneByName?.trim() || undefined,
+        });
     },
 });
 
@@ -547,7 +559,10 @@ export const reopenAction = mutation({
     handler: async (ctx, args) => {
         const action = await ctx.db.get(args.id);
         if (!action) throw new ConvexError("المهمة غير موجودة.");
-        await ctx.db.patch(args.id, { status: "pending", outcome: undefined, completedAt: undefined });
+        await ctx.db.patch(args.id, {
+            status: "pending", outcome: undefined, completedAt: undefined,
+            doneByRole: undefined, doneByName: undefined,
+        });
     },
 });
 

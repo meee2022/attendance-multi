@@ -139,6 +139,9 @@ export default defineSchema({
         notes: v.optional(v.string()),
         createdAt: v.number(),
         completedAt: v.optional(v.number()),
+        // Who marked it done or skipped, as they identified themselves on their device.
+        doneByRole: v.optional(v.string()),
+        doneByName: v.optional(v.string()),
     }).index("by_school", ["schoolId"])
       .index("by_school_status", ["schoolId", "status"])
       .index("by_student", ["studentId"]),

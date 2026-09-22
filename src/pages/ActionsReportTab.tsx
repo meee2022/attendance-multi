@@ -86,6 +86,7 @@ export default function ActionsReportTab({ schoolId }: { schoolId: string }) {
             "الحالة": STATUS_LABELS[r.status] ?? r.status,
             "تاريخ التنفيذ": qatarDay(r.completedAt),
             "النتيجة": r.outcome ?? "",
+            "نفّذته": r.doneByRole ? `${ACTOR_LABELS[r.doneByRole] ?? r.doneByRole}${r.doneByName ? ` (${r.doneByName})` : ""}` : "",
             "ملاحظات": r.notes ?? "",
         })));
         const book = XLSX.utils.book_new();
@@ -243,6 +244,7 @@ export default function ActionsReportTab({ schoolId }: { schoolId: string }) {
                                                 {r.completedAt && <bdi dir="ltr">{qatarDay(r.completedAt)}</bdi>}
                                                 {r.outcome && ` · ${r.outcome}`}
                                                 {r.notes && ` · ${r.notes}`}
+                                                {r.doneByRole && ` · نفّذته: ${ACTOR_LABELS[r.doneByRole] ?? r.doneByRole}${r.doneByName ? ` (${r.doneByName})` : ""}`}
                                             </td>
                                         </tr>
                                     ))}

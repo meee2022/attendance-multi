@@ -11,6 +11,7 @@ import PageHeader from "../components/PageHeader";
 import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
 import { formsForAction } from "../forms/registry";
+import { useStaffIdentity, STAFF_ROLES, type StaffRole } from "../lib/staffIdentity";
 import {
     ACTOR_LABELS, RECIPIENT_LABELS, KIND_LABELS, CALL_OUTCOMES,
     stepLabel, type DisciplineKind,
@@ -42,6 +43,40 @@ export default function FollowUpPage() {
     const [outcome, setOutcome] = useState("");
     const [notes, setNotes] = useState("");
     const [pending, setPending] = useState<string | null>(null);
+
+    // Who is using this device, so each staff member works her own tab.
+    const [identity, setIdentity] = useStaffIdentity(schoolId);
+    const [chooserOpen, setChooserOpen] = useState(false);
+    const [draftRole, setDraftRole] = useState<StaffRole | null>(null);
+    const [draftName, setDraftName] = useState("");
+    const openChooser = () => {
+        setDraftRole(identity?.role ?? null);
+        setDraftName(identity?.name ?? "");
+        setChooserOpen(true);
+    };
+    // Ask once, the first time this device opens the page.
+    useEffect(() => {
+        if (schoolId && !identity) openChooser();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [schoolId]);
+    // Open on her own tab rather than the mixed list.
+    const tabSet = useRef(false);
+    useEffect(() => {
+        if (identity && !tabSet.current) { tabSet.current = true; setActor(identity.role); }
+    }, [identity]);
+
+    /** False when she has not said who she is, or declines acting on another role's task. */
+    const confirmRole = (task: { actor: string }) => {
+        if (!identity) { openChooser(); return false; }
+        if (task.actor === identity.role || task.actor === "system") return true;
+        return window.confirm(
+            `هذا الإجراء مخصص لـ«${ACTOR_LABELS[task.actor] ?? task.actor}»، وأنتِ مسجّلة «${ACTOR_LABELS[identity.role]}».\n` +
+            "هل أنتِ متأكدة أنكِ تريدين تنفيذه؟"
+        );
+    };
+    const doneBy = () => identity ? { doneByRole: identity.role, doneByName: identity.name || undefined } : {};
+    // The mixed list is for looking; acting happens in each role's own tab.
+    const readOnly = actor === "all";
 
     const tasks = useQuery(api.discipline.getTasks, schoolId ? { schoolId, view } : "skip");
     const syncActions = useMutation(api.discipline.syncActions);
@@ -184,6 +219,15 @@ export default function FollowUpPage() {
                 </label>
             </div>
 
+            <div className="followup-identity">
+                <span>
+                    {identity
+                        ? <>أنتِ: <span className={`followup-role is-${identity.role}`}>{ACTOR_LABELS[identity.role]}</span>{identity.name && ` — ${identity.name}`}</>
+                        : "لم تحدّدي دورك بعد"}
+                </span>
+                <button type="button" onClick={openChooser}>{identity ? "تغيير" : "حدّدي دورك"}</button>
+            </div>
+
             <div className="workspace-tabs" role="group" aria-label="المسؤولة عن التنفيذ">
                 {ACTOR_FILTERS.map(a => (
                     <button key={a} type="button" aria-pressed={actor === a}
@@ -194,6 +238,12 @@ export default function FollowUpPage() {
                     </button>
                 ))}
             </div>
+
+            {readOnly && view === "pending" && (
+                <p className="followup-readonly-note">
+                    «كل المسؤولات» للاطلاع فقط. لتنفيذ إجراء افتحي تبويب المسؤولة عنه.
+                </p>
+            )}
 
             {feedback && (
                 <div className={`late-feedback ${feedback.error ? "is-error" : ""}`} role={feedback.error ? "alert" : "status"}>
@@ -250,7 +300,7 @@ export default function FollowUpPage() {
                                                             <span className={`followup-step is-${task.kind}`}>
                                                                 {KIND_LABELS[task.kind as DisciplineKind]} · {stepLabel(task.kind as DisciplineKind, task.count)}
                                                             </span>
-                                                            <span>{ACTOR_LABELS[task.actor] ?? task.actor}</span>
+                                                            <span className={`followup-role is-${task.actor}`}>{ACTOR_LABELS[task.actor] ?? task.actor}</span>
                                                             <span>← {RECIPIENT_LABELS[task.recipient] ?? task.recipient}</span>
                                                         </span>
                                                         {view === "done" && (
@@ -258,6 +308,7 @@ export default function FollowUpPage() {
                                                                 {task.status === "skipped" ? "تم التخطي" : task.outcome ?? "تم"}
                                                                 {task.completedAt && ` · ${format(task.completedAt, "yyyy-MM-dd HH:mm")}`}
                                                                 {task.notes && ` · ${task.notes}`}
+                                                                {task.doneByRole && ` · نفّذته: ${ACTOR_LABELS[task.doneByRole] ?? task.doneByRole}${task.doneByName ? ` (${task.doneByName})` : ""}`}
                                                             </span>
                                                         )}
                                                     </div>
@@ -270,19 +321,25 @@ export default function FollowUpPage() {
                                                                 <Printer size={15} />
                                                             </a>
                                                         )}
-                                                        {view === "pending" ? (
+                                                        {view === "pending" ? (readOnly ? null : (
                                                             <>
                                                                 <button type="button" className="late-action" disabled={pending !== null}
-                                                                    onClick={() => isOpen ? setOpenId(null) : openForm(task._id)}>
+                                                                    onClick={() => {
+                                                                        if (isOpen) { setOpenId(null); return; }
+                                                                        if (confirmRole(task)) openForm(task._id);
+                                                                    }}>
                                                                     <Check size={15} />تم
                                                                 </button>
                                                                 <button type="button" className="late-action is-cancel" disabled={pending !== null}
                                                                     aria-label={`تخطي ${task.label}`}
-                                                                    onClick={() => act(task._id, () => skipAction({ id: task._id }), "تم تخطي المهمة.")}>
+                                                                    onClick={() => {
+                                                                        if (!confirmRole(task)) return;
+                                                                        act(task._id, () => skipAction({ id: task._id, ...doneBy() }), "تم تخطي المهمة.");
+                                                                    }}>
                                                                     {pending === task._id ? <Loader2 size={15} className="animate-spin" /> : <SkipForward size={15} />}
                                                                 </button>
                                                             </>
-                                                        ) : (
+                                                        )) : (
                                                             <button type="button" className="late-action is-cancel" disabled={pending !== null}
                                                                 onClick={() => act(task._id, () => reopenAction({ id: task._id }), "أُعيدت المهمة إلى المعلّقة.")}>
                                                                 {pending === task._id ? <Loader2 size={15} className="animate-spin" /> : <RotateCcw size={15} />}تراجع
@@ -306,7 +363,7 @@ export default function FollowUpPage() {
                                                         <div className="followup-form-actions">
                                                             <button type="button" className="late-action" disabled={pending !== null || (isCall && !outcome)}
                                                                 onClick={() => act(task._id,
-                                                                    () => completeAction({ id: task._id, outcome: outcome || undefined, notes }),
+                                                                    () => completeAction({ id: task._id, outcome: outcome || undefined, notes, ...doneBy() }),
                                                                     `تم تسجيل: ${task.label}.`)}>
                                                                 {pending === task._id ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
                                                                 حفظ
@@ -323,6 +380,41 @@ export default function FollowUpPage() {
                         );
                     })}
                 </ul>
+            )}
+
+            {chooserOpen && (
+                <div className="followup-identity-dialog" role="dialog" aria-modal="true" aria-labelledby="identity-title">
+                    <div>
+                        <h2 id="identity-title" className="text-lg font-black text-qatar-maroon">من أنتِ؟</h2>
+                        <p className="text-xs font-bold text-qatar-gray-text">
+                            تظهر لكِ مهامكِ مباشرة، ويُسجَّل اسمكِ مع كل إجراء تنفّذينه. يُحفظ اختياركِ على هذا الجهاز.
+                        </p>
+                        <div className="grid gap-2" role="group" aria-label="الدور">
+                            {STAFF_ROLES.map(role => (
+                                <button key={role} type="button" className="role-option" aria-pressed={draftRole === role}
+                                    onClick={() => setDraftRole(role)}>
+                                    <span className={`followup-role is-${role}`}>{ACTOR_LABELS[role]}</span>
+                                </button>
+                            ))}
+                        </div>
+                        <input type="text" value={draftName} placeholder="اسمكِ (اختياري)" aria-label="الاسم"
+                            onChange={e => setDraftName(e.target.value)} />
+                        <div className="flex gap-2 justify-end">
+                            {identity && (
+                                <button type="button" className="late-action is-cancel" onClick={() => setChooserOpen(false)}>إلغاء</button>
+                            )}
+                            <button type="button" className="late-action" disabled={!draftRole}
+                                onClick={() => {
+                                    if (!draftRole) return;
+                                    setIdentity({ role: draftRole, name: draftName.trim() });
+                                    setActor(draftRole);
+                                    setChooserOpen(false);
+                                }}>
+                                <Check size={15} />حفظ
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
