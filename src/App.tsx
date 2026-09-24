@@ -1,6 +1,8 @@
 import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Database, Settings, BarChart3, Upload, Shield, X, MessageSquare, Clock, LogOut, DoorOpen, ClipboardCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
 import type { ReactNode } from "react";
 import TeacherUpload from "./pages/TeacherUpload";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -138,6 +140,10 @@ function Navbar() {
   const isAdminAuthed = sessionStorage.getItem("qatar_admin_auth") === "true";
   const { school } = useSchool();
   const [showExitSchool, setShowExitSchool] = useState(false);
+  // Each school can give the app its own name (e.g. "ND/TRACK").
+  const branding = useQuery(api.settings.getBranding, school?._id ? { schoolId: school._id as any } : "skip");
+  const appName = branding?.appName ?? null;
+  useEffect(() => { document.title = appName ?? "نظام الغياب المدرسي"; }, [appName]);
 
   const handleLogout = () => {
     clearAdminSession();
@@ -155,10 +161,10 @@ function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-md"
-              style={{ background: "var(--gradient-primary)" }}>Q</div>
+              style={{ background: "var(--gradient-primary)" }}>{(appName ?? "Q").charAt(0).toUpperCase()}</div>
             <div className="flex flex-col leading-tight">
-              <span className="font-extrabold text-sm text-slate-800 max-w-[150px] sm:max-w-[200px] truncate">{school?.name || "نظام الحضور والغياب"}</span>
-              <span className="hidden sm:block text-[10px] text-qatar-gray-text font-bold uppercase tracking-wider">{school?.code || "QATAR"}</span>
+              <span className="font-extrabold text-sm text-slate-800 max-w-[150px] sm:max-w-[200px] truncate">{appName ?? (school?.name || "نظام الحضور والغياب")}</span>
+              <span className="hidden sm:block text-[10px] text-qatar-gray-text font-bold uppercase tracking-wider max-w-[200px] truncate">{appName ? school?.name : (school?.code || "QATAR")}</span>
             </div>
           </Link>
 

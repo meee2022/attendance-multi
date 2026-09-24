@@ -133,6 +133,9 @@ function GeneralSettings() {
     const updateDateMode = useMutation(api.settings.updateDateMode);
     const updateDailyAbsenceThreshold = useMutation(api.settings.updateDailyAbsenceThreshold);
     const updatePeriodUploadEnabled = useMutation(api.settings.updatePeriodUploadEnabled);
+    const updateAppName = useMutation(api.settings.updateAppName);
+    const [appNameDraft, setAppNameDraft] = useState<string | null>(null);
+    const [appNameSaved, setAppNameSaved] = useState(false);
     const [periodUploadSaving, setPeriodUploadSaving] = useState(false);
 
     const school = data?.schools?.[0];
@@ -234,6 +237,34 @@ function GeneralSettings() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+
+                {/* ── The app's own name for this school ── */}
+                <div className="rounded-2xl border border-qatar-gray-border bg-white p-5 space-y-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-qatar-maroon/10 text-qatar-maroon flex items-center justify-center flex-shrink-0 font-black">
+                            {((appNameDraft ?? school?.appName) || "Q").charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <p className="font-black text-qatar-maroon text-sm">اسم التطبيق</p>
+                            <p className="text-[11px] text-slate-400 font-medium">يظهر أعلى الشاشة وفي عنوان المتصفح لموظفي هذه المدرسة</p>
+                        </div>
+                    </div>
+                    <input value={appNameDraft ?? school?.appName ?? ""} maxLength={30} placeholder={school?.name ?? "مثال: ND/TRACK"}
+                        onChange={e => { setAppNameDraft(e.target.value); setAppNameSaved(false); }}
+                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 font-black text-slate-700 outline-none focus:border-qatar-maroon" dir="auto" />
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-bold text-qatar-gray-text">{appNameSaved ? "✓ تم الحفظ" : "اتركه فارغاً ليظهر اسم المدرسة"}</span>
+                        <button type="button" disabled={appNameDraft === null || !contextSchool?._id}
+                            onClick={async () => {
+                                if (!contextSchool?._id || appNameDraft === null) return;
+                                await updateAppName({ schoolId: contextSchool._id as any, appName: appNameDraft });
+                                setAppNameDraft(null); setAppNameSaved(true);
+                            }}
+                            className="px-5 py-2.5 rounded-xl font-black text-sm bg-qatar-maroon text-white hover:bg-qatar-maroon-dark disabled:opacity-40">
+                            حفظ
+                        </button>
+                    </div>
+                </div>
 
                 {/* ── Per-period recording: closed unless the admin opens it ── */}
                 <div className="rounded-2xl border border-qatar-gray-border bg-white p-5 space-y-4">

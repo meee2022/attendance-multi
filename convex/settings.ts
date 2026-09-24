@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const updateAdminPin = mutation({
@@ -65,6 +65,26 @@ export const updateDailyAbsenceThreshold = mutation({
         const clamped = Math.max(0, Math.min(10, Math.floor(args.threshold)));
         await ctx.db.patch(school._id, { dailyAbsenceThreshold: clamped });
         return "تم حفظ عتبة الغياب.";
+    },
+});
+
+/** What the app shows as its own name for this school. */
+export const getBranding = query({
+    args: { schoolId: v.id("schools") },
+    handler: async (ctx, args) => {
+        const school = await ctx.db.get(args.schoolId);
+        return school ? { schoolName: school.name, appName: school.appName ?? null } : null;
+    },
+});
+
+export const updateAppName = mutation({
+    args: { schoolId: v.id("schools"), appName: v.string() },
+    handler: async (ctx, args) => {
+        const school = await ctx.db.get(args.schoolId);
+        if (!school) throw new Error("لا توجد مدرسة.");
+        const appName = args.appName.replace(/\s+/g, " ").trim().slice(0, 30);
+        await ctx.db.patch(school._id, { appName: appName || undefined });
+        return appName ? `اسم التطبيق: ${appName}` : "رجع الاسم إلى اسم المدرسة.";
     },
 });
 

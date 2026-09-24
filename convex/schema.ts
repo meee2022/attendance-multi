@@ -21,6 +21,8 @@ export default defineSchema({
         // Per-period recording (the uploaded sheet) is off unless the admin turns it on;
         // daily recording is always available.
         periodUploadEnabled: v.optional(v.boolean()),
+        // Name the school's staff see for the app (e.g. "ND/TRACK"); falls back to the school name.
+        appName: v.optional(v.string()),
         termStartDate: v.optional(v.string()), // YYYY-MM-DD — absence/tardiness counts start here
         disciplineInitializedAt: v.optional(v.number()), // first follow-up sync (baseline taken)
     }).index("by_code", ["code"]),
