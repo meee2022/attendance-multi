@@ -339,7 +339,7 @@ export default function ImportStudents() {
                                     : "تم التعرف على الأعمدة تلقائياً. عدّلها يدوياً إذا كان الربط خاطئاً."}
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {(["name", "class", "grade", "section", "phone"] as ColumnKind[]).map(kind => (
+                                {(["name", "class", "grade", "section", "phone", "nationalId"] as ColumnKind[]).map(kind => (
                                     <div key={kind} className="flex flex-col gap-1.5">
                                         <label className="text-[11px] font-bold text-slate-500">
                                             {COLUMN_LABELS[kind]}
