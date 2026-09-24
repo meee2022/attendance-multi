@@ -44,7 +44,11 @@ export default function ImportStudents() {
     const missing = useQuery(
         api.students.previewMissingFromRegister,
         school?._id && parsedRows.length > 0
-            ? { schoolId: school._id as any, names: parsedRows.map(r => r.fullName) }
+            ? {
+                schoolId: school._id as any,
+                names: parsedRows.map(r => r.fullName),
+                nationalIds: parsedRows.map(r => r.nationalId ?? "").filter(Boolean),
+            }
             : "skip"
     );
     const [error, setError] = useState("");

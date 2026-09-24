@@ -18,7 +18,8 @@ export const importStudentsFromSheet = mutation({
         rows: v.array(v.object({
             fullName: v.string(),
             className: v.string(),  // Already normalized (e.g. "10-1", "11-3")
-            phones: v.string()
+            phones: v.string(),
+            nationalId: v.optional(v.string()), // الرقم الشخصي, when the register has it
         })),
         // The register is the whole school for the year: anyone not in it has
         // graduated or left, and is hidden (not deleted, so history stays).
@@ -46,10 +47,13 @@ export const importStudentsFromSheet = mutation({
             .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
             .collect();
         const existingByName = new Map<string, string>();
+        const existingByQid = new Map<string, string>();
         for (const student of existingStudents) {
             const key = normalizeStudentName(student.fullName);
             if (key && !existingByName.has(key)) existingByName.set(key, student._id);
+            if (student.nationalId) existingByQid.set(student.nationalId, student._id);
         }
+        const qidOf = new Map<string, string | undefined>(existingStudents.map(st => [st._id as string, st.nationalId]));
 
         // Skip rows with no name or no class
         const validRows = args.rows.filter(r => r.fullName.trim() && r.className.trim());
@@ -102,13 +106,22 @@ export const importStudentsFromSheet = mutation({
             // duplicate every student, because nothing checked for an existing
             // record. Matching ignores alef/ya/ta-marbuta spelling differences,
             // which vary between exports of the same register.
-            const existingId = existingByName.get(normalizeStudentName(row.fullName));
+            // The personal number identifies a student across years whatever her
+            // name looks like in this export; the name is the fallback for
+            // records created before registers carried it.
+            const qid = row.nationalId?.replace(/\D/g, "") || undefined;
+            let existingId = (qid && existingByQid.get(qid)) || existingByName.get(normalizeStudentName(row.fullName));
+            // Same name but a different personal number: two different girls, not one.
+            const byNameQid = existingId ? qidOf.get(existingId) : undefined;
+            if (qid && byNameQid && byNameQid !== qid) existingId = undefined;
             if (existingId) {
                 await ctx.db.patch(existingId as any, {
                     classId: classId as any,
                     ...(guardianPhone ? { guardianPhone } : {}),
+                    ...(qid ? { nationalId: qid, fullName: row.fullName.trim() } : {}),
                     isActive: true,
                 });
+                if (qid) { existingByQid.set(qid, existingId); qidOf.set(existingId, qid); }
                 seen.add(existingId);
                 updatedCount++;
                 continue;
@@ -119,9 +132,11 @@ export const importStudentsFromSheet = mutation({
                 classId: classId as any,
                 fullName: row.fullName.trim(),
                 guardianPhone,
+                ...(qid ? { nationalId: qid } : {}),
                 isActive: true,
             });
             existingByName.set(normalizeStudentName(row.fullName), newId);
+            if (qid) existingByQid.set(qid, newId);
             seen.add(newId);
             importedCount++;
         }
@@ -142,9 +157,10 @@ export const importStudentsFromSheet = mutation({
 
 /** Active students the register does not list — who an import with hideMissing would hide. */
 export const previewMissingFromRegister = query({
-    args: { schoolId: v.id("schools"), names: v.array(v.string()) },
+    args: { schoolId: v.id("schools"), names: v.array(v.string()), nationalIds: v.optional(v.array(v.string())) },
     handler: async (ctx, args) => {
         const inFile = new Set(args.names.map(normalizeStudentName).filter(Boolean));
+        const qidsInFile = new Set((args.nationalIds ?? []).filter(Boolean));
         const classes = await ctx.db.query("classes")
             .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
             .collect();
@@ -153,7 +169,9 @@ export const previewMissingFromRegister = query({
             .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
             .collect();
         return students
-            .filter(s => s.isActive && !inFile.has(normalizeStudentName(s.fullName)))
+            .filter(s => s.isActive
+                && !(s.nationalId && qidsInFile.has(s.nationalId))
+                && !inFile.has(normalizeStudentName(s.fullName)))
             .map(s => ({ fullName: s.fullName, className: className.get(s.classId as string) ?? "" }))
             .sort((a, b) => a.className.localeCompare(b.className) || a.fullName.localeCompare(b.fullName, "ar"));
     },

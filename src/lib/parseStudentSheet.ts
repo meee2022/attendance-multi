@@ -10,9 +10,10 @@ import * as xlsx from "xlsx";
  * captions by normalized keyword.
  */
 
-export type ParsedRow = { fullName: string; className: string; phones: string };
+/** `nationalId` is the Qatari personal number (الرقم الشخصي) when the sheet has it — the reliable key across years. */
+export type ParsedRow = { fullName: string; className: string; phones: string; nationalId?: string };
 
-export type ColumnKind = "name" | "grade" | "section" | "class" | "phone";
+export type ColumnKind = "name" | "grade" | "section" | "class" | "phone" | "nationalId";
 
 export type SheetShape = {
     /** Raw rows, as arrays of cell strings. */
@@ -49,6 +50,7 @@ export function normalizeArabic(value: unknown): string {
  * match wins, so more specific kinds are listed before broader ones.
  */
 const KEYWORDS: { kind: ColumnKind; any: string[]; not?: string[] }[] = [
+    { kind: "nationalId", any: ["الرقم الشخصي", "رقم شخصي", "الرقم الوطني", "رقم الهويه", "البطاقه", "qid", "national"] },
     { kind: "phone", any: ["هاتف", "جوال", "موبايل", "تليفون", "تلفون", "phone", "mobile", "رقم ولي"] },
     { kind: "section", any: ["شعبه", "الشعبه", "section"], not: ["صف"] },
     { kind: "class", any: ["الشعبه الصفيه", "شعبه صفيه", "صف شعبه", "class"] },
@@ -67,7 +69,7 @@ function classifyHeader(caption: string): ColumnKind | null {
 }
 
 function buildMapping(headers: string[]): Record<ColumnKind, number> {
-    const mapping: Record<ColumnKind, number> = { name: -1, grade: -1, section: -1, class: -1, phone: -1 };
+    const mapping: Record<ColumnKind, number> = { name: -1, grade: -1, section: -1, class: -1, phone: -1, nationalId: -1 };
     headers.forEach((caption, index) => {
         const kind = classifyHeader(caption);
         // Keep the first match for each kind — later duplicate captions are noise.
@@ -92,8 +94,14 @@ function looksLikeClass(value: string): boolean {
     return /^\s*\d{1,2}\s*[\/\-]\s*\d{1,3}\s*$/.test(value);
 }
 
-/** One or more phone numbers, possibly comma-separated. */
+/** A Qatari personal number: 11 digits starting with 2 or 3. */
+function looksLikeNationalId(value: string): boolean {
+    return /^[23]\d{10}$/.test(value.trim());
+}
+
+/** One or more phone numbers, possibly comma-separated — never an 11-digit personal number. */
 function looksLikePhone(value: string): boolean {
+    if (looksLikeNationalId(value)) return false;
     const digits = value.replace(/\D/g, "");
     return digits.length >= 7 && /^[\d\s,،+\-()]+$/.test(value);
 }
@@ -122,7 +130,7 @@ function columnScore(rows: string[][], column: number, test: (v: string) => bool
  * column from the class or phone.
  */
 function mappingFromContent(rows: string[][]): Record<ColumnKind, number> {
-    const mapping: Record<ColumnKind, number> = { name: -1, grade: -1, section: -1, class: -1, phone: -1 };
+    const mapping: Record<ColumnKind, number> = { name: -1, grade: -1, section: -1, class: -1, phone: -1, nationalId: -1 };
     const width = rows.reduce((max, r) => Math.max(max, r.length), 0);
     const taken = new Set<number>();
 
@@ -137,6 +145,7 @@ function mappingFromContent(rows: string[][]): Record<ColumnKind, number> {
     };
 
     claim("class", looksLikeClass, 0.6);
+    claim("nationalId", looksLikeNationalId, 0.6);
     claim("phone", looksLikePhone, 0.6);
     claim("name", looksLikeName, 0.5);
     return mapping;
@@ -244,7 +253,8 @@ export function extractRows(shape: SheetShape, mapping = shape.mapping): Extract
             continue;
         }
 
-        rows.push({ fullName, className, phones: cell(row, mapping.phone) });
+        const nationalId = cell(row, mapping.nationalId).replace(/\D/g, "");
+        rows.push({ fullName, className, phones: cell(row, mapping.phone), ...(nationalId ? { nationalId } : {}) });
     }
     return { rows, skipped };
 }
@@ -255,4 +265,5 @@ export const COLUMN_LABELS: Record<ColumnKind, string> = {
     grade: "الصف",
     section: "الشعبة",
     phone: "رقم الهاتف",
+    nationalId: "الرقم الشخصي",
 };
