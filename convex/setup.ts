@@ -361,9 +361,10 @@ export const getStudentCounts = query({
         const school = await ctx.db.get(args.schoolId);
         if (!school) return { total: 0, perClass: {} };
         // Use by_school index — no full table scan
-        const students = await ctx.db.query("students")
+        const students = (await ctx.db.query("students")
             .withIndex("by_school", q => q.eq("schoolId", school._id))
-            .collect();
+            .collect())
+            .filter(s => s.isActive); // hidden (graduated/moved) students don't count
         const total = students.length;
         const perClass: Record<string, number> = {};
         for (const s of students) {

@@ -611,6 +611,11 @@ function StudentManagement() {
     const transferStudent = useMutation(api.students.transferStudent);
     const updateStudentInfo = useMutation(api.students.updateStudentInfo);
     const deleteStudentMut = useMutation(api.students.deleteStudent);
+    const addStudentMut = useMutation(api.students.addStudent);
+    const [newName, setNewName] = useState("");
+    const [newClassId, setNewClassId] = useState("");
+    const [newPhone, setNewPhone] = useState("");
+    const [adding, setAdding] = useState(false);
 
     const [search, setSearch] = useState("");
     const [selectedClass, setSelectedClass] = useState<string>("all");
@@ -757,6 +762,43 @@ function StudentManagement() {
                             </optgroup>
                         ))}
                     </select>
+                </div>
+            </div>
+
+            {/* Add one student by hand */}
+            <div className="px-6 py-4 border-b border-qatar-gray-border bg-qatar-cream/40">
+                <p className="font-black text-qatar-maroon text-sm mb-3">إضافة طالبة جديدة</p>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="اسم الطالبة كاملاً"
+                        className="md:col-span-2 border border-slate-200 rounded-xl px-4 py-2.5 font-bold text-slate-700 outline-none focus:border-qatar-maroon bg-white" />
+                    <select value={newClassId} onChange={e => setNewClassId(e.target.value)}
+                        className="border border-slate-200 rounded-xl px-4 py-2.5 font-bold text-slate-700 outline-none bg-white focus:border-qatar-maroon">
+                        <option value="">اختر الصف</option>
+                        {gradeGroups.grades.map(grade => (
+                            <optgroup key={grade} label={`الصف ${GRADE_LABELS[grade] || grade}`}>
+                                {gradeGroups.map[grade].map((c: any) => <option key={c._id} value={c._id}>{c.name}</option>)}
+                            </optgroup>
+                        ))}
+                    </select>
+                    <input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="جوال ولي الأمر (اختياري)" dir="ltr"
+                        className="border border-slate-200 rounded-xl px-4 py-2.5 font-bold text-slate-700 outline-none focus:border-qatar-maroon bg-white" />
+                </div>
+                <div className="flex justify-end mt-3">
+                    <button type="button" disabled={adding || !newName.trim() || !newClassId || !school?._id}
+                        onClick={async () => {
+                            setAdding(true); setMsg(null);
+                            try {
+                                const r = await addStudentMut({ schoolId: school!._id as any, classId: newClassId as any, fullName: newName, guardianPhone: newPhone || undefined });
+                                const verb = r.status === "added" ? "أُضيفت" : "أُعيد تفعيل";
+                                setMsg({ text: `${verb} ${r.studentName} في الصف ${r.className}`, ok: true });
+                                setNewName(""); setNewPhone("");
+                            } catch (err: any) {
+                                setMsg({ text: typeof err?.data === "string" ? err.data : "تعذّرت الإضافة.", ok: false });
+                            } finally { setAdding(false); }
+                        }}
+                        className="flex items-center gap-2 bg-qatar-maroon text-white font-black text-sm px-6 py-2.5 rounded-xl hover:opacity-90 disabled:opacity-40">
+                        <UserPlus className="w-4 h-4" />إضافة
+                    </button>
                 </div>
             </div>
 

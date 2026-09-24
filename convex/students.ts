@@ -1,5 +1,5 @@
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 
 /** Match student names across exports that spell hamza/ya/ta-marbuta differently. */
 function normalizeStudentName(value: string): string {
@@ -240,10 +240,52 @@ export const deleteDummyStudents = mutation({
 export const getStudentsByClass = query({
     args: { schoolId: v.id("schools") },
     handler: async (ctx, args) => {
-        const students = await ctx.db.query("students")
+        // Hidden students (graduated or moved away) stay out of the management list.
+        return (await ctx.db.query("students")
             .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
-            .collect();
-        return students;
+            .collect())
+            .filter(s => s.isActive);
+    },
+});
+
+/** Adds one student by hand. A matching name reactivates and moves the existing record instead of duplicating it. */
+export const addStudent = mutation({
+    args: {
+        schoolId: v.id("schools"),
+        classId: v.id("classes"),
+        fullName: v.string(),
+        guardianPhone: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const fullName = args.fullName.replace(/\s+/g, " ").trim();
+        if (fullName.split(" ").length < 2) throw new ConvexError("اكتب اسم الطالبة كاملاً (اسمين على الأقل).");
+        const cls = await ctx.db.get(args.classId);
+        if (!cls || cls.schoolId !== args.schoolId) throw new ConvexError("الصف غير موجود.");
+        const guardianPhone = args.guardianPhone?.trim() || undefined;
+
+        const key = normalizeStudentName(fullName);
+        const existing = (await ctx.db.query("students")
+            .withIndex("by_school", q => q.eq("schoolId", args.schoolId))
+            .collect())
+            .find(s => normalizeStudentName(s.fullName) === key);
+        if (existing) {
+            if (existing.isActive) {
+                // Moving an enrolled student is «نقل»'s job; adding must never do it silently.
+                const current = await ctx.db.get(existing.classId);
+                throw new ConvexError(existing.classId === args.classId
+                    ? `الطالبة «${existing.fullName}» موجودة بالفعل في هذا الصف.`
+                    : `الطالبة «${existing.fullName}» موجودة في الصف ${current?.name ?? ""}. لنقلها استخدمي زر «نقل لصف آخر».`);
+            }
+            await ctx.db.patch(existing._id, {
+                classId: args.classId, isActive: true, ...(guardianPhone ? { guardianPhone } : {}),
+            });
+            return { status: "reactivated", studentName: existing.fullName, className: cls.name };
+        }
+
+        await ctx.db.insert("students", {
+            schoolId: args.schoolId, classId: args.classId, fullName, guardianPhone, isActive: true,
+        });
+        return { status: "added", studentName: fullName, className: cls.name };
     },
 });
 
