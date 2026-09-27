@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Database, Settings, BarChart3, Upload, Shield, X, MessageSquare, Clock, LogOut, DoorOpen, ClipboardCheck } from "lucide-react";
+import { LayoutDashboard, Database, Settings, BarChart3, Upload, Shield, X, MessageSquare, Clock, LogOut, DoorOpen, ClipboardCheck, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
@@ -21,6 +21,7 @@ import LeavePermissionsPage from "./pages/LeavePermissionsPage";
 import FollowUpPage from "./pages/FollowUpPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import PrintRoutes from "./pages/PrintPage";
+import FeesPage from "./pages/FeesPage";
 
 type NavItem = { to: string; icon: ReactNode; label: string; short?: string; admin: boolean };
 
@@ -35,6 +36,7 @@ const PUBLIC_NAV: NavItem[] = [
 ];
 
 const ADMIN_NAV: NavItem[] = [
+  { to: "/fees", icon: <Wallet className="w-5 h-5" />, label: "الرسوم", admin: true },
   { to: "/settings", icon: <Settings className="w-5 h-5" />, label: "الإعدادات", admin: true },
 ];
 
@@ -73,6 +75,7 @@ function SchoolApp() {
               <Route path="/messages" element={<MessagesPage />} />
               <Route path="/import-students" element={<AdminGuard><ImportStudents /></AdminGuard>} />
               <Route path="/settings" element={<AdminGuard><SettingsPage /></AdminGuard>} />
+              <Route path="/fees" element={<AdminGuard><FeesPage /></AdminGuard>} />
               <Route path="/message-templates" element={<AdminGuard><MessageTemplatesPage /></AdminGuard>} />
               <Route path="/seed" element={<AdminGuard><SeedPage /></AdminGuard>} />
             </Routes>
@@ -194,15 +197,15 @@ function Navbar() {
             {ADMIN_NAV.map(({ to, icon, label }) => {
               const active = isActive(to);
               return (
-                <Link key={to} to={to} aria-current={isActive(to) ? "page" : undefined}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all ${active
+                <Link key={to} to={to} aria-current={isActive(to) ? "page" : undefined} title={label} aria-label={label}
+                  className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-sm font-bold transition-all ${active
                       ? "bg-qatar-maroon text-white shadow-sm"
                       : "text-qatar-gray-text hover:bg-rose-50 hover:text-qatar-maroon"
                     }`}
                 >
                   {icon}
-                  <span className="text-xs">{label}</span>
-                  <Shield className={`w-2.5 h-2.5 opacity-50 ${active ? "text-white" : "text-slate-300"}`} />
+                  {/* Icon only until very wide screens, so the admin tabs fit beside the rest. */}
+                  <span className="hidden 2xl:inline text-xs">{label}</span>
                 </Link>
               );
             })}
@@ -213,7 +216,7 @@ function Navbar() {
             {isAdminAuthed && (
               <button onClick={handleLogout} title="إنهاء جلسة المسؤول والبقاء داخل المدرسة"
                 className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-qatar-gray-text hover:text-qatar-maroon border border-slate-200 hover:border-qatar-maroon/40 px-3 py-1.5 rounded-xl transition-all">
-                <Shield className="w-3.5 h-3.5" />خروج المسؤول
+                <Shield className="w-3.5 h-3.5" /><span className="xl:hidden 2xl:inline">خروج المسؤول</span>
               </button>
             )}
             <button onClick={() => setShowExitSchool(true)} title="الخروج من المدرسة وتغييرها"

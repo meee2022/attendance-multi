@@ -40,6 +40,9 @@ export default defineSchema({
         nationalId: v.optional(v.string()),
         guardianPhone: v.optional(v.string()),
         isActive: v.boolean(),
+        // Fees (الرسوم): exempted by the admin from every fee / does not ride the bus.
+        feeExempt: v.optional(v.boolean()),
+        noBus: v.optional(v.boolean()),
     }).index("by_class", ["classId"]).index("by_school", ["schoolId"]),
     teachers: defineTable({
         schoolId: v.id("schools"),
@@ -147,6 +150,24 @@ export default defineSchema({
     }).index("by_school", ["schoolId"])
       .index("by_school_status", ["schoolId", "status"])
       .index("by_student", ["studentId"]),
+    // A fee charged to non-Qatari, non-GCC students (e.g. bus, books); fixed amount.
+    feeTypes: defineTable({
+        schoolId: v.id("schools"),
+        name: v.string(),
+        amount: v.number(),
+        isBus: v.boolean(), // students marked noBus are not charged
+        isActive: v.boolean(),
+        createdAt: v.number(),
+    }).index("by_school", ["schoolId"]),
+    // One row per student who has paid a fee; no row means not paid.
+    feePayments: defineTable({
+        schoolId: v.id("schools"),
+        feeTypeId: v.id("feeTypes"),
+        studentId: v.id("students"),
+        paidOn: v.string(), // YYYY-MM-DD
+        receiptNo: v.optional(v.string()),
+        recordedAt: v.number(),
+    }).index("by_fee", ["feeTypeId"]).index("by_student", ["studentId"]),
     tardiness: defineTable({
         schoolId: v.id("schools"),
         studentId: v.id("students"),
