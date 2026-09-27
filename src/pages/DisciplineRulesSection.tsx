@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { CalendarRange, Plus, RotateCcw, Trash2, Info, Loader2 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
@@ -6,6 +6,8 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { useSchool } from "../lib/SchoolContext";
 import { todayInQatar } from "../lib/schoolDate";
 import { FORMS, OFFICIAL_WARNING_COUNTS } from "../forms/registry";
+import { PreviewOverlay } from "./PrintPage";
+import "../forms/forms.css";
 import {
     ACTOR_LABELS, RECIPIENT_LABELS, KIND_LABELS, COUNT_AS_ABSENCE,
     type DisciplineKind,
@@ -28,6 +30,8 @@ function errorText(err: any, fallback: string) {
 export default function DisciplineRulesSection() {
     const { school } = useSchool();
     const schoolId = school?._id as Id<"schools"> | undefined;
+    const [preview, setPreview] = useState<{ formId: string; count?: number } | null>(null);
+    const closePreview = useCallback(() => setPreview(null), []);
 
     const data = useQuery(api.discipline.getRules, schoolId ? { schoolId } : "skip");
     const seedDefaults = useMutation(api.discipline.seedDefaultRules);
@@ -265,18 +269,20 @@ export default function DisciplineRulesSection() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignContent: "flex-start" }}>
                         {Object.entries(FORMS).map(([id, form]) => id === "guardian_warning"
                             ? OFFICIAL_WARNING_COUNTS.map(n => (
-                                <a key={`${id}-${n}`} href={`/print/preview/${id}?count=${n}`} target="_blank" rel="noopener noreferrer" className="late-action is-cancel">
+                                <button type="button" key={`${id}-${n}`} onClick={() => setPreview({ formId: id, count: n })} className="late-action is-cancel">
                                     {form.title} ({n})
-                                </a>
+                                </button>
                             ))
                             : (
-                                <a key={id} href={`/print/preview/${id}`} target="_blank" rel="noopener noreferrer" className="late-action is-cancel">
+                                <button type="button" key={id} onClick={() => setPreview({ formId: id })} className="late-action is-cancel">
                                     {form.title}
-                                </a>
+                                </button>
                             ))}
                     </div>
                 </div>
             </div>
+
+            {preview && <PreviewOverlay formId={preview.formId} count={preview.count} onClose={closePreview} />}
 
             {/* Add an action the paper does not have */}
             <div className="settings-rows">

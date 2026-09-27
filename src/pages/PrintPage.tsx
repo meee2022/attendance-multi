@@ -170,6 +170,10 @@ function ActionPrint() {
 function PreviewPrint() {
     const { formId } = useParams();
     const [search] = useSearchParams();
+    return <PreviewBody formId={formId ?? ""} count={Number(search.get("count")) || undefined} />;
+}
+
+function PreviewBody({ formId, count: askedCount, onClose }: { formId: string; count?: number; onClose?: () => void }) {
     const { school } = useSchool();
     const entry = FORMS[formId as FormId];
     usePrintTitle(entry ? `معاينة - ${entry.title}` : null);
@@ -177,13 +181,29 @@ function PreviewPrint() {
     if (!entry) {
         return <div className="print-root"><div className="print-state">النموذج غير موجود.</div></div>;
     }
-    const count = Number(search.get("count")) || SAMPLE_DATA.count;
+    const count = askedCount || SAMPLE_DATA.count;
     const data: FormData = { ...SAMPLE_DATA, count, absenceDates: SAMPLE_DATA.absenceDates.slice(0, count), schoolName: school?.name ?? SAMPLE_DATA.schoolName, issueDate: todayInQatar() };
     return (
         <div className="print-root">
-            <Toolbar title={`معاينة: ${entry.title} — ببيانات تجريبية`} count={1} />
+            <Toolbar title={`معاينة: ${entry.title} — ببيانات تجريبية`} count={1} onClose={onClose} />
             <entry.Component data={data} options={SAMPLE_OPTIONS[formId as FormId]} />
         </div>
+    );
+}
+
+/** A form preview shown over the settings page, for the same reason as PrintOverlay. */
+export function PreviewOverlay({ formId, count, onClose }: { formId: string; count?: number; onClose: () => void }) {
+    useEffect(() => {
+        document.body.classList.add("has-print-overlay");
+        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+        window.addEventListener("keydown", onKey);
+        return () => { document.body.classList.remove("has-print-overlay"); window.removeEventListener("keydown", onKey); };
+    }, [onClose]);
+    return createPortal(
+        <div className="print-overlay" role="dialog" aria-modal="true">
+            <PreviewBody formId={formId} count={count} onClose={onClose} />
+        </div>,
+        document.body,
     );
 }
 
