@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Routes, Route, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "convex/react";
-import { Printer, X, Loader2 } from "lucide-react";
+import { Printer, X, Loader2, FileDown } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useSchool } from "../lib/SchoolContext";
@@ -20,10 +20,15 @@ function Toolbar({ title, count }: { title: string; count: number }) {
                 <div className="hint">
                     اكتب البيانات الناقصة في الحقول المنقّطة قبل الطباعة.
                     {count > 1 && ` يحتوي ${count} نماذج، كلٌّ في صفحة.`}
+                    {" "}للحفظ كملف: «حفظ PDF» ثم اختر «Save as PDF» في نافذة الطباعة.
                 </div>
             </div>
             <div className="actions">
-                <button type="button" className="print-btn" onClick={() => window.print()}>
+                <button type="button" className="print-btn" onClick={() => window.print()}
+                    title="في نافذة الطباعة اختر «حفظ بتنسيق PDF» (Save as PDF)">
+                    <FileDown size={16} />حفظ PDF
+                </button>
+                <button type="button" className="print-btn is-ghost" onClick={() => window.print()}>
                     <Printer size={16} />طباعة
                 </button>
                 <button type="button" className="print-btn is-ghost"
@@ -54,6 +59,40 @@ function usePrintTitle(title: string | null) {
         document.title = title;
         return () => { document.title = previous; };
     }, [title]);
+}
+
+/** The printable sheets of one follow-up task; null while loading or when it has none. */
+function ActionSheets({ actionId }: { actionId: string }) {
+    const form = useQuery(api.discipline.getActionForm, { actionId: actionId as Id<"disciplineActions"> });
+    if (!form) return null;
+    const refs = formsForAction(form.kind, form.actionKey);
+    if (refs.length === 0) return null;
+    return <Sheets refs={refs} data={toFormData(form)} />;
+}
+
+function toFormData(form: any): FormData {
+    return {
+        schoolName: form.schoolName, schoolCode: form.schoolCode, studentName: form.studentName,
+        className: form.className, grade: form.grade, guardianPhone: form.guardianPhone, nationalId: form.nationalId,
+        kind: form.kind, count: form.count, actionLabel: form.label, actor: form.actor, termStart: form.termStart,
+        issueDate: todayInQatar(), absenceDates: form.absenceDates, lateDates: form.lateDates, history: form.history,
+    };
+}
+
+/** Several tasks' forms in one document — one PDF for the whole list. */
+function BatchPrint() {
+    const [search] = useSearchParams();
+    const ids = (search.get("ids") ?? "").split(",").filter(Boolean);
+    usePrintTitle(`نماذج المتابعة - ${todayInQatar()}`);
+    if (ids.length === 0) {
+        return <div className="print-root"><div className="print-state">لا توجد نماذج.</div></div>;
+    }
+    return (
+        <div className="print-root">
+            <Toolbar title={`نماذج المتابعة — ${ids.length} مهمة`} count={ids.length} />
+            {ids.map(id => <ActionSheets key={id} actionId={id} />)}
+        </div>
+    );
 }
 
 function ActionPrint() {
@@ -127,6 +166,7 @@ export default function PrintRoutes() {
     return (
         <Routes>
             <Route path="action/:actionId" element={<ActionPrint />} />
+            <Route path="actions" element={<BatchPrint />} />
             <Route path="preview/:formId" element={<PreviewPrint />} />
         </Routes>
     );

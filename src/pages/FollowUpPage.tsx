@@ -160,6 +160,8 @@ export default function FollowUpPage() {
     }
 
     const studentsAffected = new Set((tasks ?? []).map(t => t.studentId)).size;
+    // Every printable form in the current filter, for one combined PDF.
+    const printableIds = filtered.filter(t => formsForAction(t.kind, t.actionKey).length > 0).map(t => t._id);
     const absenceTasks = (tasks ?? []).filter(t => t.kind === "absence").length;
     const tardinessTasks = (tasks ?? []).filter(t => t.kind === "tardiness").length;
 
@@ -170,10 +172,18 @@ export default function FollowUpPage() {
                 description="الإجراءات المستحقة على الطالبات حسب أيام الغياب ومرات التأخير منذ بداية الفصل."
                 icon={ClipboardCheck}
                 actions={
+                    <div className="flex flex-wrap gap-2">
+                    {printableIds.length > 0 && (
+                        <a className="followup-sync" href={`/print/actions?ids=${printableIds.join(",")}`} target="_blank" rel="noopener noreferrer"
+                            title="كل النماذج الظاهرة حسب الفلتر الحالي في ملف واحد">
+                            <Printer size={16} />نماذج PDF ({printableIds.length})
+                        </a>
+                    )}
                     <button type="button" className="followup-sync" onClick={runSync} disabled={syncing || !schoolId}>
                         <RefreshCw size={16} className={syncing ? "animate-spin" : ""} />
                         {syncing ? "جارٍ التحديث…" : "تحديث المهام"}
                     </button>
+                    </div>
                 }
             />
 
