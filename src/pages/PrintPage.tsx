@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Routes, Route, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { Printer, X, Loader2, FileDown } from "lucide-react";
@@ -12,7 +13,7 @@ import "../forms/forms.css";
 
 /** Print routes render without the app's navigation, so the page is just the forms. */
 
-function Toolbar({ title, count }: { title: string; count: number }) {
+function Toolbar({ title, count, onClose }: { title: string; count: number; onClose?: () => void }) {
     return (
         <div className="print-toolbar no-print">
             <div>
@@ -32,7 +33,7 @@ function Toolbar({ title, count }: { title: string; count: number }) {
                     <Printer size={16} />طباعة
                 </button>
                 <button type="button" className="print-btn is-ghost"
-                    onClick={() => (window.history.length > 1 ? window.history.back() : window.close())}>
+                    onClick={() => onClose ? onClose() : (window.history.length > 1 ? window.history.back() : window.close())}>
                     <X size={16} />إغلاق
                 </button>
             </div>
@@ -92,6 +93,30 @@ function BatchPrint() {
             <Toolbar title={`نماذج المتابعة — ${ids.length} مهمة`} count={ids.length} />
             {ids.map(id => <ActionSheets key={id} actionId={id} />)}
         </div>
+    );
+}
+
+/**
+ * The forms of one or more tasks shown over the current page instead of a new
+ * tab: school web filters block the /print/... address as «suspicious», and
+ * nothing here changes the address. Printing shows only the forms.
+ */
+export function PrintOverlay({ ids, title, onClose }: { ids: string[]; title: string; onClose: () => void }) {
+    usePrintTitle(title);
+    useEffect(() => {
+        document.body.classList.add("has-print-overlay");
+        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+        window.addEventListener("keydown", onKey);
+        return () => { document.body.classList.remove("has-print-overlay"); window.removeEventListener("keydown", onKey); };
+    }, [onClose]);
+    return createPortal(
+        <div className="print-overlay" role="dialog" aria-modal="true" aria-label={title}>
+            <div className="print-root">
+                <Toolbar title={title} count={ids.length} onClose={onClose} />
+                {ids.map(id => <ActionSheets key={id} actionId={id} />)}
+            </div>
+        </div>,
+        document.body,
     );
 }
 

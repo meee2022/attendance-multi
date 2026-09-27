@@ -11,6 +11,8 @@ import PageHeader from "../components/PageHeader";
 import StatCard from "../components/StatCard";
 import { useSchool } from "../lib/SchoolContext";
 import { formsForAction } from "../forms/registry";
+import { PrintOverlay } from "./PrintPage";
+import "../forms/forms.css";
 import { useStaffIdentity, STAFF_ROLES, type StaffRole } from "../lib/staffIdentity";
 import {
     ACTOR_LABELS, RECIPIENT_LABELS, KIND_LABELS, CALL_OUTCOMES,
@@ -161,6 +163,7 @@ export default function FollowUpPage() {
 
     const studentsAffected = new Set((tasks ?? []).map(t => t.studentId)).size;
     // Every printable form in the current filter, for one combined PDF.
+    const [printing, setPrinting] = useState<{ ids: string[]; title: string } | null>(null);
     const printableIds = filtered.filter(t => formsForAction(t.kind, t.actionKey).length > 0).map(t => t._id);
     const absenceTasks = (tasks ?? []).filter(t => t.kind === "absence").length;
     const tardinessTasks = (tasks ?? []).filter(t => t.kind === "tardiness").length;
@@ -174,10 +177,11 @@ export default function FollowUpPage() {
                 actions={
                     <div className="flex flex-wrap gap-2">
                     {printableIds.length > 0 && (
-                        <a className="followup-sync" href={`/print/actions?ids=${printableIds.join(",")}`} target="_blank" rel="noopener noreferrer"
+                        <button type="button" className="followup-sync"
+                            onClick={() => setPrinting({ ids: printableIds, title: `نماذج المتابعة - ${new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Qatar" }).format(new Date())}` })}
                             title="كل النماذج الظاهرة حسب الفلتر الحالي في ملف واحد">
                             <Printer size={16} />نماذج PDF ({printableIds.length})
-                        </a>
+                        </button>
                     )}
                     <button type="button" className="followup-sync" onClick={runSync} disabled={syncing || !schoolId}>
                         <RefreshCw size={16} className={syncing ? "animate-spin" : ""} />
@@ -325,11 +329,11 @@ export default function FollowUpPage() {
 
                                                     <div className="followup-buttons">
                                                         {formsForAction(task.kind, task.actionKey).length > 0 && (
-                                                            <a className="late-action is-cancel" href={`/print/action/${task._id}`}
-                                                                target="_blank" rel="noopener noreferrer"
+                                                            <button type="button" className="late-action is-cancel"
+                                                                onClick={() => setPrinting({ ids: [task._id], title: `${task.label} - ${task.studentName}` })}
                                                                 title="طباعة النموذج" aria-label={`طباعة نموذج ${task.label}`}>
                                                                 <Printer size={15} />
-                                                            </a>
+                                                            </button>
                                                         )}
                                                         {view === "pending" ? (readOnly ? null : (
                                                             <>
@@ -391,6 +395,8 @@ export default function FollowUpPage() {
                     })}
                 </ul>
             )}
+
+            {printing && <PrintOverlay ids={printing.ids} title={printing.title} onClose={() => setPrinting(null)} />}
 
             {chooserOpen && (
                 <div className="followup-identity-dialog" role="dialog" aria-modal="true" aria-labelledby="identity-title">

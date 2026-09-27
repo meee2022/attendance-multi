@@ -119,3 +119,12 @@
 @media screen and (max-width: 840px) {
   .form-header-meta { flex-direction: column; align-items: stretch; }
 }
+
+/* Forms opened over the page (PrintOverlay) rather than in a new tab. */
+.print-overlay { position: fixed; inset: 0; z-index: 60; overflow: auto; background: #e9e4dc; }
+body.has-print-overlay { overflow: hidden; }
+@media print {
+  body.has-print-overlay { overflow: visible; }
+  body.has-print-overlay > #root { display: none !important; }
+  .print-overlay { position: static; overflow: visible; background: #fff; }
+}
