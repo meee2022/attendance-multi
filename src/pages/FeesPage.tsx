@@ -18,7 +18,7 @@ import { todayInQatar } from "../lib/schoolDate";
 type Status = "unpaid" | "paid" | "exempt" | "all";
 
 const DEFAULT_TEMPLATE =
-    "ولي أمر الطالبة {{name}} المحترم، نذكّركم بسداد {{fee}} بمبلغ {{amount}} ريال. شاكرين تعاونكم — {{school}}";
+    "ولي أمر الطالبة {{name}} المحترم، نذكّركم بسداد {{fee}} عبر الموقع المخصص. شاكرين تعاونكم — {{school}}";
 
 function errorText(err: any) {
     return typeof err?.data === "string" ? err.data : "تعذّر الحفظ.";
@@ -79,7 +79,7 @@ export default function FeesPage() {
         run(async () => {
             await setPaid({ schoolId, feeTypeId: activeFeeId, studentIds: ids, paid, paidOn, receiptNo: receiptNo || undefined });
             setSelected(new Set()); setReceiptNo("");
-        }, paid ? `سُجّل الدفع لـ ${ids.length} طالبة.` : `أُلغي الدفع لـ ${ids.length} طالبة.`);
+        }, paid ? `سُجّلت ${ids.length} طالبة «دفعت».` : `سُجّلت ${ids.length} طالبة «لم تدفع».`);
     };
 
     const exportMessages = () => {
@@ -123,7 +123,7 @@ export default function FeesPage() {
 
     return (
         <div className="space-y-6">
-            <PageHeader title="الرسوم" description="حصر رسوم الباص والكتب لغير القطريات وغير الخليجيات، ومن دفعت ومن لم تدفع." icon={Wallet} />
+            <PageHeader title="الرسوم" description="حصر من دفعت ومن لم تدفع رسوم الباص والكتب (غير القطريات وغير الخليجيات)." icon={Wallet} />
 
             {/* Fee types */}
             <div className="bg-white rounded-2xl qatar-card-shadow border border-qatar-gray-border p-4 space-y-3">
@@ -132,7 +132,7 @@ export default function FeesPage() {
                         <button key={f._id} type="button" onClick={() => { setFeeId(f._id); setSelected(new Set()); }}
                             className={`px-4 py-2 rounded-xl font-extrabold text-sm border ${f._id === activeFeeId
                                 ? "bg-qatar-maroon text-white border-qatar-maroon" : "bg-white text-qatar-ink-soft border-qatar-gray-border"}`}>
-                            {f.name} · {f.amount} ر.ق
+                            {f.name}{f.amount > 0 ? ` · ${f.amount} ر.ق` : ""}
                         </button>
                     ))}
                     <button type="button" onClick={() => setEditing({ name: "", amount: "", isBus: false })}
@@ -156,7 +156,7 @@ export default function FeesPage() {
                         <label className="text-xs font-bold text-qatar-ink-soft flex flex-col gap-1">اسم الرسم
                             <input value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })} placeholder="مثال: رسوم الباص" className="border rounded-xl px-3 py-2" />
                         </label>
-                        <label className="text-xs font-bold text-qatar-ink-soft flex flex-col gap-1">المبلغ (ريال)
+                        <label className="text-xs font-bold text-qatar-ink-soft flex flex-col gap-1">المبلغ (اختياري)
                             <input type="number" min={1} value={editing.amount} onChange={e => setEditing({ ...editing, amount: e.target.value })} className="border rounded-xl px-3 py-2" dir="ltr" />
                         </label>
                         <label className="flex items-center gap-2 text-sm font-bold text-qatar-ink-soft">
@@ -166,7 +166,7 @@ export default function FeesPage() {
                         <div className="flex gap-2 justify-end">
                             <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 rounded-xl border"><X className="w-4 h-4" /></button>
                             <button type="button" disabled={busy || !schoolId} onClick={() => run(async () => {
-                                const id = await saveFeeType({ schoolId: schoolId!, id: editing.id, name: editing.name, amount: Number(editing.amount), isBus: editing.isBus });
+                                const id = await saveFeeType({ schoolId: schoolId!, id: editing.id, name: editing.name, amount: Number(editing.amount) || 0, isBus: editing.isBus });
                                 setFeeId(id); setEditing(null);
                             }, "حُفظ الرسم.")} className="flex items-center gap-1 px-5 py-2 rounded-xl bg-qatar-maroon text-white font-black">
                                 <Check className="w-4 h-4" />حفظ
@@ -194,7 +194,7 @@ export default function FeesPage() {
                         <StatCard label="مطالَبات بالدفع" value={owing.length} icon={<Wallet />} />
                         <StatCard label="دفعت" value={paidCount} icon={<Check />} color="green" />
                         <StatCard label="لم تدفع" value={owing.length - paidCount} icon={<X />} color="rose" />
-                        <StatCard label="المحصّل / المتبقي (ر.ق)" value={`${paidCount * fee.amount} / ${(owing.length - paidCount) * fee.amount}`} icon={<Wallet />} color="blue" />
+                        <StatCard label="نسبة الدفع" value={owing.length ? `${Math.round((paidCount / owing.length) * 100)}%` : "—"} icon={<Wallet />} color="blue" />
                     </div>
 
                     {/* Filters */}
@@ -224,8 +224,8 @@ export default function FeesPage() {
                             <b className="text-amber-900">{selected.size} محددة</b>
                             <input type="date" value={paidOn} max={todayInQatar()} onChange={e => setPaidOn(e.target.value)} className="border rounded-xl px-3 py-1.5" />
                             <input value={receiptNo} onChange={e => setReceiptNo(e.target.value)} placeholder="رقم الإيصال (اختياري)" className="border rounded-xl px-3 py-1.5" />
-                            <button type="button" disabled={busy} onClick={() => markSelected(true)} className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-black text-sm">تسجيل الدفع</button>
-                            <button type="button" disabled={busy} onClick={() => markSelected(false)} className="px-4 py-2 rounded-xl border font-bold text-sm">إلغاء الدفع</button>
+                            <button type="button" disabled={busy} onClick={() => markSelected(true)} className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-black text-sm">دفعت</button>
+                            <button type="button" disabled={busy} onClick={() => markSelected(false)} className="px-4 py-2 rounded-xl border font-bold text-sm">لم تدفع</button>
                             <button type="button" onClick={() => setSelected(new Set())} className="mr-auto text-sm font-bold underline">إلغاء التحديد</button>
                         </div>
                     )}
@@ -298,7 +298,7 @@ export default function FeesPage() {
                         <p className="font-black text-qatar-maroon flex items-center gap-2"><MessageSquare className="w-4 h-4" />رسالة تذكير لغير المدفوعات</p>
                         <textarea value={template} onChange={e => setTemplate(e.target.value)} rows={3} className="w-full border rounded-xl p-3 text-sm" />
                         <p className="text-xs font-bold text-qatar-gray-text">
-                            المتغيرات: {"{{name}}"} اسم الطالبة، {"{{class}}"} الشعبة، {"{{fee}}"} اسم الرسم، {"{{amount}}"} المبلغ، {"{{school}}"} اسم المدرسة.
+                            المتغيرات: {"{{name}}"} اسم الطالبة، {"{{class}}"} الشعبة، {"{{fee}}"} اسم الرسم، {"{{school}}"} اسم المدرسة.
                             {className !== "all" && ` — للشعبة ${className} فقط.`}
                         </p>
                         <button type="button" onClick={exportMessages} disabled={owing.length === paidCount}

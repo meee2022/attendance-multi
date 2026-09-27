@@ -55,7 +55,7 @@ export const saveFeeType = mutation({
     handler: async (ctx, args) => {
         const name = args.name.trim();
         if (!name) throw new ConvexError("اكتب اسم الرسم.");
-        if (!(args.amount > 0)) throw new ConvexError("المبلغ يجب أن يكون أكبر من صفر.");
+        if (args.amount < 0) throw new ConvexError("المبلغ لا يكون سالباً.");
         if (args.id) {
             await ctx.db.patch(args.id, { name, amount: args.amount, isBus: args.isBus });
             return args.id;
