@@ -13,6 +13,18 @@
         font-family: 'Cairo', sans-serif;
       }
     </style>
+    <script>
+      // Some school networks serve a stale page whose stylesheet no longer
+      // exists, so the app shows unstyled. Reload once, bypassing the cache.
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          var styled = getComputedStyle(document.documentElement).getPropertyValue("--gradient-primary").trim();
+          if (styled) { try { sessionStorage.removeItem("css_retry"); } catch (e) {} return; }
+          try { if (sessionStorage.getItem("css_retry")) return; sessionStorage.setItem("css_retry", "1"); } catch (e) { return; }
+          var u = new URL(location.href); u.searchParams.set("r", Date.now()); location.replace(u.toString());
+        }, 1500);
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
