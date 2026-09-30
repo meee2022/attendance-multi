@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "convex/react";
 import { format } from "date-fns";
 import {
     ClipboardCheck, RefreshCw, Phone, Check, SkipForward, RotateCcw, Search, Printer,
-    Loader2, UserX, Clock, Users, ListChecks, CalendarRange,
+    Loader2, UserX, Clock, Users, ListChecks, CalendarRange, ChevronDown,
 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -20,6 +20,12 @@ import {
 } from "../lib/discipline";
 
 type View = "pending" | "done";
+const PAGE_SIZE = 12;
+const STAGES = [
+    { id: "primary", label: "الابتدائية", min: 1, max: 6 },
+    { id: "preparatory", label: "الإعدادية", min: 7, max: 9 },
+    { id: "secondary", label: "الثانوية", min: 10, max: 12 },
+];
 const ACTOR_FILTERS = ["all", "supervisor", "coordinator", "social_worker", "behavior_team"] as const;
 
 function errorText(err: any, fallback: string) {
@@ -35,6 +41,12 @@ export default function FollowUpPage() {
     const [actor, setActor] = useState<(typeof ACTOR_FILTERS)[number]>("all");
     const [kind, setKind] = useState<"all" | DisciplineKind>("all");
     const [search, setSearch] = useState("");
+    const [stage, setStage] = useState("all");
+    const [grade, setGrade] = useState("all");
+    const [actionKey, setActionKey] = useState("all");
+    const [sort, setSort] = useState("name");
+    const [pagination, setPagination] = useState({ key: "", page: 0 });
+    const resultsRef = useRef<HTMLDivElement>(null);
 
     const [syncing, setSyncing] = useState(false);
     const [syncInfo, setSyncInfo] = useState<{ generated: number; cancelled: number; termStart: string; syncedAt: number } | null>(null);
@@ -109,11 +121,29 @@ export default function FollowUpPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [schoolId]);
 
-    const filtered = useMemo(() => (tasks ?? []).filter(t =>
-        (actor === "all" || t.actor === actor)
+    const selectedStage = STAGES.find(item => item.id === stage);
+    const stageTasks = useMemo(() => (tasks ?? []).filter(t =>
+        !selectedStage || (t.grade !== null && t.grade >= selectedStage.min && t.grade <= selectedStage.max)
+    ), [tasks, selectedStage]);
+    const availableGrades = useMemo(() => [...new Set(stageTasks.flatMap(t => t.grade === null ? [] : [t.grade]))].sort((a, b) => a - b), [stageTasks]);
+    const scopedTasks = useMemo(() => stageTasks.filter(t =>
+        (grade === "all" || String(t.grade) === grade)
         && (kind === "all" || t.kind === kind)
         && t.studentName.includes(search.trim())
-    ), [tasks, actor, kind, search]);
+    ), [stageTasks, grade, kind, search]);
+    const actionOptions = useMemo(() => {
+        const options = new Map<string, { key: string; label: string; count: number }>();
+        for (const task of scopedTasks) {
+            if (actor !== "all" && task.actor !== actor) continue;
+            const option = options.get(task.actionKey) ?? { key: task.actionKey, label: task.label, count: 0 };
+            option.count++;
+            options.set(task.actionKey, option);
+        }
+        return [...options.values()].sort((a, b) => a.label.localeCompare(b.label, "ar"));
+    }, [scopedTasks, actor]);
+    const filtered = useMemo(() => scopedTasks.filter(t =>
+        (actor === "all" || t.actor === actor) && (actionKey === "all" || t.actionKey === actionKey)
+    ), [scopedTasks, actor, actionKey]);
 
     // One card per student, heaviest cases first.
     const groups = useMemo(() => {
@@ -126,19 +156,33 @@ export default function FollowUpPage() {
         return [...byStudent.values()]
             .map(list => list.sort((a, b) => a.kind.localeCompare(b.kind) || a.count - b.count))
             .sort((a, b) =>
-                (b[0].absenceCount + b[0].tardinessCount) - (a[0].absenceCount + a[0].tardinessCount)
+                (sort === "priority" ? (b[0].absenceCount + b[0].tardinessCount) - (a[0].absenceCount + a[0].tardinessCount) : 0)
                 || a[0].studentName.localeCompare(b[0].studentName, "ar"));
-    }, [filtered]);
+    }, [filtered, sort]);
 
     const actorCounts = useMemo(() => {
         const counts: Record<string, number> = { all: 0 };
-        for (const task of tasks ?? []) {
-            if (kind !== "all" && task.kind !== kind) continue;
+        for (const task of scopedTasks) {
+            if (actionKey !== "all" && task.actionKey !== actionKey) continue;
             counts.all++;
             counts[task.actor] = (counts[task.actor] ?? 0) + 1;
         }
         return counts;
-    }, [tasks, kind]);
+    }, [scopedTasks, actionKey]);
+
+    const filterKey = JSON.stringify([view, actor, kind, stage, grade, actionKey, search, sort]);
+    const pageCount = Math.max(1, Math.ceil(groups.length / PAGE_SIZE));
+    const page = pagination.key === filterKey ? Math.min(pagination.page, pageCount - 1) : 0;
+    const pageGroups = groups.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+    const hasFilters = search !== "" || stage !== "all" || grade !== "all" || actionKey !== "all" || kind !== "all";
+    function clearFilters() {
+        setSearch(""); setStage("all"); setGrade("all"); setActionKey("all"); setKind("all"); setOpenId(null);
+    }
+    function changePage(next: number) {
+        setPagination({ key: filterKey, page: next }); setOpenId(null);
+        resultsRef.current?.scrollIntoView({ block: "start" });
+        resultsRef.current?.focus({ preventScroll: true });
+    }
 
     const openForm = (id: string) => {
         setOpenId(id);
@@ -179,7 +223,7 @@ export default function FollowUpPage() {
                     {printableIds.length > 0 && (
                         <button type="button" className="followup-sync"
                             onClick={() => setPrinting({ ids: printableIds, title: `نماذج المتابعة - ${new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Qatar" }).format(new Date())}` })}
-                            title="كل النماذج الظاهرة حسب الفلتر الحالي في ملف واحد">
+                            title="كل النماذج المطابقة للفلاتر في جميع صفحات النتائج، في ملف واحد">
                             <Printer size={16} />نماذج PDF ({printableIds.length})
                         </button>
                     )}
@@ -218,10 +262,10 @@ export default function FollowUpPage() {
                         </button>
                     ))}
                 </div>
-                <div className="followup-segment" role="group" aria-label="نوع الإجراء">
+                <div className="followup-segment" role="group" aria-label="سبب المتابعة">
                     {(["all", "absence", "tardiness"] as const).map(k => (
                         <button key={k} type="button" aria-pressed={kind === k} className={kind === k ? "is-active" : ""}
-                            onClick={() => setKind(k)}>
+                            onClick={() => { setKind(k); setActionKey("all"); setOpenId(null); }}>
                             {k === "all" ? "الكل" : KIND_LABELS[k]}
                         </button>
                     ))}
@@ -232,6 +276,34 @@ export default function FollowUpPage() {
                         aria-label="البحث باسم الطالبة" onChange={e => setSearch(e.target.value)} />
                 </label>
             </div>
+
+            <section className="followup-filters" aria-label="تصفية الطالبات والإجراءات">
+                <label>المرحلة الدراسية
+                    <select value={stage} onChange={e => { setStage(e.target.value); setGrade("all"); setActionKey("all"); setOpenId(null); }}>
+                        <option value="all">جميع المراحل</option>
+                        {STAGES.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+                    </select>
+                </label>
+                <label>الصف الدراسي
+                    <select value={grade} onChange={e => { setGrade(e.target.value); setActionKey("all"); setOpenId(null); }}>
+                        <option value="all">جميع الصفوف</option>
+                        {availableGrades.map(g => <option key={g} value={g}>الصف {g}</option>)}
+                        {grade !== "all" && !availableGrades.includes(Number(grade)) && <option value={grade}>الصف {grade} (لا توجد مهام)</option>}
+                    </select>
+                </label>
+                <label>الإجراء المطلوب
+                    <select value={actionKey} onChange={e => { setActionKey(e.target.value); setOpenId(null); }}>
+                        <option value="all">جميع الإجراءات</option>
+                        {actionOptions.map(option => <option key={option.key} value={option.key}>{option.label} ({option.count})</option>)}
+                        {actionKey !== "all" && !actionOptions.some(option => option.key === actionKey) && <option value={actionKey}>الإجراء المحدد (لا توجد مهام)</option>}
+                    </select>
+                </label>
+                <label>ترتيب الطالبات
+                    <select value={sort} onChange={e => setSort(e.target.value)}>
+                        <option value="name">الاسم: أ إلى ي</option><option value="priority">الأكثر غيابًا وتأخيرًا</option>
+                    </select>
+                </label>
+            </section>
 
             <div className="followup-identity">
                 <span>
@@ -246,7 +318,7 @@ export default function FollowUpPage() {
                 {ACTOR_FILTERS.map(a => (
                     <button key={a} type="button" aria-pressed={actor === a}
                         className={actor === a ? "bg-qatar-maroon text-white" : "text-qatar-ink-soft"}
-                        onClick={() => setActor(a)}>
+                        onClick={() => { setActor(a); setActionKey("all"); setOpenId(null); }}>
                         {a === "all" ? "كل المسؤولات" : ACTOR_LABELS[a]}
                         <span className="followup-tab-count">{actorCounts[a] ?? 0}</span>
                     </button>
@@ -265,6 +337,11 @@ export default function FollowUpPage() {
                 </div>
             )}
 
+            <div ref={resultsRef} tabIndex={-1} className="followup-results-heading">
+                <div><h2>الطالبات المطابقات</h2><p aria-live="polite">{tasks === undefined ? "جارٍ تحميل النتائج…" : `${groups.length} طالبة · ${filtered.length} إجراء`} · افتحي اسم الطالبة لعرض إجراءاتها</p></div>
+                {hasFilters && <button type="button" className="late-action is-cancel" onClick={clearFilters}>مسح الفلاتر</button>}
+            </div>
+            {view === "done" && <p className="followup-history-note">يعرض السجل آخر 300 إجراء منفّذ أو متخطّى. للسجل الكامل افتحي تقرير الإجراءات.</p>}
             {tasks === undefined ? (
                 <div className="late-panel"><div className="late-empty" role="status"><Loader2 className="animate-spin" /><p>جارٍ تحميل المهام…</p></div></div>
             ) : groups.length === 0 ? (
@@ -272,18 +349,19 @@ export default function FollowUpPage() {
                     <div className="late-empty">
                         <ClipboardCheck />
                         <h3>{view === "pending" ? "لا توجد مهام معلّقة" : "لا توجد مهام منفّذة بعد"}</h3>
-                        <p>{search || actor !== "all" || kind !== "all"
+                        <p>{hasFilters || actor !== "all"
                             ? "جرّب تغيير الفلاتر أو مسح البحث."
                             : "تظهر المهام هنا تلقائياً عندما يبلغ عدد أيام غياب الطالبة أو مرات تأخيرها رقماً له إجراء."}</p>
                     </div>
                 </div>
             ) : (
                 <ul className="followup-list">
-                    {groups.map(list => {
+                    {pageGroups.map(list => {
                         const head = list[0];
                         return (
-                            <li key={head.studentId} className="followup-card">
-                                <header className="followup-card-head">
+                            <li key={`${filterKey}:${head.studentId}`} className="followup-card">
+                                <details className="followup-student-details" onToggle={e => { if (!e.currentTarget.open && list.some(t => t._id === openId)) setOpenId(null); }}>
+                                <summary className="followup-card-head">
                                     <div className="min-w-0">
                                         <strong>{head.studentName}</strong>
                                         <span className="followup-meta">
@@ -292,6 +370,10 @@ export default function FollowUpPage() {
                                             {head.tardinessCount > 0 && <span className="followup-badge is-late">تأخير: {head.tardinessCount} مرة</span>}
                                         </span>
                                     </div>
+                                    <span className="followup-expand"><span>{list.length} إجراء</span><ChevronDown size={18} /></span>
+                                </summary>
+                                <div className="followup-student-contact">
+                                    <span>التواصل مع ولي الأمر</span>
                                     {head.guardianPhone ? (
                                         <a className="followup-phone" href={`tel:${head.guardianPhone}`} aria-label={`اتصال بولي أمر ${head.studentName}`}>
                                             <Phone size={15} /><bdi dir="ltr">{head.guardianPhone}</bdi>
@@ -299,7 +381,7 @@ export default function FollowUpPage() {
                                     ) : (
                                         <span className="followup-phone is-missing">لا يوجد رقم</span>
                                     )}
-                                </header>
+                                </div>
 
                                 <ul className="followup-actions">
                                     {list.map(task => {
@@ -390,12 +472,18 @@ export default function FollowUpPage() {
                                         );
                                     })}
                                 </ul>
+                                </details>
                             </li>
                         );
                     })}
                 </ul>
             )}
 
+            {groups.length > PAGE_SIZE && <nav className="followup-pagination" aria-label="صفحات الطالبات">
+                <button type="button" className="late-action is-cancel" disabled={page === 0} onClick={() => changePage(page - 1)}>السابق</button>
+                <span>صفحة {page + 1} من {pageCount} · الطالبات {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, groups.length)}</span>
+                <button type="button" className="late-action is-cancel" disabled={page + 1 >= pageCount} onClick={() => changePage(page + 1)}>التالي</button>
+            </nav>}
             {printing && <PrintOverlay ids={printing.ids} title={printing.title} onClose={() => setPrinting(null)} />}
 
             {chooserOpen && (

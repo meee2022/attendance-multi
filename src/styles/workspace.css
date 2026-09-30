@@ -539,3 +539,28 @@
 .followup-identity-dialog .role-option { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; border: 1px solid var(--workspace-border); border-radius: 0.875rem; font-weight: 800; text-align: start; }
 .followup-identity-dialog .role-option[aria-pressed="true"] { border-color: var(--color-qatar-maroon); background: #fff1f2; color: var(--color-qatar-maroon); }
 .followup-identity-dialog input { border: 1px solid var(--workspace-border); border-radius: 0.75rem; padding: 0.625rem 0.875rem; }
+
+/* Follow-up: narrow the queue, then open one student's actions as needed. */
+.followup-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; padding: 1rem; background: var(--workspace-surface); border: 1px solid var(--workspace-border); border-radius: 16px; }
+.followup-filters label { display: grid; gap: 0.5rem; font-size: 0.75rem; color: var(--color-qatar-ink-soft); min-width: 0; }
+.followup-filters select { width: 100%; min-width: 0; min-height: 44px; padding: 0.6rem; border: 1px solid var(--workspace-border); border-radius: 10px; color: var(--color-qatar-ink); background: var(--color-qatar-cream); }
+.followup-results-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; scroll-margin-top: 6rem; }
+.followup-results-heading p, .followup-history-note { margin-top: 0.35rem; color: var(--color-qatar-gray-text); font-size: 0.75rem; }
+.followup-student-details > summary { cursor: pointer; list-style: none; background: var(--workspace-surface); border: 0; }
+.followup-student-details > summary::-webkit-details-marker { display: none; }
+.followup-student-details > summary:hover { background: var(--color-qatar-cream); }
+.followup-student-details > summary:focus-visible { outline: 2px solid var(--color-qatar-maroon); outline-offset: -3px; border-radius: 16px; }
+.followup-student-details[open] > summary { background: var(--color-qatar-cream-dark); border-bottom: 1px solid var(--workspace-border); }
+.followup-expand { display: flex; align-items: center; gap: 0.625rem; flex-shrink: 0; font-size: 0.75rem; color: var(--color-qatar-maroon); }
+.followup-student-details[open] .followup-expand svg { transform: rotate(180deg); }
+.followup-student-contact { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.75rem 1.125rem; font-size: 0.75rem; color: var(--color-qatar-gray-text); border-bottom: 1px solid var(--workspace-border); }
+.followup-pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; font-size: 0.75rem; color: var(--color-qatar-gray-text); }
+.followup-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+@media (max-width: 900px) { .followup-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 639px) {
+  .followup-filters { gap: 0.75rem; padding: 0.875rem; }
+  .followup-student-details > .followup-card-head { flex-direction: row; align-items: center; gap: 0.5rem; }
+  .followup-results-heading { flex-wrap: wrap; }
+  .followup-pagination { gap: 0.5rem; text-align: center; }
+  .followup-search input { width: 100%; }
+}

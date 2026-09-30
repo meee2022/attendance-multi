@@ -128,3 +128,16 @@ body.has-print-overlay { overflow: hidden; }
   body.has-print-overlay > #root { display: none !important; }
   .print-overlay { position: static; overflow: visible; background: #fff; }
 }
+
+@media screen {
+  .print-toolbar { position: sticky; top: 0; z-index: 5; box-shadow: 0 4px 16px rgb(42 20 24 / 0.08); }
+  .print-toolbar .actions { flex-wrap: wrap; }
+  .print-back { white-space: nowrap; }
+  .print-btn:focus-visible { outline: 2px solid var(--color-qatar-gold-dark, #a8853a); outline-offset: 3px; }
+}
+@media screen and (max-width: 639px) {
+  .print-toolbar { padding: 10px; }
+  .print-toolbar .hint { display: none; }
+  .print-toolbar .actions { width: 100%; gap: 6px; }
+  .print-toolbar .print-btn { padding: 8px 10px; min-height: 44px; font-size: 12px; }
+}
