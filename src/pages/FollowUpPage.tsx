@@ -93,6 +93,7 @@ export default function FollowUpPage() {
     const readOnly = actor === "all";
 
     const tasks = useQuery(api.discipline.getTasks, schoolId ? { schoolId, view } : "skip");
+    const schoolData = useQuery(api.setup.getInitialData, schoolId ? { schoolId } : "skip");
     const syncActions = useMutation(api.discipline.syncActions);
     const completeAction = useMutation(api.discipline.completeAction);
     const skipAction = useMutation(api.discipline.skipAction);
@@ -121,16 +122,22 @@ export default function FollowUpPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [schoolId]);
 
-    const selectedStage = STAGES.find(item => item.id === stage);
+    // Use the school's classes, not the current task list, so filters stay
+    // consistent when switching between pending and completed actions.
+    const schoolGrades = useMemo(() => [...new Set((schoolData?.classes ?? [])
+        .filter(cls => cls.isActive).map(cls => cls.grade))].sort((a, b) => a - b), [schoolData]);
+    const availableStages = STAGES.filter(item => schoolGrades.some(g => g >= item.min && g <= item.max));
+    const selectedStage = availableStages.length > 1 ? availableStages.find(item => item.id === stage) : undefined;
     const stageTasks = useMemo(() => (tasks ?? []).filter(t =>
         !selectedStage || (t.grade !== null && t.grade >= selectedStage.min && t.grade <= selectedStage.max)
     ), [tasks, selectedStage]);
-    const availableGrades = useMemo(() => [...new Set(stageTasks.flatMap(t => t.grade === null ? [] : [t.grade]))].sort((a, b) => a - b), [stageTasks]);
+    const availableGrades = schoolGrades.filter(g => !selectedStage || (g >= selectedStage.min && g <= selectedStage.max));
+    const selectedGrade = availableGrades.includes(Number(grade)) ? grade : "all";
     const scopedTasks = useMemo(() => stageTasks.filter(t =>
-        (grade === "all" || String(t.grade) === grade)
+        (selectedGrade === "all" || String(t.grade) === selectedGrade)
         && (kind === "all" || t.kind === kind)
         && t.studentName.includes(search.trim())
-    ), [stageTasks, grade, kind, search]);
+    ), [stageTasks, selectedGrade, kind, search]);
     const actionOptions = useMemo(() => {
         const options = new Map<string, { key: string; label: string; count: number }>();
         for (const task of scopedTasks) {
@@ -170,11 +177,11 @@ export default function FollowUpPage() {
         return counts;
     }, [scopedTasks, actionKey]);
 
-    const filterKey = JSON.stringify([view, actor, kind, stage, grade, actionKey, search, sort]);
+    const filterKey = JSON.stringify([schoolId, view, actor, kind, selectedStage?.id, selectedGrade, actionKey, search, sort]);
     const pageCount = Math.max(1, Math.ceil(groups.length / PAGE_SIZE));
     const page = pagination.key === filterKey ? Math.min(pagination.page, pageCount - 1) : 0;
     const pageGroups = groups.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-    const hasFilters = search !== "" || stage !== "all" || grade !== "all" || actionKey !== "all" || kind !== "all";
+    const hasFilters = search !== "" || !!selectedStage || selectedGrade !== "all" || actionKey !== "all" || kind !== "all";
     function clearFilters() {
         setSearch(""); setStage("all"); setGrade("all"); setActionKey("all"); setKind("all"); setOpenId(null);
     }
@@ -279,16 +286,15 @@ export default function FollowUpPage() {
 
             <section className="followup-filters" aria-label="تصفية الطالبات والإجراءات">
                 <label>المرحلة الدراسية
-                    <select value={stage} onChange={e => { setStage(e.target.value); setGrade("all"); setActionKey("all"); setOpenId(null); }}>
-                        <option value="all">جميع المراحل</option>
-                        {STAGES.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+                    <select value={selectedStage?.id ?? "all"} disabled={availableStages.length <= 1} onChange={e => { setStage(e.target.value); setGrade("all"); setActionKey("all"); setOpenId(null); }}>
+                        <option value="all">{schoolData === undefined ? "جارٍ تحميل المراحل…" : availableStages.length === 1 ? availableStages[0].label : availableStages.length === 0 ? "لا توجد مراحل مسجّلة" : "جميع المراحل"}</option>
+                        {availableStages.length > 1 && availableStages.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
                     </select>
                 </label>
                 <label>الصف الدراسي
-                    <select value={grade} onChange={e => { setGrade(e.target.value); setActionKey("all"); setOpenId(null); }}>
+                    <select value={selectedGrade} disabled={schoolData === undefined || availableGrades.length === 0} onChange={e => { setGrade(e.target.value); setActionKey("all"); setOpenId(null); }}>
                         <option value="all">جميع الصفوف</option>
                         {availableGrades.map(g => <option key={g} value={g}>الصف {g}</option>)}
-                        {grade !== "all" && !availableGrades.includes(Number(grade)) && <option value={grade}>الصف {grade} (لا توجد مهام)</option>}
                     </select>
                 </label>
                 <label>الإجراء المطلوب
