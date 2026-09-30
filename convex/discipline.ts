@@ -378,15 +378,18 @@ export const syncActions = mutation({
                             generated++;
                         }
                     }
-                } else if (count < last) {
-                    // An excuse was accepted or a late record removed: steps above
-                    // the new count are no longer due.
-                    for (const action of existingActions) {
-                        if (action.studentId === student._id && action.kind === kind
-                            && action.count > count && action.status === "pending") {
-                            await ctx.db.patch(action._id, { status: "cancelled", notes: "انخفض العدد بعد تعديل السجل" });
-                            cancelled++;
-                        }
+                }
+
+                // Steps above the current count are no longer due (an excuse was
+                // accepted, an absence or late record removed). Checked on every
+                // sync, not only when the count drops, so none is left behind.
+                for (const action of existingActions) {
+                    if (action.studentId === student._id && action.kind === kind
+                        && action.count > count && action.status === "pending") {
+                        const fresh = await ctx.db.get(action._id);
+                        if (fresh?.status !== "pending") continue;
+                        await ctx.db.patch(action._id, { status: "cancelled", notes: "انخفض العدد بعد تعديل السجل" });
+                        cancelled++;
                     }
                 }
 
