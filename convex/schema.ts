@@ -25,6 +25,10 @@ export default defineSchema({
         appName: v.optional(v.string()),
         termStartDate: v.optional(v.string()), // YYYY-MM-DD — absence/tardiness counts start here
         disciplineInitializedAt: v.optional(v.number()), // first follow-up sync (baseline taken)
+        // School days to wait after an absence before its tasks (except the phone call) are raised.
+        absenceActionDelayDays: v.optional(v.number()),
+        // Late arrivals per cycle: the Nth counts as an absence day and the steps start over at N+1.
+        tardinessCycle: v.optional(v.number()),
     }).index("by_code", ["code"]),
     classes: defineTable({
         schoolId: v.id("schools"),
@@ -125,6 +129,7 @@ export default defineSchema({
         studentId: v.id("students"),
         kind: v.union(v.literal("absence"), v.literal("tardiness")),
         lastCount: v.number(),
+        lastMature: v.optional(v.number()), // absence steps whose waiting days have passed
         updatedAt: v.number(),
     }).index("by_school", ["schoolId"]),
     // Generated follow-up tasks. Label/actor are snapshotted so history stays

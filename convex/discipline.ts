@@ -32,6 +32,31 @@ const range = (from: number, to: number) => Array.from({ length: to - from + 1 }
 /** Converts a late arrival into an absence day when it fires. */
 export const COUNT_AS_ABSENCE = "count_as_absence";
 
+/** The coordinator tells the guardian that the lates were counted as an absence day. */
+const ABSENCE_NOTICE: RuleSeed = {
+    actionKey: "absence_notice", label: "إبلاغ ولي الأمر باحتساب الطالبة غياب يوم كامل لتكرار التأخير",
+    actor: "coordinator", recipient: "guardian", counts: [7],
+};
+
+/** The one absence action raised on the day itself; the rest wait `absenceActionDelayDays`. */
+const IMMEDIATE_ABSENCE_ACTION = "phone_call";
+
+/** Position of a late arrival inside its cycle: with a cycle of 7, the 8th is step 1 again. */
+function cycleStep(kind: Kind, step: number, cycle: number): number {
+    return kind === "tardiness" && cycle > 0 ? ((step - 1) % cycle) + 1 : step;
+}
+
+/** `date` (YYYY-MM-DD) plus `days` school days; Friday and Saturday are skipped. */
+function addSchoolDays(date: string, days: number): string {
+    const d = new Date(`${date}T00:00:00Z`);
+    for (let left = days; left > 0;) {
+        d.setUTCDate(d.getUTCDate() + 1);
+        const weekday = d.getUTCDay();
+        if (weekday !== 5 && weekday !== 6) left--;
+    }
+    return d.toISOString().slice(0, 10);
+}
+
 /** The two handwritten sheets, transcribed exactly as written. */
 const DEFAULT_RULES: Record<Kind, RuleSeed[]> = {
     absence: [
@@ -55,6 +80,7 @@ const DEFAULT_RULES: Record<Kind, RuleSeed[]> = {
         { actionKey: "coordinator_refer_social", label: "تحويل من المنسقة إلى الأخصائية الاجتماعية", actor: "coordinator", recipient: "staff", counts: [4] },
         { actionKey: "guardian_summon", label: "استدعاء ولي الأمر وتعهده", actor: "coordinator", recipient: "guardian", counts: [4, 6] },
         { actionKey: COUNT_AS_ABSENCE, label: "احتساب غياب يوم كامل", actor: "system", recipient: "staff", counts: [7] },
+        ABSENCE_NOTICE,
     ],
 };
 
@@ -98,6 +124,8 @@ export const getRules = query({
             rules,
             termStartDate: school?.termStartDate ?? null,
             effectiveTermStart: school?.termStartDate ?? defaultTermStart(),
+            absenceActionDelayDays: school?.absenceActionDelayDays ?? 0,
+            tardinessCycle: school?.tardinessCycle ?? 0,
         };
     },
 });
@@ -166,6 +194,44 @@ export const addRule = mutation({
             isActive: true,
         });
         return "تمت إضافة الإجراء. حدّد الأيام التي يستحق فيها.";
+    },
+});
+
+/**
+ * The waiting days before absence tasks and the length of the tardiness cycle.
+ * Setting the cycle moves «احتساب غياب» and the coordinator's notice to its last step.
+ */
+export const setFollowUpOptions = mutation({
+    args: {
+        schoolId: v.id("schools"),
+        absenceActionDelayDays: v.optional(v.number()),
+        tardinessCycle: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        const whole = (n: number, max: number) => Number.isInteger(n) && n >= 0 && n <= max;
+        if (args.absenceActionDelayDays !== undefined) {
+            if (!whole(args.absenceActionDelayDays, 10)) throw new ConvexError("المهلة من 0 إلى 10 أيام.");
+            await ctx.db.patch(args.schoolId, { absenceActionDelayDays: args.absenceActionDelayDays || undefined });
+        }
+        if (args.tardinessCycle !== undefined) {
+            const cycle = args.tardinessCycle;
+            if (!whole(cycle, 20) || cycle === 1) throw new ConvexError("عدد مرات التأخير من 2 إلى 20، أو 0 لإيقاف التكرار.");
+            await ctx.db.patch(args.schoolId, { tardinessCycle: cycle || undefined });
+            if (cycle) {
+                const rules = (await loadRules(ctx, args.schoolId)).filter(r => r.kind === "tardiness");
+                for (const key of [COUNT_AS_ABSENCE, ABSENCE_NOTICE.actionKey]) {
+                    const rule = rules.find(r => r.actionKey === key);
+                    if (rule) await ctx.db.patch(rule._id, { counts: [cycle] });
+                }
+                if (!rules.some(r => r.actionKey === ABSENCE_NOTICE.actionKey)) {
+                    await ctx.db.insert("disciplineRules", {
+                        schoolId: args.schoolId, kind: "tardiness", ...ABSENCE_NOTICE, counts: [cycle],
+                        order: rules.reduce((max, r) => Math.max(max, r.order), -1) + 1, isActive: true,
+                    });
+                }
+            }
+        }
+        return "تم الحفظ.";
     },
 });
 
@@ -260,7 +326,10 @@ export const syncActions = mutation({
         if (!school) throw new ConvexError("لا توجد مدرسة.");
         const termStart = school.termStartDate ?? defaultTermStart();
         const threshold = school.dailyAbsenceThreshold ?? 0;
+        const delay = school.absenceActionDelayDays ?? 0;
+        const cycle = school.tardinessCycle ?? 0;
         const now = Date.now();
+        const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Qatar" }).format(new Date(now));
 
         let rules = await loadRules(ctx, args.schoolId);
         if (rules.length === 0) {
@@ -331,54 +400,66 @@ export const syncActions = mutation({
         for (const student of students) {
             const grade = gradeByClass.get(student.classId as string) ?? 0;
             const late = lateCount.get(student._id) ?? 0;
-            let absentDays = 0;
-            for (const missed of (periodsAbsent.get(student._id)?.values() ?? [])) {
-                if (missed > threshold) absentDays++;
-            }
-            const converted = conversionCounts.filter(n => n <= late).length;
+            const absentDates = [...(periodsAbsent.get(student._id) ?? [])]
+                .filter(([, missed]) => missed > threshold).map(([date]) => date).sort();
+            const absentDays = absentDates.length;
+            let converted = 0;
+            for (let n = 1; n <= late; n++) if (conversionCounts.includes(cycleStep("tardiness", n, cycle))) converted++;
             const current: Record<Kind, number> = { absence: absentDays + converted, tardiness: late };
+            // Absence steps whose waiting days have passed; the others raise only the phone call.
+            const matureAbsence = delay
+                ? absentDates.filter(date => addSchoolDays(date, delay) <= today).length + converted
+                : current.absence;
 
             for (const kind of ["absence", "tardiness"] as Kind[]) {
                 const count = current[kind];
                 const row = progress.get(`${student._id}:${kind}`);
                 const last = row ? row.lastCount : initialized ? 0 : Math.max(count - 1, 0);
 
-                if (count > last) {
-                    for (let step = last + 1; step <= count; step++) {
-                        for (const rule of rulesByKind[kind]) {
-                            if (!rule.counts.includes(step)) continue;
-                            if (rule.minGrade && grade && grade < rule.minGrade) continue;
-                            if (rule.maxGrade && grade && grade > rule.maxGrade) continue;
+                const waits = kind === "absence" && delay > 0;
+                const mature = waits ? matureAbsence : count;
+                const lastMature = !waits ? last
+                    : row ? row.lastMature ?? row.lastCount
+                    : initialized ? 0 : Math.max(mature - 1, 0);
 
-                            const dedupeKey = `${student._id}:${kind}:${step}:${rule.actionKey}`;
-                            const existing = actionByKey.get(dedupeKey);
-                            if (existing) {
-                                if (existing.status === "cancelled") {
-                                    await ctx.db.patch(existing._id, { status: "pending", notes: undefined, createdAt: now });
-                                    generated++;
-                                }
-                                continue;
+                const raise = async (step: number, delayed: boolean) => {
+                    for (const rule of rulesByKind[kind]) {
+                        if (waits && (rule.actionKey !== IMMEDIATE_ABSENCE_ACTION) !== delayed) continue;
+                        if (!rule.counts.includes(cycleStep(kind, step, cycle))) continue;
+                        if (rule.minGrade && grade && grade < rule.minGrade) continue;
+                        if (rule.maxGrade && grade && grade > rule.maxGrade) continue;
+
+                        const dedupeKey = `${student._id}:${kind}:${step}:${rule.actionKey}`;
+                        const existing = actionByKey.get(dedupeKey);
+                        if (existing) {
+                            if (existing.status === "cancelled") {
+                                await ctx.db.patch(existing._id, { status: "pending", notes: undefined, createdAt: now });
+                                generated++;
                             }
-                            const automatic = rule.actor === "system";
-                            await ctx.db.insert("disciplineActions", {
-                                schoolId: args.schoolId,
-                                studentId: student._id,
-                                kind,
-                                count: step,
-                                actionKey: rule.actionKey,
-                                label: rule.label,
-                                actor: rule.actor,
-                                recipient: rule.recipient,
-                                dedupeKey,
-                                status: automatic ? "done" : "pending",
-                                outcome: automatic ? "تم تلقائياً" : undefined,
-                                createdAt: now,
-                                completedAt: automatic ? now : undefined,
-                            });
-                            generated++;
+                            continue;
                         }
+                        const automatic = rule.actor === "system";
+                        await ctx.db.insert("disciplineActions", {
+                            schoolId: args.schoolId,
+                            studentId: student._id,
+                            kind,
+                            count: step,
+                            actionKey: rule.actionKey,
+                            label: rule.label,
+                            actor: rule.actor,
+                            recipient: rule.recipient,
+                            dedupeKey,
+                            status: automatic ? "done" : "pending",
+                            outcome: automatic ? "تم تلقائياً" : undefined,
+                            createdAt: now,
+                            completedAt: automatic ? now : undefined,
+                        });
+                        generated++;
                     }
-                }
+                };
+                for (let step = last + 1; step <= count; step++) await raise(step, false);
+                if (waits) for (let step = lastMature + 1; step <= mature; step++) await raise(step, true);
+                const newMature = waits ? Math.max(mature, Math.min(lastMature, count)) : undefined;
 
                 // Steps above the current count are no longer due (an excuse was
                 // accepted, an absence or late record removed). Checked on every
@@ -394,10 +475,12 @@ export const syncActions = mutation({
                 }
 
                 if (row) {
-                    if (row.lastCount !== count) await ctx.db.patch(row._id, { lastCount: count, updatedAt: now });
+                    if (row.lastCount !== count || row.lastMature !== newMature) {
+                        await ctx.db.patch(row._id, { lastCount: count, lastMature: newMature, updatedAt: now });
+                    }
                 } else if (count > 0) {
                     await ctx.db.insert("disciplineProgress", {
-                        schoolId: args.schoolId, studentId: student._id, kind, lastCount: count, updatedAt: now,
+                        schoolId: args.schoolId, studentId: student._id, kind, lastCount: count, lastMature: newMature, updatedAt: now,
                     });
                 }
             }
@@ -407,7 +490,7 @@ export const syncActions = mutation({
             for (const action of existingActions) {
                 if (action.studentId !== student._id || action.status !== "pending") continue;
                 const rule = activeRules.find(r => r.kind === action.kind && r.actionKey === action.actionKey);
-                const applies = !!rule && rule.counts.includes(action.count)
+                const applies = !!rule && rule.counts.includes(cycleStep(action.kind, action.count, cycle))
                     && !(rule.minGrade && grade && grade < rule.minGrade)
                     && !(rule.maxGrade && grade && grade > rule.maxGrade);
                 if (applies) continue;

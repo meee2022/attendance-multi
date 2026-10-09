@@ -20,6 +20,9 @@ export default function LateStudentsPage() {
     const [selectedClassId, setSelectedClassId] = useState("");
     const [pending, setPending] = useState<string | null>(null);
     const saving = useRef(false);
+    const [historyQuery, setHistoryQuery] = useState("");
+    const [historyStudentId, setHistoryStudentId] = useState<Id<"students"> | null>(null);
+    const historyDates = useQuery(api.tardiness.getStudentLates, historyStudentId ? { studentId: historyStudentId } : "skip");
     const [feedback, setFeedback] = useState<{ error: boolean; text: string } | null>(null);
     const schoolId = school?._id as Id<"schools"> | undefined;
     const initData = useQuery(api.setup.getInitialData, schoolId ? { schoolId } : "skip");
@@ -53,6 +56,11 @@ export default function LateStudentsPage() {
         }
     }
 
+    const classNames = new Map((initData?.classes ?? []).map((c: any) => [c._id as string, c.name as string]));
+    const historyNeedle = historyQuery.trim();
+    const historyMatches = historyNeedle.length >= 2 ? (students ?? []).filter(s => s.fullName.includes(historyNeedle)).slice(0, 8) : [];
+    const historyStudent = historyStudentId ? (students ?? []).find(s => s._id === historyStudentId) : undefined;
+
     return (
         <div className="late-page space-y-6">
             <header className="late-heading">
@@ -78,6 +86,34 @@ export default function LateStudentsPage() {
             {feedback && <div className={`late-feedback ${feedback.error ? "is-error" : ""}`} role={feedback.error ? "alert" : "status"}>
                 {feedback.error ? <X size={17} /> : <Check size={17} />}{feedback.text}
             </div>}
+
+            <section className="late-panel" aria-labelledby="history-title">
+                <div className="late-panel-heading"><div><h2 id="history-title">سجل تأخير طالبة</h2><p>ابحث بالاسم في كل الشعب لعرض تواريخ تأخيرها</p></div><Search size={21} /></div>
+                <div className="late-filters">
+                    <label>اسم الطالبة<div className="late-search"><Search size={17} /><input type="search" placeholder="اكتب جزءاً من الاسم…" value={historyQuery}
+                        onChange={e => { setHistoryQuery(e.target.value); setHistoryStudentId(null); }} /></div></label>
+                </div>
+                {historyQuery.trim().length >= 2 && !historyStudent && (
+                    <div className="late-roster"><ul>{historyMatches.length === 0
+                        ? <li className="late-student"><div className="late-student-copy"><span>لا توجد أسماء مطابقة</span></div></li>
+                        : historyMatches.map(s => <li key={s._id} className="late-student">
+                            <div className="late-student-copy"><strong>{s.fullName}</strong><span>{classNames.get(s.classId)}</span></div>
+                            <button className="late-action" onClick={() => setHistoryStudentId(s._id)}>عرض التواريخ</button>
+                        </li>)}</ul></div>
+                )}
+                {historyStudent && (
+                    <div className="late-roster">
+                        <div className="late-roster-summary"><span>{historyStudent.fullName} · {classNames.get(historyStudent.classId)}</span>
+                            <span>{historyDates === undefined ? "جارٍ التحميل…" : `${historyDates.length} مرة تأخير`}</span></div>
+                        <ul>{historyDates?.length === 0
+                            ? <li className="late-student"><div className="late-student-copy"><span>لا يوجد تأخير مسجّل لهذه الطالبة</span></div></li>
+                            : historyDates?.map((d, i) => <li key={d} className="late-student">
+                                <span className="late-row-number">{i + 1}</span>
+                                <div className="late-student-copy"><strong>{new Date(`${d}T00:00:00`).toLocaleDateString("ar", { weekday: "long" })}</strong><span><bdi>{d}</bdi></span></div>
+                            </li>)}</ul>
+                    </div>
+                )}
+            </section>
 
             <div className="late-layout">
                 <section className="late-panel" aria-labelledby="roster-title">

@@ -39,6 +39,9 @@ export default function DisciplineRulesSection() {
     const addRule = useMutation(api.discipline.addRule);
     const deleteRule = useMutation(api.discipline.deleteRule);
     const setTermStart = useMutation(api.discipline.setTermStart);
+    const setFollowUpOptions = useMutation(api.discipline.setFollowUpOptions);
+    const [delayDraft, setDelayDraft] = useState<string | null>(null);
+    const [cycleDraft, setCycleDraft] = useState<string | null>(null);
     const resetDiscipline = useMutation(api.discipline.resetDiscipline);
     const totals = useQuery(api.discipline.getDisciplineTotals, schoolId ? { schoolId } : "skip");
 
@@ -256,6 +259,40 @@ export default function DisciplineRulesSection() {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Waiting days and the tardiness cycle */}
+            <div className="settings-rows">
+                <div className="settings-row">
+                    <div>
+                        <label htmlFor="absence-delay">مهلة إجراءات الغياب (أيام دراسية)</label>
+                        <p>الاتصال الهاتفي يظهر في يوم الغياب نفسه. التعهد والإنذار والتحويل تظهر بعد هذه المهلة:
+                            مع 3 أيام، غياب الأحد تنزل إجراءاته يوم الأربعاء. الجمعة والسبت لا تُحسبان. 0 = بلا مهلة.</p>
+                    </div>
+                    <div className="settings-row-control">
+                        <input id="absence-delay" type="number" min={0} max={10} value={delayDraft ?? String(data.absenceActionDelayDays)}
+                            onChange={e => setDelayDraft(e.target.value)} />
+                        <button type="button" disabled={!schoolId || delayDraft === null || delayDraft === ""}
+                            onClick={() => schoolId && run(() => setFollowUpOptions({ schoolId, absenceActionDelayDays: Number(delayDraft) })).then(() => setDelayDraft(null))}>
+                            حفظ
+                        </button>
+                    </div>
+                </div>
+                <div className="settings-row">
+                    <div>
+                        <label htmlFor="late-cycle">عدد مرات التأخير التي تُحتسب غياباً</label>
+                        <p>عند هذا العدد يُحتسب للطالبة غياب يوم كامل وتُبلَّغ المنسقة، ثم تُعاد إجراءات التأخير من الأول:
+                            مع 7، التأخير الثامن يُعامل كالمرة الأولى. 0 = بلا إعادة.</p>
+                    </div>
+                    <div className="settings-row-control">
+                        <input id="late-cycle" type="number" min={0} max={20} value={cycleDraft ?? String(data.tardinessCycle)}
+                            onChange={e => setCycleDraft(e.target.value)} />
+                        <button type="button" disabled={!schoolId || cycleDraft === null || cycleDraft === ""}
+                            onClick={() => schoolId && run(() => setFollowUpOptions({ schoolId, tardinessCycle: Number(cycleDraft) })).then(() => setCycleDraft(null))}>
+                            حفظ
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* Printable forms */}

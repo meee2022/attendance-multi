@@ -127,3 +127,15 @@ export const getTardinessStats = query({
         return result.sort((a, b) => b.lateDaysCount - a.lateDaysCount);
     },
 });
+
+// Every late date of one student, oldest first
+export const getStudentLates = query({
+    args: { studentId: v.id("students") },
+    handler: async (ctx, args) => {
+        const lates = await ctx.db
+            .query("tardiness")
+            .withIndex("by_student", (q) => q.eq("studentId", args.studentId))
+            .collect();
+        return lates.map(l => l.date).sort();
+    },
+});
