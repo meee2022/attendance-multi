@@ -72,7 +72,8 @@ export default function AdminDashboard() {
     const [selectedGrade, setSelectedGrade] = useState<number | null>(null);
     const data = useQuery(api.attendance.getDailySummary, school?._id ? { schoolId: school._id as any, date: activeDate } : "skip");
     const tardyStudents = useQuery(api.tardiness.getLatesByDate, school?._id ? { schoolId: school._id as any, date: activeDate } : "skip");
-    const [isTardyModalOpen, setIsTardyModalOpen] = useState(false);
+    // Which list the dashboard shows over the page: today's lates or today's absences.
+    const [listOpen, setListOpen] = useState<"late" | "absent" | null>(null);
 
     // Extract unique grades from actual classes in database
     const availableGrades = useMemo(() => {
@@ -117,6 +118,7 @@ export default function AdminDashboard() {
         );
     }
 
+    const listRows = listOpen === "late" ? tardyStudents : listOpen === "absent" ? data?.absentStudents : undefined;
     const { summary, classes } = tableData || { classes: [], summary: null };
     const formattedDate = format(new Date(date), "d/MM/yyyy");
     const gradeLabel = selectedGrade !== null ? (GRADE_LABELS[selectedGrade] || `الصف ${selectedGrade}`) : "";
@@ -147,6 +149,8 @@ export default function AdminDashboard() {
                     value={data?.summary?.totalAbsent || 0}
                     icon={<UserX className="w-6 h-6" />}
                     color="rose"
+                    subValue="اضغط لعرض القائمة"
+                    onClick={() => setListOpen("absent")}
                 />
                 <StatCard
                     label="متأخرون اليوم"
@@ -154,7 +158,7 @@ export default function AdminDashboard() {
                     subValue="اضغط لعرض القائمة"
                     icon={<Clock className="w-6 h-6" />}
                     color="amber"
-                    onClick={() => setIsTardyModalOpen(true)}
+                    onClick={() => setListOpen("late")}
                 />
                 <StatCard
                     label="نسبة الحضور الحقيقية"
@@ -317,11 +321,11 @@ export default function AdminDashboard() {
             </div>
 
             {/* Tardy Modal */}
-            {isTardyModalOpen && (
+            {listOpen && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center p-4"
                     style={{ background: "rgba(15,23,42,0.6)", backdropFilter: "blur(6px)" }}
-                    onClick={() => setIsTardyModalOpen(false)}
+                    onClick={() => setListOpen(null)}
                 >
                     <div
                         className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200"
@@ -331,22 +335,22 @@ export default function AdminDashboard() {
                             style={{ background: "var(--gradient-hero)" }}>
                             <div>
                                 <h3 className="text-white font-black text-lg flex items-center gap-2">
-                                    <Clock className="w-5 h-5 text-amber-300" />
-                                    المتأخرون اليوم
+                                    {listOpen === "late" ? <Clock className="w-5 h-5 text-amber-300" /> : <UserX className="w-5 h-5 text-rose-300" />}
+                                    {listOpen === "late" ? "المتأخرون" : "الغائبون"} ({listRows?.length ?? 0})
                                 </h3>
-                                <p className="text-white/80 text-xs font-bold mt-1">تاريخ اليوم: {formattedDate}</p>
+                                <p className="text-white/80 text-xs font-bold mt-1">التاريخ: {format(new Date(activeDate), "d/MM/yyyy")}</p>
                             </div>
-                            <button onClick={() => setIsTardyModalOpen(false)}
+                            <button onClick={() => setListOpen(null)}
                                 className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/35 flex items-center justify-center text-white transition-colors">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
                         
                         <div className="p-0 max-h-[60vh] overflow-y-auto">
-                            {!tardyStudents || tardyStudents.length === 0 ? (
+                            {!listRows || listRows.length === 0 ? (
                                 <div className="py-12 flex flex-col items-center gap-3 text-slate-400">
                                     <UserCheck className="w-12 h-12 text-emerald-300" />
-                                    <p className="font-black text-lg">لا يوجد متأخرين مسجلين اليوم</p>
+                                    <p className="font-black text-lg">{listOpen === "late" ? "لا يوجد تأخير مسجّل في هذا اليوم" : "لا يوجد غياب مسجّل في هذا اليوم"}</p>
                                 </div>
                             ) : (
                                 <table className="w-full text-right border-collapse">
@@ -358,7 +362,7 @@ export default function AdminDashboard() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {tardyStudents.map((st: any, i: number) => (
+                                        {listRows.map((st: any, i: number) => (
                                             <tr key={st._id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                                                 <td className="py-3.5 px-6 text-center">
                                                     <span className="text-slate-400 font-bold text-sm w-6 inline-block">{i + 1}</span>
@@ -378,7 +382,7 @@ export default function AdminDashboard() {
                             )}
                         </div>
                         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
-                            <button onClick={() => setIsTardyModalOpen(false)}
+                            <button onClick={() => setListOpen(null)}
                                 className="px-6 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold text-sm transition-colors">
                                 إغلاق
                             </button>

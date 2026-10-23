@@ -388,6 +388,8 @@ export const getDailySummary = query({
             }
         }
 
+        // Names behind the absent count, for the dashboard's list.
+        const absentStudents: { _id: string; studentName: string; className: string }[] = [];
         const classStats = classes.map(cls => {
             const clsStudents = students.filter(s => s.classId === cls._id && s.isActive);
             const totalStudents = clsStudents.length;
@@ -407,7 +409,10 @@ export const getDailySummary = query({
                         // Only count the student as "discovered" today if they actually have a recorded status
                         if (absentPeriods > 0 || presentPeriods > 0) {
                             const isAbsentForDay = absentPeriods > dailyAbsenceThreshold;
-                            if (isAbsentForDay) dayAbsent++;
+                            if (isAbsentForDay) {
+                                dayAbsent++;
+                                absentStudents.push({ _id: st._id, studentName: st.fullName, className: cls.name });
+                            }
                             else dayPresent++;
                         }
                     }
@@ -436,6 +441,8 @@ export const getDailySummary = query({
 
         return {
             classes: classStats,
+            absentStudents: absentStudents.sort((a, b) =>
+                a.className.localeCompare(b.className, undefined, { numeric: true }) || a.studentName.localeCompare(b.studentName, "ar")),
             summary: {
                 totalStudents: totalAccountedFor,
                 totalCapacity: totalSchoolStudents,
