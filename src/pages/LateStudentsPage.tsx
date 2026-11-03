@@ -22,7 +22,10 @@ export default function LateStudentsPage() {
     const saving = useRef(false);
     const [historyQuery, setHistoryQuery] = useState("");
     const [historyStudentId, setHistoryStudentId] = useState<Id<"students"> | null>(null);
-    const historyDates = useQuery(api.tardiness.getStudentLates, historyStudentId ? { studentId: historyStudentId } : "skip");
+    const [historyKind, setHistoryKind] = useState<"late" | "absent">("late");
+    const lateHistory = useQuery(api.tardiness.getStudentLates, historyStudentId ? { studentId: historyStudentId } : "skip");
+    const absentHistory = useQuery(api.tardiness.getStudentAbsences, historyStudentId ? { studentId: historyStudentId } : "skip");
+    const historyDates = historyKind === "late" ? lateHistory : absentHistory;
     const [feedback, setFeedback] = useState<{ error: boolean; text: string } | null>(null);
     const schoolId = school?._id as Id<"schools"> | undefined;
     const initData = useQuery(api.setup.getInitialData, schoolId ? { schoolId } : "skip");
@@ -88,7 +91,7 @@ export default function LateStudentsPage() {
             </div>}
 
             <section className="late-panel" aria-labelledby="history-title">
-                <div className="late-panel-heading"><div><h2 id="history-title">سجل تأخير طالبة</h2><p>ابحث بالاسم في كل الشعب لعرض تواريخ تأخيرها</p></div><Search size={21} /></div>
+                <div className="late-panel-heading"><div><h2 id="history-title">سجل غياب وتأخير طالبة</h2><p>ابحث بالاسم في كل الشعب لعرض تواريخ غيابها أو تأخيرها</p></div><Search size={21} /></div>
                 <div className="late-filters">
                     <label>اسم الطالبة<div className="late-search"><Search size={17} /><input type="search" placeholder="اكتب جزءاً من الاسم…" value={historyQuery}
                         onChange={e => { setHistoryQuery(e.target.value); setHistoryStudentId(null); }} /></div></label>
@@ -104,9 +107,12 @@ export default function LateStudentsPage() {
                 {historyStudent && (
                     <div className="late-roster">
                         <div className="late-roster-summary"><span>{historyStudent.fullName} · {classNames.get(historyStudent.classId)}</span>
-                            <span>{historyDates === undefined ? "جارٍ التحميل…" : `${historyDates.length} مرة تأخير`}</span></div>
+                            <span>
+                                <button className={`late-action ${historyKind === "late" ? "" : "is-cancel"}`} onClick={() => setHistoryKind("late")}>التأخير ({lateHistory?.length ?? "…"})</button>{" "}
+                                <button className={`late-action ${historyKind === "absent" ? "" : "is-cancel"}`} onClick={() => setHistoryKind("absent")}>الغياب ({absentHistory?.length ?? "…"})</button>
+                            </span></div>
                         <ul>{historyDates?.length === 0
-                            ? <li className="late-student"><div className="late-student-copy"><span>لا يوجد تأخير مسجّل لهذه الطالبة</span></div></li>
+                            ? <li className="late-student"><div className="late-student-copy"><span>{historyKind === "late" ? "لا يوجد تأخير مسجّل لهذه الطالبة" : "لا يوجد غياب مسجّل لهذه الطالبة"}</span></div></li>
                             : historyDates?.map((d, i) => <li key={d} className="late-student">
                                 <span className="late-row-number">{i + 1}</span>
                                 <div className="late-student-copy"><strong>{new Date(`${d}T00:00:00`).toLocaleDateString("ar", { weekday: "long" })}</strong><span><bdi>{d}</bdi></span></div>

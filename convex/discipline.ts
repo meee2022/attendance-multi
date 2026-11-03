@@ -459,19 +459,25 @@ export const syncActions = mutation({
                 };
                 for (let step = last + 1; step <= count; step++) await raise(step, false);
                 if (waits) for (let step = lastMature + 1; step <= mature; step++) await raise(step, true);
-                const newMature = waits ? Math.max(mature, Math.min(lastMature, count)) : undefined;
+                // Delayed steps above `mature` are put back to waiting below, so they are raised again once due.
+                const newMature = waits ? mature : undefined;
 
                 // Steps above the current count are no longer due (an excuse was
                 // accepted, an absence or late record removed). Checked on every
                 // sync, not only when the count drops, so none is left behind.
+                // A delayed absence task whose day has not waited its days yet (the
+                // records were corrected so a recent day now holds its step) waits again.
                 for (const action of existingActions) {
-                    if (action.studentId === student._id && action.kind === kind
-                        && action.count > count && action.status === "pending") {
-                        const fresh = await ctx.db.get(action._id);
-                        if (fresh?.status !== "pending") continue;
-                        await ctx.db.patch(action._id, { status: "cancelled", notes: "انخفض العدد بعد تعديل السجل" });
-                        cancelled++;
-                    }
+                    if (action.studentId !== student._id || action.kind !== kind || action.status !== "pending") continue;
+                    const early = waits && action.actionKey !== IMMEDIATE_ABSENCE_ACTION && action.count > mature;
+                    if (action.count <= count && !early) continue;
+                    const fresh = await ctx.db.get(action._id);
+                    if (fresh?.status !== "pending") continue;
+                    await ctx.db.patch(action._id, {
+                        status: "cancelled",
+                        notes: action.count > count ? "انخفض العدد بعد تعديل السجل" : "بانتظار انتهاء مهلة الغياب",
+                    });
+                    cancelled++;
                 }
 
                 if (row) {
@@ -692,15 +698,18 @@ export const getActionForm = query({
             if (!period || period.date < termStart) continue;
             missedPerDate.set(period.date, (missedPerDate.get(period.date) ?? 0) + 1);
         }
+        // Only the days that led to this task: later absences belong to later steps.
         const absenceDates = [...missedPerDate.entries()]
             .filter(([, missed]) => missed > threshold)
             .map(([date]) => date)
-            .sort();
+            .sort()
+            .slice(0, action.kind === "absence" ? action.count : undefined);
 
         const lates = await ctx.db.query("tardiness")
             .withIndex("by_student", q => q.eq("studentId", student._id))
             .collect();
-        const lateDates = lates.map(l => l.date).filter(d => d >= termStart).sort();
+        const lateDates = lates.map(l => l.date).filter(d => d >= termStart).sort()
+            .slice(0, action.kind === "tardiness" ? action.count : undefined);
 
         const history = (await ctx.db.query("disciplineActions")
             .withIndex("by_student", q => q.eq("studentId", student._id))

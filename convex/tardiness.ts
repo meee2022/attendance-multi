@@ -139,3 +139,24 @@ export const getStudentLates = query({
         return lates.map(l => l.date).sort();
     },
 });
+
+// Days one student was absent (more absent periods than the school's threshold), oldest first
+export const getStudentAbsences = query({
+    args: { studentId: v.id("students") },
+    handler: async (ctx, args) => {
+        const student = await ctx.db.get(args.studentId);
+        const school = student ? await ctx.db.get(student.schoolId) : null;
+        const threshold = school?.dailyAbsenceThreshold ?? 0;
+        const records = await ctx.db
+            .query("attendance")
+            .withIndex("by_student", (q) => q.eq("studentId", args.studentId))
+            .collect();
+        const missed = new Map<string, number>();
+        for (const r of records) {
+            if (r.status !== "absent") continue;
+            const period = await ctx.db.get(r.periodId);
+            if (period) missed.set(period.date, (missed.get(period.date) ?? 0) + 1);
+        }
+        return [...missed].filter(([, n]) => n > threshold).map(([d]) => d).sort();
+    },
+});
