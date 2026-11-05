@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { FormProps } from "./formKit";
+import { CONVERTED_NOTE, type FormProps } from "./formKit";
 import "./moeAbsenceWarning.css";
 
 /**
@@ -51,18 +51,18 @@ function Blank({ children, width }: { children?: ReactNode; width?: string }) {
 }
 
 /** One half of a row of the dates table; a half with no day left is shaded grey, as on the originals. */
-function DateCells({ n, date }: { n?: number; date?: string }) {
+function DateCells({ n, date, converted }: { n?: number; date?: string; converted?: string[] }) {
     if (n === undefined) return <><td className="is-empty" /><td className="is-empty" /><td className="is-empty" /></>;
     return (
         <>
             <td>{n}</td>
             <td><Blank>{weekday(date)}</Blank></td>
-            <td><Blank><bdi dir="ltr">{dmy(date)}</bdi></Blank></td>
+            <td><Blank><bdi dir="ltr">{dmy(date)}</bdi>{date && converted?.includes(date) && " *"}</Blank></td>
         </>
     );
 }
 
-function AbsenceDatesTable({ count, dates }: { count: number; dates: string[] }) {
+function AbsenceDatesTable({ count, dates, converted }: { count: number; dates: string[]; converted: string[] }) {
     const head = <><th>م</th><th>اليوم</th><th>التاريخ</th></>;
 
     if (count <= 3) {
@@ -72,7 +72,7 @@ function AbsenceDatesTable({ count, dates }: { count: number; dates: string[] })
                 <thead><tr>{head}</tr></thead>
                 <tbody>
                     {Array.from({ length: count }, (_, i) => (
-                        <tr key={i}><DateCells n={i + 1} date={dates[i]} /></tr>
+                        <tr key={i}><DateCells n={i + 1} date={dates[i]} converted={converted} /></tr>
                     ))}
                 </tbody>
             </table>
@@ -92,8 +92,8 @@ function AbsenceDatesTable({ count, dates }: { count: number; dates: string[] })
             <tbody>
                 {Array.from({ length: rowCount }, (_, i) => (
                     <tr key={i}>
-                        <DateCells n={right[i]} date={dates[right[i] - 1]} />
-                        <DateCells n={left[i]} date={dates[left[i] - 1]} />
+                        <DateCells n={right[i]} date={dates[right[i] - 1]} converted={converted} />
+                        <DateCells n={left[i]} date={dates[left[i] - 1]} converted={converted} />
                     </tr>
                 ))}
             </tbody>
@@ -143,7 +143,8 @@ export function MoeAbsenceWarning({ data }: FormProps) {
                 نفيدكم علما بأن عدد أيام غياب ابنكم /ابنتكم عن المدرسة بدون عذر قد وصل مدة ({n} {textUnit}) بتاريخ:
             </p>
 
-            <AbsenceDatesTable count={n} dates={dates} />
+            <AbsenceDatesTable count={n} dates={dates} converted={data.convertedDates ?? []} />
+            {dates.some(d => data.convertedDates?.includes(d)) && <p className="moe-center">{CONVERTED_NOTE}</p>}
 
             <p className="moe-para">
                 وكما تعلمون بأن تكرار الغياب يؤثر سلبا على مستوى التحصيل الأكاديمي للطالب، وفي حال تجاوز المدة المسموح بها

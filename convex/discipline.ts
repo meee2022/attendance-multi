@@ -698,18 +698,27 @@ export const getActionForm = query({
             if (!period || period.date < termStart) continue;
             missedPerDate.set(period.date, (missedPerDate.get(period.date) ?? 0) + 1);
         }
+        const lates = await ctx.db.query("tardiness")
+            .withIndex("by_student", q => q.eq("studentId", student._id))
+            .collect();
+        const allLates = lates.map(l => l.date).filter(d => d >= termStart).sort();
+        const lateDates = allLates.slice(0, action.kind === "tardiness" ? action.count : undefined);
+
+        // Days a repeated lateness was counted as an absence, as the sync counts them.
+        const cycle = school.tardinessCycle ?? 0;
+        const conversionCounts = (await loadRules(ctx, school._id))
+            .filter(r => r.isActive && r.kind === "tardiness" && r.actionKey === COUNT_AS_ABSENCE)
+            .flatMap(r => r.counts);
+        const converted = allLates.filter((_, i) => conversionCounts.includes(cycleStep("tardiness", i + 1, cycle)));
+
         // Only the days that led to this task: later absences belong to later steps.
         const absenceDates = [...missedPerDate.entries()]
             .filter(([, missed]) => missed > threshold)
             .map(([date]) => date)
+            .concat(converted)
             .sort()
             .slice(0, action.kind === "absence" ? action.count : undefined);
-
-        const lates = await ctx.db.query("tardiness")
-            .withIndex("by_student", q => q.eq("studentId", student._id))
-            .collect();
-        const lateDates = lates.map(l => l.date).filter(d => d >= termStart).sort()
-            .slice(0, action.kind === "tardiness" ? action.count : undefined);
+        const convertedDates = converted.filter(d => absenceDates.includes(d));
 
         const history = (await ctx.db.query("disciplineActions")
             .withIndex("by_student", q => q.eq("studentId", student._id))
@@ -734,6 +743,7 @@ export const getActionForm = query({
             nationalId: student.nationalId ?? null,
             termStart,
             absenceDates,
+            convertedDates,
             lateDates,
             history,
         };

@@ -23,6 +23,8 @@ export type FormData = {
     termStart: string;
     issueDate: string;
     absenceDates: string[];
+    /** Absence days that are really a repeated lateness counted as an absence. */
+    convertedDates?: string[];
     lateDates: string[];
     history: FormHistoryItem[];
 };
@@ -52,6 +54,8 @@ export function countPhrase(data: FormData): string {
     if (data.kind === "absence") return n === 1 ? "يوماً واحداً" : n === 2 ? "يومين" : n <= 10 ? `${n} أيام` : `${n} يوماً`;
     return n === 1 ? "مرة واحدة" : n === 2 ? "مرتين" : n <= 10 ? `${n} مرات` : `${n} مرة`;
 }
+
+export const CONVERTED_NOTE = "* يوم احتُسب غياباً لتكرار التأخير الصباحي.";
 
 /** The dates that made up the action's count — later ones happened after this step. */
 export const kindDates = (data: FormData) =>
@@ -171,6 +175,7 @@ export function StudentInfo({ data }: { data: FormData }) {
 export function DatesTable({ data }: { data: FormData }) {
     const dates = kindDates(data);
     const title = data.kind === "absence" ? "بيان أيام الغياب" : "بيان مرات التأخير";
+    const converted = data.kind === "absence" ? data.convertedDates ?? [] : [];
     if (dates.length === 0) {
         return <p className="form-muted">لا توجد تواريخ مسجّلة في النظام منذ بداية الفصل.</p>;
     }
@@ -188,13 +193,14 @@ export function DatesTable({ data }: { data: FormData }) {
                                 <tr key={date}>
                                     <td>{(c === 0 ? 0 : half) + i + 1}</td>
                                     <td>{weekday(date)}</td>
-                                    <td><bdi dir="ltr">{date}</bdi></td>
+                                    <td><bdi dir="ltr">{date}</bdi>{converted.includes(date) && " *"}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 ))}
             </div>
+            {converted.length > 0 && <p className="form-muted">{CONVERTED_NOTE}</p>}
         </>
     );
 }

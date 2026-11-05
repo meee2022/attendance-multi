@@ -132,7 +132,7 @@ function toFormData(form: any): FormData {
         schoolName: form.schoolName, schoolCode: form.schoolCode, studentName: form.studentName,
         className: form.className, grade: form.grade, guardianPhone: form.guardianPhone, nationalId: form.nationalId,
         kind: form.kind, count: form.count, actionLabel: form.label, actor: form.actor, termStart: form.termStart,
-        issueDate: todayInQatar(), absenceDates: form.absenceDates, lateDates: form.lateDates, history: form.history,
+        issueDate: todayInQatar(), absenceDates: form.absenceDates, convertedDates: form.convertedDates, lateDates: form.lateDates, history: form.history,
     };
 }
 
@@ -206,6 +206,7 @@ function ActionPrint() {
         termStart: form.termStart,
         issueDate: todayInQatar(),
         absenceDates: form.absenceDates,
+        convertedDates: form.convertedDates,
         lateDates: form.lateDates,
         history: form.history,
     };
